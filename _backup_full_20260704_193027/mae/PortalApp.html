@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>estúdio elã - portal (integrado)</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&amp;family=EB+Garamond:ital,wght@0,400..800;1,400..800&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <style>
+    <?!= include('portal_styles') ?>
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col lowercase antialiased">
+
+  <div id="shell-header"></div>
+  <main id="view-outlet" class="flex-grow w-full flex flex-col">
+    <div id="portal-fallback" style="width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#ffffff;color:#000000;font-family:Arial,sans-serif;font-size:18px;font-weight:700;padding:24px;box-sizing:border-box;text-align:center;">carregando portal... se continuar em branco, abra o console do navegador.</div>
+  </main>
+  <div id="shell-bottomnav"></div>
+  <div id="shell-footer"></div>
+  <div id="toast" class="toast"></div>
+  <div id="portal-error" style="position:absolute;top:16px;left:16px;right:16px;z-index:200;background:rgba(255,255,255,.95);color:#b00020;padding:12px;display:none;border:1px solid #b00020;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;line-height:1.4;white-space:pre-wrap;max-height:180px;overflow:auto;"></div>
+
+  <script>
+    // Templates preloaded from server-side files (safe injection via includeAsJs)
+    window.__TEMPLATES = {
+      'components/header.html': <?!= includeAsJs('components_header') ?>,
+      'components/bottomnav.html': <?!= includeAsJs('components_bottomnav') ?>,
+      'components/footer.html': <?!= includeAsJs('components_footer') ?>,
+      'views/login.html': <?!= includeAsJs('views_login') ?>,
+      'views/dashboard.html': <?!= includeAsJs('views_dashboard') ?>,
+      'views/briefing.html': <?!= includeAsJs('views_briefing') ?>,
+      'views/upload.html': <?!= includeAsJs('views_upload') ?>,
+      'views/pagamentos.html': <?!= includeAsJs('views_pagamentos') ?>,
+      'views/perfil.html': <?!= includeAsJs('views_perfil') ?>,
+      'views/historico.html': <?!= includeAsJs('views_historico') ?>
+    };
+
+    function showPortalError(message) {
+      const errorBox = document.getElementById('portal-error');
+      if (!errorBox) return;
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+      document.getElementById('portal-fallback').style.display = 'none';
+    }
+
+    window.addEventListener('error', function(event) {
+      showPortalError('Erro JS: ' + (event.error ? event.error.stack || event.error : event.message));
+    });
+    window.addEventListener('unhandledrejection', function(event) {
+      showPortalError('Promise rejeitada: ' + (event.reason ? (event.reason.stack || event.reason) : event));
+    });
+
+    // Intercept fetch() for relative template requests so router.js can use fetch()
+    (function(){
+      const origFetch = window.fetch.bind(window);
+      window.fetch = function(input, init) {
+        try {
+          let url = (typeof input === 'string') ? input : (input && input.url) || '';
+          if (!url) return origFetch(input, init);
+          const normalized = new URL(url, location.href).pathname.replace(/^[\/]/, '');
+          const key = normalized === 'views/login.html' || normalized === 'views/dashboard.html' || normalized === 'views/briefing.html' || normalized === 'views/upload.html' || normalized === 'views/pagamentos.html' || normalized === 'views/perfil.html' || normalized === 'views/historico.html' ? normalized : url;
+          if (window.__TEMPLATES && window.__TEMPLATES[key]) {
+            const body = window.__TEMPLATES[key];
+            return Promise.resolve(new Response(body, { status: 200, headers: { 'Content-Type': 'text/html' } }));
+          }
+        } catch (e) {
+          console.warn('fetch interceptor error', e);
+        }
+        return origFetch(input, init);
+      };
+    })();
+  </script>
+
+  <script>
+    <?!= include('portal_api') ?>
+  </script>
+  <script>
+    <?!= include('portal_router') ?>
+  </script>
+</body>
+</html>

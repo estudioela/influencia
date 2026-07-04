@@ -1,0 +1,24 @@
+<div class="flex-grow w-full px-margin-mobile md:px-margin-desktop py-stack-lg animate-fade-up">
+  <div class="max-w-3xl mx-auto flex flex-col gap-stack-lg">
+    <section id="upload-etapa-selecao" class="flex flex-col gap-stack-md">
+      <div id="dropzone" class="border-2 border-dashed border-outline/30 rounded-lg p-stack-lg text-center cursor-pointer">
+        <p class="font-body-md text-body-md text-on-surface-variant">arraste os arquivos ou clique para selecionar</p>
+        <input id="fileInput" type="file" multiple class="hidden" />
+      </div>
+      <div id="transfer-list" class="flex flex-col gap-2"></div>
+      <button id="commit-transfer" class="w-full md:w-auto px-8 py-4 bg-secondary text-on-secondary rounded-full font-label-sm text-label-sm lowercase">enviar</button>
+    </section>
+
+    <section id="upload-etapa-sucesso" class="hidden flex-col gap-4">
+      <p class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-secondary">envio concluído</p>
+      <p class="font-body-md text-body-md">seus arquivos foram enviados com sucesso.</p>
+      <button data-nav-to="dashboard" class="px-8 py-4 bg-secondary text-on-secondary rounded-full font-label-sm text-label-sm lowercase">voltar</button>
+    </section>
+
+    <section id="upload-etapa-erro" class="hidden flex-col gap-2">
+      <p class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-error">falha no envio</p>
+      <p id="upload-erro-texto" class="font-body-md text-body-md">erro</p>
+      <button id="upload-btn-tentar-novamente" class="px-8 py-4 bg-secondary text-on-secondary rounded-full font-label-sm text-label-sm lowercase">tentar novamente</button>
+    </section>
+  </div>
+</div>
