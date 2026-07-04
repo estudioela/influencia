@@ -2,3 +2,4 @@
 *.log
 archive/
 _backup_full_*/
+**/.git
