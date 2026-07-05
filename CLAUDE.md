@@ -4,7 +4,7 @@
 
 ## 1. Visão geral (10 linhas)
 
-Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Apps Script (`mae/`), versionado neste repo Git, deployado via `clasp`. `mae/Código.js` é o ERP (roda dentro da Planilha Google, menu customizado). `mae/WebApp.js` é o backend do Portal (Web App público, `doGet`/`doPost`). `mae/Index.html` é o front-end do Portal (SPA de um arquivo só, sem framework). Planilha Google = único banco de dados; Portal só lê/escreve nela via Apps Script, não existe banco separado. `docs/`, `sites/`, `stitch_import/`, pastas `_backup_*`/`_archive_*` na raiz não fazem parte do app — não abrir por padrão. `portal.estudioela.com` é servido por GitHub Pages **deste mesmo repositório**, branch `pages-portal` (não a `main`).
+Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Apps Script (`mae/`), versionado neste repo Git, deployado via `clasp`. `mae/Código.js` é o ERP (roda dentro da Planilha Google, menu customizado). `mae/WebApp.js` é o backend do Portal (Web App público, `doGet`/`doPost`). `mae/Index.html` é o front-end do Portal (SPA de um arquivo só, sem framework). Planilha Google = único banco de dados; Portal só lê/escreve nela via Apps Script, não existe banco separado. `docs/` é documentação (inclusive referência visual do Stitch, em `docs/design-reference/`); `sites/` está vazio (placeholder oficial pra sites auxiliares, ver `PROJECT_GOVERNANCE.md`) — nenhum dos dois faz parte do app, não abrir por padrão. `portal.estudioela.com` é servido por GitHub Pages **deste mesmo repositório**, branch `pages-portal` (não a `main`).
 
 ## 2. Mapa de arquitetura real
 
@@ -104,7 +104,8 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - **Padrão inconsistente**: `BASE`/`BRIEFING` em `MAP` (WebApp.js) usam índice fixo; `ATIVACOES`/`PAGAMENTOS`/`HISTORICO_*` usam `getHeaderMap()`. Não é bug, mas é a maior fonte provável de confusão futura — confirme qual padrão uma função usa antes de copiar código de outra.
 - **`onFormSubmit()`** (`mae/Código.js` ~L544): depende de trigger instalável configurado fora do código-fonte (painel de Triggers do Apps Script). Não há como confirmar por aqui se está de fato instalado.
 - **Legado já removido** (não recriar): `Portal.js`, `Sincronizador.js`, `SincronizarPortal.js` — sincronizavam com uma "Planilha de Apoio" externa (ID `1289Eu3hk-...`) que foi descontinuada. `BASE DE DADOS` é fonte única desde então. Se esses nomes de arquivo aparecerem em algum backup/branch antigo, não restaurar sem entender que o fluxo que eles implementavam não existe mais.
-- **Pastas de backup na raiz** (`_archive_legacy_stitch/`, `_backup_cleanup_20260704_214648/` ~72M, `_backup_stitch_consolidacao_20260704/`): histórico morto, não fazem parte do app. Não editar nem tratar como fonte de verdade.
+- **Pastas de backup que existiam na raiz** (`_archive_legacy_stitch/`, `_backup_cleanup_20260704_214648/` ~72M, `_backup_stitch_consolidacao_20260704/`): já estavam no `.gitignore` (nunca foram versionadas) — removidas da raiz em 2026-07-05, movidas para `~/Backups/jescri-migracao-root-cleanup-.../` (fora do repo, na máquina local). Histórico morto, não recriar.
+- **`stitch_import/` (referência visual do Stitch)**: movido de `stitch_import/` (raiz) para `docs/design-reference/stitch-import/` em 2026-07-05, via `git mv` (histórico preservado). Atualizar este caminho se referenciar em outro lugar.
 - **`sites/`**: hoje vazio (mirrors locais de `estudioela.com`/`portal-influenciadoras` foram removidos por serem espelhos sem uso). Não recriar sem necessidade real.
 
 ## 7. Zona proibida (não alterar sem confirmação explícita do usuário)
@@ -121,7 +122,7 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 
 - **Onde começar:** para qualquer tarefa em ERP/Portal, ler `mae/WebApp.js` inteiro primeiro (~900 linhas, cabe no contexto) antes de qualquer grep parcial — os contratos entre `mae/Index.html` e `mae/WebApp.js` só ficam claros vendo os dois completos.
 - **Para saber nome de aba:** conferir `SETUP.ABAS` (`mae/Código.js` topo) E `MAP` (`mae/WebApp.js` topo) — os dois arquivos mapeiam nomes de aba independentemente, podem divergir.
-- **Ignorar por padrão** (não abrir salvo pedido explícito): `_archive_legacy_stitch/`, `_backup_cleanup_20260704_214648/`, `_backup_stitch_consolidacao_20260704/`, `stitch_import/` (referência visual do Stitch, não é código do app), `.claude/`, `.git/`.
+- **Ignorar por padrão** (não abrir salvo pedido explícito): `docs/design-reference/` (referência visual do Stitch, não é código do app), `.claude/`, `.git/`.
 - **`docs/`** é só documentação (inclusive este mapa não vive lá, vive na raiz) — não afeta runtime, não precisa ler pra entender o sistema.
 - **`sites/`** está vazio — não explorar.
 - **Antes de mexer em qualquer coisa de sessão/login/pagamento**, ler a seção 3 deste arquivo primeiro — evita reintroduzir bugs já corrigidos (histórico completo das correções: `git log --oneline -- mae/WebApp.js mae/Index.html`).
