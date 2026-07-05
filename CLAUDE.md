@@ -13,6 +13,7 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - `mae/WebApp.js` — Portal: `doGet`/`doPost`, todas as funções chamadas via `google.script.run` pelo front-end, `MAP` (mapeamento de colunas).
 - `mae/PortalUi.gs` — só `abrirPortalModal()`, abre `Index.html` num modal dentro da planilha.
 - `mae/SidebarBackend.js` — backend das sidebars do ERP (dados de influenciadora, pagamento extra).
+- `mae/SchemaExporter.js` — SCHEMA_EXPORTER: gera `SYSTEM_SCHEMA.json`/`SYSTEM_SCHEMA.md` (estrutura real da planilha, direto via `SpreadsheetApp`/`ScriptApp`, versionado por hash SHA-256). Roda via menu (" 📄 Schema Vivo"), via `onEdit` instalável com debounce, via trigger de tempo, e ao final de `gerarNovoMesCompleto()`. Triggers instaláveis exigem rodar `instalarTriggersSchemaExporter()` uma vez (menu) — restrição de plataforma, não pendência de código.
 - `mae/appsscript.json` — manifest: timezone, oauthScopes, config do Web App (`executeAs: USER_DEPLOYING`, `access: ANYONE_ANONYMOUS`).
 
 **Frontend (Portal, roda no navegador da influenciadora):**
@@ -103,7 +104,8 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - **Arquivo sensível — `mae/WebApp.js` `MAP.BASE`**: índices de coluna **fixos por número** (não por `getHeaderMap`), únicos assim no arquivo (todo o resto usa nome de cabeçalho). Se alguém inserir/remover coluna em `BASE DE DADOS`, quebra login/perfil **silenciosamente** (lê célula errada, não dá erro).
 - **Padrão inconsistente**: `BASE`/`BRIEFING` em `MAP` (WebApp.js) usam índice fixo; `ATIVACOES`/`PAGAMENTOS`/`HISTORICO_*` usam `getHeaderMap()`. Não é bug, mas é a maior fonte provável de confusão futura — confirme qual padrão uma função usa antes de copiar código de outra.
 - **`onFormSubmit()`** (`mae/Código.js` ~L544): depende de trigger instalável configurado fora do código-fonte (painel de Triggers do Apps Script). Não há como confirmar por aqui se está de fato instalado.
-- **Legado já removido** (não recriar): `Portal.js`, `Sincronizador.js`, `SincronizarPortal.js` — sincronizavam com uma "Planilha de Apoio" externa (ID `1289Eu3hk-...`) que foi descontinuada. `BASE DE DADOS` é fonte única desde então. Se esses nomes de arquivo aparecerem em algum backup/branch antigo, não restaurar sem entender que o fluxo que eles implementavam não existe mais.
+- **Legado já removido** (não recriar): `Portal.js`, `Sincronizador.js`, `SincronizarPortal.js` — sincronizavam com uma "Planilha de Apoio" externa (ID `1289Eu3hk-...`) que foi descontinuada. `BASE DE DADOS` é fonte única desde então. Removidos do repo git há tempos, mas **continuavam vivos no projeto Apps Script em produção** (só sumiram de fato do script ao vivo em 2026-07-05, como efeito colateral de um `clasp push` a partir de `mae/`, que substitui o conteúdo remoto por completo). Se esses nomes de arquivo aparecerem em algum backup/branch antigo, não restaurar sem entender que o fluxo que eles implementavam não existe mais.
+- **Incidente 2026-07-05 — projeto clasp duplicado na raiz**: chegou a existir um `.clasp.json` na raiz do repo (fora de `mae/`) apontando pro **mesmo `scriptId`** de produção, não versionado, com um `.claspignore` que ignorava `*.html` — um push a partir dali teria apagado todo HTML do Portal em produção. Havia também um `mae/PortalUi.js` (duplicata de `mae/PortalUi.gs`, mesma função `abrirPortalModal()`), que colidiria como o mesmo arquivo remoto no clasp. Ambos eram não-versionados (removidos sem perda de histórico). Por isso `mae/.claspignore` agora existe como allowlist explícita (só os 9 arquivos legítimos) — qualquer arquivo novo dentro de `mae/` só é enviado no push se for adicionado a essa lista.
 - **Pastas de backup que existiam na raiz** (`_archive_legacy_stitch/`, `_backup_cleanup_20260704_214648/` ~72M, `_backup_stitch_consolidacao_20260704/`): já estavam no `.gitignore` (nunca foram versionadas) — removidas da raiz em 2026-07-05, movidas para `~/Backups/jescri-migracao-root-cleanup-.../` (fora do repo, na máquina local). Histórico morto, não recriar.
 - **`stitch_import/` (referência visual do Stitch)**: movido de `stitch_import/` (raiz) para `docs/design-reference/stitch-import/` em 2026-07-05, via `git mv` (histórico preservado). Atualizar este caminho se referenciar em outro lugar.
 - **`sites/`**: hoje vazio (mirrors locais de `estudioela.com`/`portal-influenciadoras` foram removidos por serem espelhos sem uso). Não recriar sem necessidade real.
@@ -126,3 +128,37 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - **`docs/`** é só documentação (inclusive este mapa não vive lá, vive na raiz) — não afeta runtime, não precisa ler pra entender o sistema.
 - **`sites/`** está vazio — não explorar.
 - **Antes de mexer em qualquer coisa de sessão/login/pagamento**, ler a seção 3 deste arquivo primeiro — evita reintroduzir bugs já corrigidos (histórico completo das correções: `git log --oneline -- mae/WebApp.js mae/Index.html`).
+
+## 9. EXECUTION PROTOCOL (MANDATORY FOR ALL AGENTS)
+
+> Este arquivo (`CLAUDE.md`) tem precedência sobre qualquer comportamento padrão do agente.
+
+- Proibida a exploração livre do repositório. Nenhum agente deve varrer diretórios ou "descobrir" estrutura por conta própria.
+- Toda tarefa começa pelo `FLOW.md` (mapa de fluxos) — é a primeira fonte consultada, antes deste arquivo ou de qualquer arquivo de código.
+- Toda edição só pode partir de caminhos explícitos já documentados no `CLAUDE.md` (arquivo + função + linha aproximada). Não editar com base em suposição ou em busca própria.
+- Proibido usar busca exploratória (`grep`, scan de pastas, leitura de diretórios inteiros) — exceção única: o fluxo pedido não está documentado nem em `FLOW.md` nem no `CLAUDE.md`. Nesse caso, a busca é permitida apenas o suficiente para localizar o fluxo, e o achado deve ser documentado depois (atualizar `FLOW.md`/`CLAUDE.md`).
+- Antes de qualquer alteração, responder sempre nesta ordem:
+  1. **fluxo** (qual fluxo, conforme `FLOW.md`/seção 4)
+  2. **arquivo** (caminho exato)
+  3. **função** (nome exato, com linha aproximada se houver)
+  Só depois disso a edição pode prosseguir.
+
+## 10. FRAMEWORK LOCK MODE (INDUSTRIAL EXECUTION GUARANTEE)
+
+> Esta seção substitui a exceção de busca exploratória prevista na seção 9. A partir daqui, não existe mais exceção: se o fluxo não está no `FLOW.md`, a tarefa não é executada, ponto final.
+
+1. `FLOW.md` é a **única** fonte permitida para execução de tarefas. Nenhum agente deve derivar passos de execução de outro lugar.
+2. Se uma tarefa não estiver documentada no `FLOW.md`:
+   - não executar;
+   - não explorar o repositório sob nenhuma justificativa;
+   - solicitar explicitamente ao usuário onde/como adicionar o fluxo faltante ao `FLOW.md`, e parar aí.
+3. `CLAUDE.md` serve apenas como regras estruturais (arquitetura, riscos, zona proibida) — **nunca** como fonte de execução. Execução vem exclusivamente do `FLOW.md`.
+4. Proibido alterar comportamento com base em inferência, suposição ou busca de código. Toda ação deriva de um fluxo já escrito no `FLOW.md`.
+5. Toda ação começa obrigatoriamente identificando, nesta ordem:
+   - fluxo identificado no `FLOW.md`;
+   - arquivo exato;
+   - função exata.
+6. Se houver qualquer dúvida sobre um fluxo (ambiguidade, fluxo incompleto, arquivo/função desatualizado):
+   - parar a execução imediatamente;
+   - não explorar diretórios para tentar resolver a dúvida sozinho;
+   - solicitar ao usuário a atualização do `FLOW.md` antes de prosseguir.
