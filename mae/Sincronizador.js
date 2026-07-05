@@ -1,18 +1,26 @@
 /*************************************************************
  * SINCRONIZADOR ERP — PORTAL DO INFLUENCIADOR
- * Menu superior + Sync Down (Planilha Mãe -> Portal)
- * Esta é a ÚNICA função onOpen do projeto.
+ * Sync Down (Planilha Mãe -> Portal)
+ * O menu deste módulo foi incorporado ao onOpen() de Código.js
+ * (submenu "🖥️ Portal de Apoio", itens 3-5) para evitar duas
+ * funções onOpen concorrentes no mesmo projeto.
  *************************************************************/
 
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('?? Sincronização ERP')
-    .addItem('⬇️ Puxar Dados da Planilha Mãe', 'puxarDadosDaMae')
-    .addItem('⬇️ Puxar Históricos da Planilha Mãe', 'puxarHistoricosDaMae')
-    .addSeparator()
-    .addItem('ℹ️ Testar Conexão com a Mãe', 'testarConexaoMae')
-    .addToUi();
-}
+const ID_PLANILHA_MAE    = "1ZKqrmz80oOaU70gcHeIgr-yK9zeJ_5YkE8b5CKkuRdM";
+const ABA_MAE            = "BASE DE DADOS";
+// A planilha externa de apoio (1289Eu3hk...) foi excluída/ficou inacessível;
+// BASE DE APOIO agora é mantida como aba-espelho na própria planilha mãe.
+const ID_PLANILHA_PORTAL = ID_PLANILHA_MAE;
+const ABA_PORTAL         = "BASE DE APOIO";
+
+// Abas de histórico geradas por script na Mãe, só leitura no Portal.
+// O Portal nunca escreve nelas (WebApp.gs só faz getSheetByName + getDataRange
+// em getHistorico()), então a cópia aqui é sempre um clear() + rewrite direto,
+// sem precisar preservar nenhuma coluna como em puxarDadosDaMae().
+const ABAS_HISTORICO = [
+  "HISTÓRICO DE CONTEÚDOS",
+  "HISTÓRICO DE PAGAMENTOS"
+];
 
 function testarConexaoMae() {
   const ui = SpreadsheetApp.getUi();
@@ -83,7 +91,7 @@ function puxarDadosDaMae() {
     let pastasRestauradas = 0;
     try {
       // Preserva o ID_PASTA_DRIVE (coluna exclusiva do Portal) antes do clear(),
-      // casando por CUPOM. MAP vem de config.gs, mesmo projeto, mesmo escopo global.
+      // casando por CUPOM. MAP vem de WebApp.gs, mesmo projeto, mesmo escopo global.
       const colPastaDrive = MAP.BASE.ID_PASTA_DRIVE;
       const colCupom = MAP.BASE.CUPOM;
       const pastaPorCupom = {};
@@ -137,7 +145,7 @@ function puxarDadosDaMae() {
  * com o mesmo nome nos dois lados.
  *
  * Mais simples que puxarDadosDaMae(): o Portal só LÊ essas abas em
- * getHistorico() (entregas.gs), nunca escreve nelas. Não existe coluna
+ * getHistorico() (WebApp.gs), nunca escreve nelas. Não existe coluna
  * exclusiva do Portal pra preservar, então é clear() + rewrite direto.
  *
  * Se uma aba de histórico não existir ainda no Portal, ela é criada.

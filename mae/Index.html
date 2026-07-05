@@ -7,49 +7,598 @@
 <title>Portal de Influenciadoras Jescri</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<?!= include('styles'); ?>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Archivo+Narrow:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fdf8f8;
+    --bg-container:#f1edec;
+    --bg-container-low:#f7f2f2;
+    --bg-container-high:#ece7e7;
+    --surface-lowest:#ffffff;
+    --text:#1c1b1b;
+    --text-muted:#5d3f3b;
+    --text-faint:#916f6a;
+    --hairline:rgba(145,111,106,.25);
+    --primary:#8f0002;
+    --primary-strong:#bc0004;
+    --on-primary:#ffffff;
+    --error:#ba1a1a;
+    --font-display:'EB Garamond',serif;
+    --font-label:'Archivo Narrow',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    height:100%;
+    text-transform:lowercase;
+  }
+  input, button, select, textarea{ text-transform:lowercase; font-family:inherit; }
+
+  h1,h2,h3{
+    font-family:var(--font-display);
+    font-weight:400;
+    margin:0;
+    color:var(--text);
+  }
+
+  .material-symbols-outlined{
+    font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;
+    font-size:20px;
+    vertical-align:middle;
+    line-height:1;
+  }
+
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    padding-top:64px;
+    padding-bottom:88px;
+  }
+  @media (min-width:768px){ #app{ max-width:900px; } }
+
+  /* ---------- Topo (marca + sair) ---------- */
+  .topo{
+    position:fixed;
+    top:0;left:0;right:0;
+    height:64px;
+    max-width:520px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    background:var(--bg);
+    border-bottom:1px solid var(--hairline);
+    z-index:20;
+  }
+  @media (min-width:768px){ .topo{ max-width:900px; } }
+  .marca{
+    font-family:var(--font-display);
+    font-style:italic;
+    font-size:1.4rem;
+    color:var(--primary);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+    letter-spacing:-.01em;
+  }
+  .btn-sair{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-family:var(--font-label);
+    font-size:.72rem;
+    letter-spacing:.08em;
+    cursor:pointer;
+    padding:4px;
+  }
+  .btn-sair .material-symbols-outlined{ font-size:16px; }
+
+  body.login-ativo .topo,
+  body.login-ativo #nav-inferior{ display:none; }
+  body.login-ativo #app{ padding-top:0; padding-bottom:0; }
+
+  .tela{
+    display:none;
+    flex-direction:column;
+    flex:1;
+    padding:24px 20px 32px 20px;
+    animation:fade .3s ease;
+  }
+  .tela.ativa{display:flex;}
+  .tela.sem-nav{padding-bottom:24px;}
+
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- Login ---------- */
+  #tela-login{justify-content:center;align-items:center;text-align:center;padding-bottom:24px;}
+  .login-marca{text-align:center;margin-bottom:40px;}
+  .login-marca h1{font-size:2.5rem;font-style:italic;color:var(--primary);letter-spacing:-.01em;}
+  .login-marca p{font-family:var(--font-label);font-size:.7rem;letter-spacing:.08em;color:var(--text-faint);margin-top:10px;}
+
+  /* ---------- Form elements ---------- */
+  .campo{margin-bottom:22px;text-align:left;width:100%;max-width:320px;}
+  .campo label{
+    display:block;
+    font-family:var(--font-label);
+    font-size:.68rem;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:8px;
+    letter-spacing:.1em;
+  }
+  .campo input{
+    width:100%;
+    padding:10px 0;
+    border-radius:0;
+    border:none;
+    border-bottom:1px solid var(--hairline);
+    background:transparent;
+    font-family:var(--font-body);
+    font-size:1rem;
+    color:var(--text);
+  }
+  .campo input:focus{
+    outline:none;
+    border-bottom-color:var(--primary);
+  }
+  .campo input:disabled{
+    color:var(--text-faint);
+  }
+  .campo-erro{
+    color:var(--error);
+    font-family:var(--font-label);
+    font-size:.72rem;
+    margin-top:8px;
+    display:none;
+    text-align:left;
+  }
+  .campo-erro.visivel{display:block;}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    max-width:320px;
+    padding:15px 24px;
+    font-family:var(--font-label);
+    font-weight:600;
+    font-size:.72rem;
+    letter-spacing:.08em;
+    border:none;
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  .btn:active{opacity:.82;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primario{
+    background:var(--primary-strong);
+    color:var(--on-primary);
+    border-radius:999px;
+  }
+  .btn-secundario{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--hairline);
+    border-radius:0;
+  }
+  .btn-fixo-baixo{
+    margin-top:auto;
+    padding-top:16px;
+  }
+
+  /* ---------- Cabecalho de secao ---------- */
+  .cabecalho{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:28px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .btn-voltar{
+    width:36px;height:36px;
+    border:1px solid var(--hairline);
+    background:var(--surface-lowest);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    color:var(--primary);
+  }
+  .saudacao{font-size:1.5rem;font-style:italic;}
+  .subtitulo{font-family:var(--font-label);font-size:.68rem;letter-spacing:.06em;color:var(--text-muted);margin-top:4px;}
+
+  /* ---------- Seletor de mes ---------- */
+  .seletor-mes{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px solid var(--hairline);
+    margin-bottom:24px;
+  }
+  .seletor-mes button{
+    width:28px;height:28px;
+    border:none;
+    background:none;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    color:var(--text-muted);
+  }
+  .seletor-mes button:disabled{opacity:.3;cursor:not-allowed;}
+  .seletor-mes span{
+    font-family:var(--font-label);
+    font-weight:600;
+    letter-spacing:.12em;
+    font-size:.72rem;
+    color:var(--text);
+  }
+
+  /* ---------- Cards de ativacao ---------- */
+  .lista{display:flex;flex-direction:column;gap:16px;}
+  .card{
+    background:var(--bg-container-low);
+    border:1px solid var(--hairline);
+    padding:20px;
+  }
+  .card-topo{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:14px;
+    gap:10px;
+  }
+  .card-formato{
+    font-family:var(--font-label);
+    font-weight:600;
+    font-size:.72rem;
+    letter-spacing:.05em;
+    background:var(--bg-container);
+    padding:4px 10px;
+  }
+  .pill{
+    font-family:var(--font-label);
+    font-weight:600;
+    font-size:.66rem;
+    letter-spacing:.05em;
+    padding:5px 12px;
+    white-space:nowrap;
+    border:1px solid var(--hairline);
+  }
+  .pill-aguardando{background:transparent;color:var(--text-muted);}
+  .pill-aprovacao{background:var(--bg-container-high);color:var(--text);}
+  .pill-aprovado{background:var(--primary-strong);color:var(--on-primary);border-color:var(--primary-strong);}
+  .pill-publicado{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+  .card-datas{
+    display:flex;
+    gap:20px;
+    margin-bottom:16px;
+  }
+  .card-datas div span{
+    display:block;
+    font-family:var(--font-label);
+    font-size:.62rem;
+    color:var(--text-faint);
+    letter-spacing:.05em;
+    margin-bottom:3px;
+  }
+  .card-datas div strong{font-size:.85rem;font-weight:400;}
+
+  .card-acoes{display:flex;gap:10px;}
+  .card-acoes .btn{width:auto;flex:1;padding:11px 14px;font-size:.68rem;}
+
+  .vazio{
+    text-align:center;
+    color:var(--text-faint);
+    padding:48px 20px;
+    font-family:var(--font-label);
+    font-size:.75rem;
+    letter-spacing:.05em;
+  }
+
+  /* ---------- Briefing ---------- */
+  .briefing-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:24px;
+  }
+  .briefing-meta .tag{
+    background:var(--bg-container);
+    font-family:var(--font-label);
+    font-size:.66rem;
+    letter-spacing:.05em;
+    padding:6px 12px;
+    color:var(--text-muted);
+  }
+  .briefing-texto{
+    border-left:1px solid var(--primary);
+    padding-left:16px;
+    line-height:1.7;
+    font-size:.92rem;
+    white-space:pre-wrap;
+    flex:1;
+    color:var(--text);
+    opacity:.9;
+  }
+
+  /* ---------- Upload ---------- */
+  .upload-caixa{
+    border:1.5px dashed var(--hairline);
+    padding:40px 20px;
+    text-align:center;
+    margin-bottom:20px;
+    background:var(--bg-container-low);
+  }
+  .upload-caixa .material-symbols-outlined{
+    font-size:32px;
+    color:var(--text-muted);
+    margin-bottom:10px;
+    display:block;
+  }
+  .upload-nome-arquivo{
+    font-family:var(--font-label);
+    font-size:.72rem;
+    margin-top:10px;
+    word-break:break-all;
+    color:var(--text);
+  }
+  .barra-progresso{
+    width:100%;
+    height:2px;
+    background:var(--bg-container-high);
+    margin:16px 0 8px 0;
+  }
+  .barra-progresso-fill{
+    height:100%;
+    background:var(--primary-strong);
+    width:0%;
+    transition:width .2s ease;
+  }
+  .upload-status{
+    text-align:center;
+    font-family:var(--font-label);
+    font-size:.7rem;
+    color:var(--text-muted);
+  }
+  .upload-sucesso{
+    text-align:center;
+    padding:48px 20px;
+  }
+  .upload-sucesso .material-symbols-outlined{font-size:40px;color:var(--primary);margin-bottom:16px;}
+  .upload-sucesso h3{margin-bottom:8px;font-size:1.3rem;font-style:italic;}
+  .upload-sucesso p{color:var(--text-muted);font-size:.85rem;}
+
+  /* ---------- Pagamentos ---------- */
+  .card-total{
+    background:var(--bg-container);
+    border:1px solid var(--hairline);
+    padding:20px;
+    margin-bottom:20px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .card-total-linha{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .card-total-linha span{font-family:var(--font-label);font-size:.68rem;letter-spacing:.08em;color:var(--text-muted);}
+  .card-total-linha strong{font-family:var(--font-display);font-style:italic;font-size:1.3rem;font-weight:400;}
+
+  .pagamento-valor{font-family:var(--font-display);font-size:1.2rem;font-weight:400;margin-bottom:14px;}
+  .pagamento-data{font-family:var(--font-label);font-size:.66rem;color:var(--text-muted);margin-top:10px;}
+
+  .tracker{display:flex;align-items:center;}
+  .tracker-etapa{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+  .tracker-bolinha{
+    width:8px;height:8px;
+    border-radius:50%;
+    border:1px solid var(--hairline);
+    background:var(--surface-lowest);
+    z-index:1;
+  }
+  .tracker-etapa.completa .tracker-bolinha,
+  .tracker-etapa.ativa .tracker-bolinha{
+    background:var(--primary-strong);
+    border-color:var(--primary-strong);
+  }
+  .tracker-linha{
+    position:absolute;
+    top:3px;
+    left:-50%;
+    width:100%;
+    height:1px;
+    background:var(--hairline);
+    z-index:0;
+  }
+  .tracker-etapa.completa .tracker-linha,
+  .tracker-etapa.ativa .tracker-linha{background:var(--primary-strong);}
+  .tracker-etapa:first-child .tracker-linha{display:none;}
+  .tracker-label{
+    font-family:var(--font-label);
+    font-size:.6rem;
+    color:var(--text-faint);
+    margin-top:6px;
+    text-align:center;
+    max-width:80px;
+    line-height:1.2;
+    letter-spacing:.03em;
+  }
+  .tracker-etapa.ativa .tracker-label{color:var(--primary);font-weight:600;}
+
+  /* ---------- Historico ---------- */
+  .historico-secao{margin-bottom:28px;}
+  .historico-secao h3{font-size:1.1rem;margin-bottom:14px;font-style:italic;}
+  .historico-item{
+    background:var(--bg-container-low);
+    border:1px solid var(--hairline);
+    padding:14px 16px;
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .historico-item-info strong{display:block;font-size:.85rem;font-weight:400;}
+  .historico-item-info span{font-family:var(--font-label);font-size:.66rem;color:var(--text-muted);}
+
+  /* ---------- Perfil ---------- */
+  .perfil-bloco{
+    background:var(--bg-container-low);
+    border:1px solid var(--hairline);
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .perfil-bloco h3{font-family:var(--font-label);font-size:.7rem;color:var(--text-muted);letter-spacing:.06em;margin-bottom:14px;}
+  .perfil-leitura-linha{
+    display:flex;
+    justify-content:space-between;
+    padding:8px 0;
+    border-bottom:1px solid var(--hairline);
+    font-size:.85rem;
+  }
+  .perfil-leitura-linha:last-child{border-bottom:none;}
+  .perfil-leitura-linha span:first-child{font-family:var(--font-label);font-size:.68rem;letter-spacing:.04em;color:var(--text-muted);}
+  .perfil-leitura-linha span:last-child{font-weight:400;text-align:right;}
+  .campo-dupla{display:flex;gap:12px;}
+  .campo-dupla .campo{flex:1;}
+
+  /* ---------- Nav inferior ---------- */
+  #nav-inferior{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    max-width:520px;
+    margin:0 auto;
+    background:var(--bg);
+    border-top:1px solid var(--hairline);
+    display:flex;
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px)) 4px;
+    z-index:20;
+  }
+  @media (min-width:768px){ #nav-inferior{ max-width:900px; } }
+  .nav-item{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px 0;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:var(--text-faint);
+  }
+  .nav-item span:last-child{font-family:var(--font-label);font-size:.62rem;letter-spacing:.04em;}
+  .nav-item.ativo{color:var(--primary);}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:96px;
+    transform:translateX(-50%) translateY(16px);
+    background:var(--text);
+    color:var(--bg);
+    padding:12px 20px;
+    font-family:var(--font-label);
+    font-size:.72rem;
+    letter-spacing:.04em;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    max-width:90%;
+    text-align:center;
+    z-index:100;
+  }
+  .toast.visivel{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  .carregando{
+    text-align:center;
+    color:var(--text-faint);
+    padding:40px 20px;
+    font-family:var(--font-label);
+    font-size:.72rem;
+    letter-spacing:.05em;
+  }
+</style>
 </head>
 <body>
 <div id="app">
 
+  <header class="topo" id="topo">
+    <button class="marca" onclick="navegarPara('pendencias')">jescri</button>
+    <button class="btn-sair" onclick="limparSessaoEVoltarLogin()">
+      <span class="material-symbols-outlined">logout</span>
+      <span>sair</span>
+    </button>
+  </header>
+
   <!-- ============ TELA 1: LOGIN ============ -->
   <section id="tela-login" class="tela ativa sem-nav">
     <div class="login-marca">
-      <h1>Jescri</h1>
-      <p>Portal de Influenciadoras</p>
+      <h1>jescri</h1>
+      <p>portal de influenciadoras</p>
     </div>
     <div class="campo">
-      <label for="input-cupom">Cupom</label>
+      <label for="input-cupom">cupom</label>
       <input type="text" id="input-cupom" autocomplete="off" autocapitalize="characters">
     </div>
     <div class="campo">
-      <label for="input-senha">Senha</label>
+      <label for="input-senha">senha</label>
       <input type="password" id="input-senha" autocomplete="off" inputmode="numeric">
     </div>
-    <div class="campo-erro" id="login-erro">Cupom ou senha inválidos.</div>
-    <button class="btn btn-primario" id="btn-entrar" onclick="fazerLogin()">Entrar</button>
+    <div class="campo-erro" id="login-erro">cupom ou senha inválidos.</div>
+    <button class="btn btn-primario" id="btn-entrar" onclick="fazerLogin()">
+      <span>entrar</span>
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+    </button>
   </section>
 
   <!-- ============ TELA 2: PENDENCIAS ============ -->
   <section id="tela-pendencias" class="tela">
     <div class="cabecalho">
       <div>
-        <h2 class="saudacao" id="pend-saudacao">Olá</h2>
-        <p class="subtitulo">Suas ativações do mês</p>
+        <h2 class="saudacao" id="pend-saudacao">olá</h2>
+        <p class="subtitulo">suas ativações do mês</p>
       </div>
     </div>
     <div class="seletor-mes">
       <button onclick="mudarMes('pend',-1)" id="pend-mes-prev">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
       </button>
-      <span id="pend-mes-label">JULHO</span>
+      <span id="pend-mes-label">julho</span>
       <button onclick="mudarMes('pend',1)" id="pend-mes-next">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
       </button>
     </div>
     <div class="lista" id="pend-lista">
-      <div class="carregando">Carregando...</div>
+      <div class="carregando">carregando...</div>
     </div>
   </section>
 
@@ -57,19 +606,22 @@
   <section id="tela-briefing" class="tela sem-nav">
     <div class="cabecalho">
       <button class="btn-voltar" onclick="mostrarTela('tela-pendencias')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>
       </button>
-      <h2 id="briefing-titulo">Briefing</h2>
+      <h2 id="briefing-titulo">briefing</h2>
     </div>
     <div class="briefing-meta">
       <span class="tag" id="briefing-mes">-</span>
       <span class="tag" id="briefing-formato">-</span>
-      <span class="tag" id="briefing-entrega">Entrega: -</span>
-      <span class="tag" id="briefing-postagem">Postagem: -</span>
+      <span class="tag" id="briefing-entrega">entrega: -</span>
+      <span class="tag" id="briefing-postagem">postagem: -</span>
     </div>
-    <div class="briefing-texto" id="briefing-texto">Carregando...</div>
+    <div class="briefing-texto" id="briefing-texto">carregando...</div>
     <div class="btn-fixo-baixo">
-      <button class="btn btn-primario" id="briefing-btn-enviar" onclick="abrirEnviarMaterial(STATE.ativacaoAtual)">Enviar material</button>
+      <button class="btn btn-primario" id="briefing-btn-enviar" onclick="abrirEnviarMaterial(STATE.ativacaoAtual)">
+        <span>enviar material</span>
+        <span class="material-symbols-outlined" style="font-size:16px;">upload</span>
+      </button>
     </div>
   </section>
 
@@ -77,42 +629,42 @@
   <section id="tela-upload" class="tela sem-nav">
     <div class="cabecalho">
       <button class="btn-voltar" onclick="mostrarTela('tela-pendencias')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>
       </button>
-      <h2>Enviar material</h2>
+      <h2>enviar material</h2>
     </div>
 
     <div id="upload-etapa-selecao">
       <div class="upload-caixa">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
-        <div>Toque para escolher foto ou vídeo</div>
+        <span class="material-symbols-outlined">cloud_upload</span>
+        <div>toque para escolher foto ou vídeo</div>
         <div class="upload-nome-arquivo" id="upload-nome-arquivo"></div>
       </div>
         <input type="file" id="input-arquivo" accept="image/*,video/*" multiple style="display:none" onchange="arquivoSelecionado(this.files)">
-      <button class="btn btn-secundario" onclick="document.getElementById('input-arquivo').click()">Escolher arquivo</button>
+      <button class="btn btn-secundario" onclick="document.getElementById('input-arquivo').click()">escolher arquivo</button>
       <div style="height:12px"></div>
-      <button class="btn btn-primario" id="btn-iniciar-envio" onclick="iniciarEnvio()" disabled>Enviar</button>
+      <button class="btn btn-primario" id="btn-iniciar-envio" onclick="iniciarEnvio()" disabled>enviar</button>
     </div>
 
     <div id="upload-etapa-progresso" style="display:none">
       <div class="upload-caixa">
         <div class="upload-nome-arquivo" id="upload-progresso-nome"></div>
         <div class="barra-progresso"><div class="barra-progresso-fill" id="upload-barra"></div></div>
-        <div class="upload-status" id="upload-status-texto">Enviando... 0%</div>
+        <div class="upload-status" id="upload-status-texto">enviando... 0%</div>
       </div>
     </div>
 
     <div id="upload-etapa-sucesso" class="upload-sucesso" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-      <h3>Material enviado</h3>
-      <p>Seu arquivo foi recebido e está em análise.</p>
+      <span class="material-symbols-outlined">check_circle</span>
+      <h3>material enviado</h3>
+      <p>seu arquivo foi recebido e está em análise.</p>
       <div style="height:20px"></div>
-      <button class="btn btn-primario" onclick="voltarDeUploadParaPendencias()">Voltar para pendências</button>
+      <button class="btn btn-primario" onclick="voltarDeUploadParaPendencias()">voltar para pendências</button>
     </div>
 
     <div id="upload-etapa-erro" style="display:none">
-      <div class="campo-erro visivel" id="upload-erro-texto">Falha no envio.</div>
-      <button class="btn btn-primario" onclick="iniciarEnvio()">Tentar novamente</button>
+      <div class="campo-erro visivel" id="upload-erro-texto">falha no envio.</div>
+      <button class="btn btn-primario" onclick="iniciarEnvio()">tentar novamente</button>
     </div>
   </section>
 
@@ -120,47 +672,47 @@
   <section id="tela-pagamentos" class="tela">
     <div class="cabecalho">
       <div>
-        <h2>Pagamentos</h2>
+        <h2>pagamentos</h2>
       </div>
     </div>
     <div class="seletor-mes">
       <button onclick="mudarMes('pag',-1)" id="pag-mes-prev">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
       </button>
-      <span id="pag-mes-label">JULHO</span>
+      <span id="pag-mes-label">julho</span>
       <button onclick="mudarMes('pag',1)" id="pag-mes-next">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
       </button>
     </div>
     <div class="card-total">
-      <div class="card-total-linha"><span>Previsto no mês</span><strong id="pag-total-previsto">R$ 0,00</strong></div>
-      <div class="card-total-linha"><span>Pago no mês</span><strong id="pag-total-pago">R$ 0,00</strong></div>
+      <div class="card-total-linha"><span>previsto no mês</span><strong id="pag-total-previsto">r$ 0,00</strong></div>
+      <div class="card-total-linha"><span>pago no mês</span><strong id="pag-total-pago">r$ 0,00</strong></div>
     </div>
     <div class="lista" id="pag-lista">
-      <div class="carregando">Carregando...</div>
+      <div class="carregando">carregando...</div>
     </div>
   </section>
 
   <!-- ============ TELA 6: HISTORICO ============ -->
   <section id="tela-historico" class="tela">
     <div class="cabecalho">
-      <div><h2>Histórico</h2></div>
+      <div><h2>histórico</h2></div>
     </div>
     <div class="seletor-mes">
       <button onclick="mudarMes('hist',-1)" id="hist-mes-prev">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
       </button>
-      <span id="hist-mes-label">JULHO</span>
+      <span id="hist-mes-label">julho</span>
       <button onclick="mudarMes('hist',1)" id="hist-mes-next">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
       </button>
     </div>
     <div class="historico-secao">
-      <h3>Ativações</h3>
-      <div id="hist-ativacoes"><div class="carregando">Carregando...</div></div>
+      <h3>ativações</h3>
+      <div id="hist-ativacoes"><div class="carregando">carregando...</div></div>
     </div>
     <div class="historico-secao">
-      <h3>Pagamentos</h3>
+      <h3>pagamentos</h3>
       <div id="hist-pagamentos"></div>
     </div>
   </section>
@@ -168,72 +720,70 @@
   <!-- ============ TELA 7: PERFIL ============ -->
   <section id="tela-perfil" class="tela">
     <div class="cabecalho">
-      <div><h2>Perfil</h2></div>
+      <div><h2>perfil</h2></div>
     </div>
 
     <div class="perfil-bloco">
-      <h3>Dados cadastrais</h3>
-      <div class="perfil-leitura-linha"><span>Nome</span><span id="perfil-nome">-</span></div>
-      <div class="perfil-leitura-linha"><span>CNPJ</span><span id="perfil-cnpj">-</span></div>
-      <div class="perfil-leitura-linha"><span>Cidade</span><span id="perfil-cidade">-</span></div>
-      <div class="perfil-leitura-linha"><span>Estado</span><span id="perfil-estado">-</span></div>
-      <div class="perfil-leitura-linha"><span>Rua</span><span id="perfil-rua">-</span></div>
+      <h3>dados cadastrais</h3>
+      <div class="perfil-leitura-linha"><span>nome</span><span id="perfil-nome">-</span></div>
+      <div class="perfil-leitura-linha"><span>cnpj</span><span id="perfil-cnpj">-</span></div>
+      <div class="perfil-leitura-linha"><span>cidade</span><span id="perfil-cidade">-</span></div>
+      <div class="perfil-leitura-linha"><span>estado</span><span id="perfil-estado">-</span></div>
+      <div class="perfil-leitura-linha"><span>rua</span><span id="perfil-rua">-</span></div>
     </div>
 
     <div class="perfil-bloco">
-      <h3>Editáveis</h3>
+      <h3>editáveis</h3>
       <div class="campo">
-        <label for="perfil-input-chavepix">Chave Pix</label>
+        <label for="perfil-input-chavepix">chave pix</label>
         <input type="text" id="perfil-input-chavepix">
       </div>
       <div class="campo">
-        <label for="perfil-input-email">E-mail</label>
+        <label for="perfil-input-email">e-mail</label>
         <input type="email" id="perfil-input-email">
       </div>
       <div class="campo">
-        <label for="perfil-input-cep">CEP</label>
+        <label for="perfil-input-cep">cep</label>
         <input type="text" id="perfil-input-cep" inputmode="numeric">
       </div>
       <div class="campo-dupla">
         <div class="campo">
-          <label for="perfil-input-numero">Número</label>
+          <label for="perfil-input-numero">número</label>
           <input type="text" id="perfil-input-numero" inputmode="numeric">
         </div>
         <div class="campo">
-          <label for="perfil-input-complemento">Complemento</label>
+          <label for="perfil-input-complemento">complemento</label>
           <input type="text" id="perfil-input-complemento">
         </div>
       </div>
-      <button class="btn btn-primario" id="btn-salvar-perfil" onclick="salvarPerfil()">Salvar alterações</button>
+      <button class="btn btn-primario" id="btn-salvar-perfil" onclick="salvarPerfil()">salvar alterações</button>
       <div class="campo-erro" id="perfil-msg"></div>
     </div>
 
     <div class="perfil-bloco">
-      <h3>Somente leitura</h3>
-      <div class="perfil-leitura-linha"><span>Cupom</span><span id="perfil-cupom">-</span></div>
-      <div class="perfil-leitura-linha"><span>Valor total</span><span id="perfil-valortotal">-</span></div>
+      <h3>somente leitura</h3>
+      <div class="perfil-leitura-linha"><span>cupom</span><span id="perfil-cupom">-</span></div>
+      <div class="perfil-leitura-linha"><span>valor total</span><span id="perfil-valortotal">-</span></div>
     </div>
-
-    <button class="btn btn-secundario" id="btn-sair" onclick="sairDoApp()">Sair</button>
   </section>
 
   <!-- ============ NAV INFERIOR ============ -->
-  <nav class="nav-inferior" id="nav-inferior">
+  <nav id="nav-inferior">
     <button class="nav-item" id="nav-pendencias" onclick="navegarPara('pendencias')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span>Pendências</span>
+      <span class="material-symbols-outlined">pending_actions</span>
+      <span>pendências</span>
     </button>
     <button class="nav-item" id="nav-pagamentos" onclick="navegarPara('pagamentos')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      <span>Pagamentos</span>
+      <span class="material-symbols-outlined">payments</span>
+      <span>pagamentos</span>
     </button>
     <button class="nav-item" id="nav-historico" onclick="navegarPara('historico')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-      <span>Histórico</span>
+      <span class="material-symbols-outlined">history</span>
+      <span>histórico</span>
     </button>
     <button class="nav-item" id="nav-perfil" onclick="navegarPara('perfil')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-      <span>Perfil</span>
+      <span class="material-symbols-outlined">person</span>
+      <span>perfil</span>
     </button>
   </nav>
 
@@ -301,7 +851,6 @@ async function chamar(nomeFuncao){
   }
   if(res && res.ok === false && res.erro === 'SESSAO_EXPIRADA'){
     limparSessaoEVoltarLogin();
-    mostrarToast('Sua sessão expirou. Faça login novamente.');
     throw new Error('SESSAO_EXPIRADA');
   }
   return res;
@@ -315,14 +864,6 @@ function limparSessaoEVoltarLogin(){
   mostrarTela('tela-login');
 }
 
-function sairDoApp(){
-  var token = STATE.token;
-  limparSessaoEVoltarLogin();
-  if(token){
-    google.script.run.logout(token);
-  }
-}
-
 /* ==========================================================
    NAVEGAÇÃO
    ========================================================== */
@@ -330,6 +871,8 @@ function mostrarTela(id){
   var telas = document.querySelectorAll('.tela');
   for(var i=0;i<telas.length;i++){ telas[i].classList.remove('ativa'); }
   document.getElementById(id).classList.add('ativa');
+
+  document.body.classList.toggle('login-ativo', id === 'tela-login');
 
   var navIds = ['pendencias','pagamentos','historico','perfil'];
   var mapa = {'tela-pendencias':'pendencias','tela-pagamentos':'pagamentos','tela-historico':'historico','tela-perfil':'perfil'};
@@ -411,11 +954,8 @@ async function fazerLogin(){
       STATE.nome = res.nome;
       document.getElementById('input-senha').value = '';
       navegarPara('pendencias');
-    } else if(res.erro === 'MUITAS_TENTATIVAS'){
-      erroEl.textContent = 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
-      erroEl.classList.add('visivel');
     } else {
-      erroEl.textContent = 'Cupom ou senha inválidos.';
+      erroEl.textContent = res.erro === 'CREDENCIAIS_INVALIDAS' ? 'Cupom ou senha inválidos.' : ('Erro: ' + (res.erro || 'desconhecido'));
       erroEl.classList.add('visivel');
     }
   } catch(e){
@@ -842,6 +1382,7 @@ async function salvarPerfil(){
 /* ==========================================================
    INIT
    ========================================================== */
+document.body.classList.add('login-ativo');
 document.getElementById('input-senha').addEventListener('keydown', function(e){
   if(e.key === 'Enter') fazerLogin();
 });
