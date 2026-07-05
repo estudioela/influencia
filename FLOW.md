@@ -97,44 +97,45 @@
 - `DATA_PAGAMENTO` só é preenchida quando `STATUS_PAGAMENTO = PAGO` (efeito colateral condicional, não uma escrita independente).
 - proibido criar novas colunas ou inferir campos fora deste schema.
 
-### CORREÇÃO DE ARQUITETURA (fonte: usuário, 2026-07-05)
+### CORREÇÃO DE ARQUITETURA #1 (fonte: usuário, 2026-07-05)
 
 **Não existe função isolada de escrita em `PAGAMENTOS`.** A suposição anterior (uma função dedicada recebendo `google.script.run` do front-end e gravando `STATUS_PAGAMENTO` diretamente) estava **errada** e foi removida deste documento.
 
-Modelo correto:
-- `PAGAMENTOS` é atualizado **indiretamente**, através do fluxo de campanha/conteúdo — não por uma escrita isolada e dedicada a pagamento.
-- backend principal continua sendo `mae/WebApp.js` (mesmo arquivo dos outros fluxos).
-- existem duas camadas de status, **distintas**:
-  - `STATUS_CONTEUDO` — estado da ativação (envio/upload/aprovação de material), camada de conteúdo.
-  - `STATUS_PAGAMENTO` — estado financeiro, aba `PAGAMENTOS`.
-- `STATUS_PAGAMENTO` é determinado/derivado a partir do estado de `STATUS_CONTEUDO`, não escrito de forma independente por uma função própria de pagamento.
+### CORREÇÃO DE ARQUITETURA #2 (fonte: leitura literal do código, `SYSTEM_MAP.md`, 2026-07-05 — substitui uma correção anterior baseada em descrição do usuário que também estava errada)
+
+O bloco anterior deste documento ("derivação `STATUS_CONTEUDO` → `STATUS_PAGAMENTO`, FECHADO") foi escrito a partir de uma descrição do usuário, sem confirmação por código. Uma auditoria completa de `mae/Código.js`+`mae/WebApp.js` (ver `SYSTEM_MAP.md`, seção "Achado crítico") mostrou que **essa função não existe**:
+
+- `finalizarEnvioResumable()` (`mae/WebApp.js` ~L889) grava `STATUS_CONTEUDO` **sempre** como valor fixo `"EM_APROVACAO"` — nunca `APROVADO` nem `POSTADO`, e não toca `PAGAMENTOS`.
+- A transição de `STATUS_CONTEUDO` para `APROVADO`/`POSTADO` não é gravada por nenhuma função — só é **lida** (pelo `onEdit()` de `ATIVAÇÕES`, `mae/Código.js` ~L207, que arquiva quando o valor contém `"postado"`). É edição manual da equipe na aba `ATIVAÇÕES`, não automação.
+- A única automação real que toca `PAGAMENTOS` é o `onEdit()` de `mae/Código.js` (~L269-270), que reage à edição direta de `STATUS_PAGAMENTO` (não de `STATUS_CONTEUDO`) — ver `FLOW: Pagamentos — STATUS_PAGAMENTO = PAGO` abaixo.
+
+Modelo correto (substitui o anterior):
+- **Não existe derivação automática `STATUS_CONTEUDO` → `STATUS_PAGAMENTO`.**
+- `STATUS_CONTEUDO` (aba `ATIVAÇÕES`) e `STATUS_PAGAMENTO` (aba `PAGAMENTOS`) são camadas **independentes**, sem ponte de código entre elas.
+- Toda transição de `STATUS_PAGAMENTO` (`PENDENTE`→`APROVADO`→`PAGO`) é edição manual da equipe direto na aba `PAGAMENTOS`, não consequência de `STATUS_CONTEUDO`.
 
 ### `STATUS_CONTEUDO` (aba `ATIVAÇÕES`, planilha `[JESCRI] INFLUÊNCIA 360º`)
 
-Camada de conteúdo, distinta de `STATUS_PAGAMENTO`. Valores possíveis:
-- `EM_APROVACAO`
-- `APROVADO`
-- `POSTADO`
+Camada de conteúdo, independente de `STATUS_PAGAMENTO`. Valores possíveis: `em aberto` (inicial, `gerarNovoMesCompleto()`), `EM_APROVACAO` (automático, único valor gravado por código — `finalizarEnvioResumable()`), `APROVADO`/`POSTADO` (edição manual da equipe, sem função que os grave).
 
-### FLOW: Pagamentos — derivação `STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FECHADO)
+### FLOW: Envio de material → `STATUS_CONTEUDO` (sem derivação para `PAGAMENTOS`)
 
 - **ENTRADA**: influenciadora envia material (mesmo gatilho do `FLOW: Envio de material`).
   arquivo: `mae/Index.html` (`arquivoSelecionado`/`iniciarEnvio`/`enviarArquivoResumable()` ~L1334) → `google.script.run`
 
 - **PROCESSAMENTO**:
-  1. `mae/WebApp.js:iniciarEnvioResumable()` (~L822) — cria/atualiza item em `ATIVAÇÕES` e define `STATUS_CONTEUDO = EM_APROVACAO`.
-  2. `mae/WebApp.js:finalizarEnvioResumable()` (~L862) — atualiza `STATUS_CONTEUDO` conforme avanço da aprovação/postagem (`APROVADO` ou `POSTADO`).
-  3. **Regra de derivação (escopo limitado — ver ressalva abaixo)**: quando `STATUS_CONTEUDO` muda para `APROVADO` ou `POSTADO`, o sistema atualiza `STATUS_PAGAMENTO` na aba `PAGAMENTOS` como consequência direta dessa mudança — não existe função intermediária isolada de pagamento. **Esta derivação NÃO cobre a transição para `PAGO`** (ver sub-fluxo manual abaixo).
-  4. Regras de coluna em `PAGAMENTOS` (já confirmadas): só `STATUS_PAGAMENTO` muda diretamente nessa derivação; nenhuma coluna nova é criada.
+  1. `mae/WebApp.js:iniciarEnvioResumable()` (~L822) — abre a sessão de upload resumable; **não** grava `STATUS_CONTEUDO`.
+  2. `mae/WebApp.js:finalizarEnvioResumable()` (~L862) — grava `LINK_ARQUIVO` e sempre define `STATUS_CONTEUDO = "EM_APROVACAO"` (valor fixo).
+  3. Avanço para `APROVADO`/`POSTADO`: manual, edição direta da equipe em `ATIVAÇÕES` — nenhuma função de código faz essa transição.
   origem dos dados: aba `ATIVAÇÕES` (`STATUS_CONTEUDO`)
 
-- **SAÍDA**: aba `PAGAMENTOS` atualizada (`STATUS_PAGAMENTO`) como consequência do avanço de `STATUS_CONTEUDO` em `ATIVAÇÕES`.
-  destino: aba `PAGAMENTOS`.
+- **SAÍDA**: `ATIVAÇÕES.STATUS_CONTEUDO = "EM_APROVACAO"`. **Sem efeito em `PAGAMENTOS`.**
+  destino: aba `ATIVAÇÕES` apenas.
 
 **Arquivos envolvidos**: `mae/Index.html`, `mae/WebApp.js`
 **Funções envolvidas**: `iniciarEnvioResumable()` (~L822), `finalizarEnvioResumable()` (~L862)
 
-Sub-fluxo fechado — sem pendências, para as transições `PENDENTE`→`APROVADO` (via avanço de conteúdo). Confirmado pelo usuário (2026-07-05): não existe função intermediária separada de pagamento; a derivação ocorre dentro de `finalizarEnvioResumable()`/`iniciarEnvioResumable()`.
+Sub-fluxo fechado por leitura de código — sem pendências. **Correção**: transições de `STATUS_PAGAMENTO` (inclusive `PENDENTE`→`APROVADO`) não têm origem aqui; são manuais, ver sub-fluxo abaixo.
 
 ### FLOW: Pagamentos — `STATUS_PAGAMENTO = PAGO` (manual, fora do fluxo de conteúdo)
 
