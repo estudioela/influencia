@@ -1,1 +1,0 @@
-../mae/Sincronizador.js
