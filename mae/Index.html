@@ -815,15 +815,14 @@ var STATE = {
   nome: null,
   ativacaoAtual: null,
   arquivoSelecionado: null,
-  mesIndex: {
-    pend: new Date().getMonth(),
-    pag: new Date().getMonth(),
-    hist: new Date().getMonth()
-  },
+  // Períodos reais (mês+ano) com dados, carregados via listarPeriodos() e
+  // ordenados do mais recente para o mais antigo — substitui o antigo índice
+  // fixo 0-11 sem ano, que não distinguia campanhas do mesmo mês em anos
+  // diferentes e não escondia meses sem dados.
+  periodos: [],
+  periodoIndex: { pend: 0, pag: 0, hist: 0 },
   cacheBriefing: {}
 };
-
-var MESES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
 
 var STATUS_LABELS = {
   'AGUARDANDO_MATERIAL': 'Aguardando material',
@@ -915,6 +914,8 @@ function limparSessaoEVoltarLogin(){
   STATE.token = null;
   STATE.nome = null;
   STATE.ativacaoAtual = null;
+  STATE.periodos = [];
+  STATE.periodoIndex = { pend: 0, pag: 0, hist: 0 };
   try{
     localStorage.removeItem(SESSION_STORAGE_KEY_TOKEN);
     localStorage.removeItem(SESSION_STORAGE_KEY_NOME);
@@ -1058,31 +1059,57 @@ async function fazerLogin(){
 /* ==========================================================
    PENDÊNCIAS
    ========================================================== */
+async function carregarPeriodos(){
+  if(STATE.periodos.length) return;
+  try{
+    var res = await chamar('listarPeriodos', STATE.token);
+    STATE.periodos = (res && res.ok && res.periodos) ? res.periodos : [];
+  } catch(e){
+    STATE.periodos = [];
+  }
+}
+
 function mudarMes(tela, delta){
-  var novo = STATE.mesIndex[tela] + delta;
-  if(novo < 0 || novo > 11) return;
-  STATE.mesIndex[tela] = novo;
+  if(!STATE.periodos.length) return;
+  var novo = STATE.periodoIndex[tela] + delta;
+  if(novo < 0 || novo >= STATE.periodos.length) return;
+  STATE.periodoIndex[tela] = novo;
   if(tela === 'pend'){ atualizarLabelMes('pend'); carregarPendencias(); }
   if(tela === 'pag'){ atualizarLabelMes('pag'); carregarPagamentos(); }
   if(tela === 'hist'){ atualizarLabelMes('hist'); carregarHistorico(); }
 }
 
+function periodoAtual(tela){
+  return STATE.periodos[STATE.periodoIndex[tela]] || null;
+}
+
 function atualizarLabelMes(tela){
-  var idx = STATE.mesIndex[tela];
-  document.getElementById(tela+'-mes-label').textContent = MESES[idx];
-  document.getElementById(tela+'-mes-prev').disabled = (idx === 0);
-  document.getElementById(tela+'-mes-next').disabled = (idx === 11);
+  var p = periodoAtual(tela);
+  var label = document.getElementById(tela+'-mes-label');
+  var btnPrev = document.getElementById(tela+'-mes-prev');
+  var btnNext = document.getElementById(tela+'-mes-next');
+  if(!p){
+    label.textContent = 'sem períodos';
+    btnPrev.disabled = true;
+    btnNext.disabled = true;
+    return;
+  }
+  label.textContent = p.mes.toLowerCase() + (p.ano ? '/' + p.ano : '');
+  btnPrev.disabled = (STATE.periodoIndex[tela] <= 0);
+  btnNext.disabled = (STATE.periodoIndex[tela] >= STATE.periodos.length - 1);
 }
 
 async function carregarPendencias(){
+  await carregarPeriodos();
   atualizarLabelMes('pend');
   document.getElementById('pend-saudacao').innerHTML = 'Olá, <span class="valor-nome">' + escaparHtml(primeiroNome(STATE.nome)) + '</span>';
   var lista = document.getElementById('pend-lista');
   lista.innerHTML = '<div class="carregando">Carregando...</div>';
 
-  var mesAno = MESES[STATE.mesIndex.pend];
+  var p = periodoAtual('pend');
+  if(!p){ lista.innerHTML = '<div class="vazio">Nenhum período com ativações encontrado.</div>'; return; }
   try{
-    var res = await chamar('getPendencias', STATE.token, mesAno);
+    var res = await chamar('getPendencias', STATE.token, p.mes, p.ano);
     if(!res.ok){ lista.innerHTML = '<div class="vazio">Não foi possível carregar as pendências.</div>'; return; }
     renderPendencias(res.itens || []);
   } catch(e){
@@ -1297,15 +1324,17 @@ function voltarDeUploadParaPendencias(){
    PAGAMENTOS
    ========================================================== */
 async function carregarPagamentos(){
+  await carregarPeriodos();
   atualizarLabelMes('pag');
   var lista = document.getElementById('pag-lista');
   lista.innerHTML = '<div class="carregando">Carregando...</div>';
   document.getElementById('pag-total-previsto').textContent = formatarMoeda(0);
   document.getElementById('pag-total-pago').textContent = formatarMoeda(0);
 
-  var mesAno = MESES[STATE.mesIndex.pag];
+  var p = periodoAtual('pag');
+  if(!p){ lista.innerHTML = '<div class="vazio">Nenhum período com pagamentos encontrado.</div>'; return; }
   try{
-    var res = await chamar('getPagamentos', STATE.token, mesAno);
+    var res = await chamar('getPagamentos', STATE.token, p.mes, p.ano);
     if(!res.ok){ lista.innerHTML = '<div class="vazio">Não foi possível carregar os pagamentos.</div>'; return; }
 
     document.getElementById('pag-total-previsto').textContent = formatarMoeda(res.totalPrevisto);
@@ -1352,15 +1381,17 @@ function renderPagamentos(itens){
    HISTÓRICO
    ========================================================== */
 async function carregarHistorico(){
+  await carregarPeriodos();
   atualizarLabelMes('hist');
   var elAtiv = document.getElementById('hist-ativacoes');
   var elPag = document.getElementById('hist-pagamentos');
   elAtiv.innerHTML = '<div class="carregando">Carregando...</div>';
   elPag.innerHTML = '';
 
-  var mesAno = MESES[STATE.mesIndex.hist];
+  var p = periodoAtual('hist');
+  if(!p){ elAtiv.innerHTML = '<div class="vazio">Nenhum período com histórico encontrado.</div>'; return; }
   try{
-    var res = await chamar('getHistorico', STATE.token, mesAno);
+    var res = await chamar('getHistorico', STATE.token, p.mes, p.ano);
     if(!res.ok){
       elAtiv.innerHTML = '<div class="vazio">Não foi possível carregar o histórico.</div>';
       return;

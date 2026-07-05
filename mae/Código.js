@@ -1,6 +1,7 @@
 /**
  * ERP INFLUÊNCIA 360º - V 6.2 (SISTEMA DE GESTÃO INTEGRADA)
- * Módulos: Automação Baseada em Eventos, Espelhamento Ativações -> Briefing, Menu Otimizado, Inteligência de CEP, Rastreio e Sincronização Portal Reversa.
+ * Módulos: Automação Baseada em Eventos, Espelhamento Ativações -> Briefing, Menu Otimizado, Inteligência de CEP, Rastreio.
+ * Portal do Influenciador lê BASE DE DADOS diretamente (WebApp.gs) — não há mais sync/espelho com planilha externa.
  */
 
 const SETUP = {
@@ -52,14 +53,7 @@ function onOpen() {
     .addSeparator()
 
     .addSubMenu(ui.createMenu(" 🖥️ Portal de Apoio")
-      .addItem(" 1. Enviar Dados para o Portal (Ativações/Pagamentos)", "lancarParaPortal")
-      .addItem(" 2. Puxar Atualizações de Cadastro do Portal", "puxarAtualizacoesDoPortal")
-      .addSeparator()
-      .addItem(" 3. Puxar Base de Dados da Mãe (Sync Down)", "puxarDadosDaMae")
-      .addItem(" 4. Puxar Históricos da Mãe (Sync Down)", "puxarHistoricosDaMae")
-      .addItem(" 5. Testar Conexão com a Mãe", "testarConexaoMae")
-      .addSeparator()
-      .addItem(" 6. Abrir Portal (Modal)", "abrirPortalModal")
+      .addItem(" 1. Abrir Portal (Modal)", "abrirPortalModal")
     )
 
     .addToUi();
@@ -82,13 +76,15 @@ function gerarNovoMesCompleto() {
   const fluxoSheet = ss.getSheetByName(SETUP.ABAS.FLUXO);
   const pagSheet = ss.getSheetByName(SETUP.ABAS.PAGAMENTOS);
 
-  const res = ui.prompt(' Iniciar Planejameno Mensal', 'Digite o nome do MÊS da Nova Campanha? (Ex: AGOSTO)\nNota: O Briefing atual será limpo para o rascunho.', ui.ButtonSet.OK_CANCEL);
+  const res = ui.prompt(' Iniciar Planejamento Mensal', 'Digite o MÊS e o ANO da Nova Campanha (Ex: AGOSTO 2026)\nNota: O Briefing atual será limpo para o rascunho.', ui.ButtonSet.OK_CANCEL);
   if (res.getSelectedButton() != ui.Button.OK) return;
-  const mesTarget = res.getResponseText().trim().toUpperCase();
+  const { mes: mesTarget, ano: anoTarget } = parseMesAno(res.getResponseText());
   if (!mesTarget) return;
 
   const hBase = getHeaderMap(baseSheet);
   const hBrief = getHeaderMap(briefingSheet);
+  const hAtiv = getHeaderMap(ativSheet);
+  const hPag = getHeaderMap(pagSheet);
   let baseData = baseSheet.getDataRange().getValues();
   
   let influON = baseData.filter(r => r[0] === true || r[0].toString().toUpperCase() === 'ON').map(r => ({
@@ -120,22 +116,34 @@ function gerarNovoMesCompleto() {
     if (hBrief['PASTA_DRIVE_LINK']) briefingSheet.getRange(rowBrief, hBrief['PASTA_DRIVE_LINK']).setValue(inf.pasta);
 
     listaFluxo.push([inf.nome, inf.endereco || "", "Aguardando Confirmação", mesTarget, '', '', 'pendente']);
-    listaPag.push([inf.nome, mesTarget, inf.valor, inf.pix, 'em aberto', '', '']);
+    listaPag.push(montarLinha(hPag, {
+      INFLU_KEY: inf.nome, MES_REFERENCIA: mesTarget, ANO_REFERENCIA: anoTarget,
+      VALOR_TOTAL: inf.valor, CHAVE_PIX: inf.pix, STATUS_PAGAMENTO: 'em aberto'
+    }));
 
-    for(let r=1; r<=inf.qReels; r++) listaAtiv.push([inf.nome, mesTarget, 'REEL', '', '', 'em aberto']);
-    for(let c=1; c<=inf.qCarrosel; c++) listaAtiv.push([inf.nome, mesTarget, 'CARROSSEL', '', '', 'em aberto']);
+    for(let r=1; r<=inf.qReels; r++) listaAtiv.push(montarLinha(hAtiv, {
+      ID: Utilities.getUuid(), INFLU_KEY: inf.nome, MES_REFERENCIA: mesTarget, ANO_REFERENCIA: anoTarget,
+      FORMATO: 'REEL', STATUS_CONTEUDO: 'em aberto'
+    }));
+    for(let c=1; c<=inf.qCarrosel; c++) listaAtiv.push(montarLinha(hAtiv, {
+      ID: Utilities.getUuid(), INFLU_KEY: inf.nome, MES_REFERENCIA: mesTarget, ANO_REFERENCIA: anoTarget,
+      FORMATO: 'CARROSSEL', STATUS_CONTEUDO: 'em aberto'
+    }));
     for(let s=1; s<=inf.qStories; s++) {
       let fmt = inf.qStories > 1 ? 'STORIES_'+s : 'STORIES';
-      listaAtiv.push([inf.nome, mesTarget, fmt, '', '', 'em aberto']);
+      listaAtiv.push(montarLinha(hAtiv, {
+        ID: Utilities.getUuid(), INFLU_KEY: inf.nome, MES_REFERENCIA: mesTarget, ANO_REFERENCIA: anoTarget,
+        FORMATO: fmt, STATUS_CONTEUDO: 'em aberto'
+      }));
     }
   });
-  
+
   if(listaFluxo.length) fluxoSheet.getRange(fluxoSheet.getLastRow()+1, 1, listaFluxo.length, 7).setValues(listaFluxo);
-  if(listaPag.length) pagSheet.getRange(pagSheet.getLastRow()+1, 1, listaPag.length, 7).setValues(listaPag);
-  if(listaAtiv.length) ativSheet.getRange(ativSheet.getLastRow()+1, 1, listaAtiv.length, 6).setValues(listaAtiv);
+  if(listaPag.length) pagSheet.getRange(pagSheet.getLastRow()+1, 1, listaPag.length, listaPag[0].length).setValues(listaPag);
+  if(listaAtiv.length) ativSheet.getRange(ativSheet.getLastRow()+1, 1, listaAtiv.length, listaAtiv[0].length).setValues(listaAtiv);
 
   ordenarAbaAtivacoesCronologico();
-  ui.alert('Sucesso!', `O planejamento de ${mesTarget} foi gerado!\n\n- Briefing limpo e preparado.\n- Linhas de Ativações, Fluxo e Pagamentos injetadas com sucesso!`, ui.ButtonSet.OK);
+  ui.alert('Sucesso!', `O planejamento de ${mesTarget}/${anoTarget} foi gerado!\n\n- Briefing limpo e preparado.\n- Linhas de Ativações, Fluxo e Pagamentos injetadas com sucesso!`, ui.ButtonSet.OK);
 }
 
 // Cria um trigger instalável onOpen para garantir que o menu seja registrado
@@ -321,12 +329,13 @@ function lancarPagamentosDoMes() {
   const baseSheet = ss.getSheetByName(SETUP.ABAS.BASE);
   const pagSheet = ss.getSheetByName(SETUP.ABAS.PAGAMENTOS);
 
-  const res = ui.prompt(' Pagamentos Avulsos', 'Qual o mês de referência para essa injeção de pagamentos? (Ex: AGOSTO)', ui.ButtonSet.OK_CANCEL);
+  const res = ui.prompt(' Pagamentos Avulsos', 'Qual o MÊS e ANO de referência para essa injeção de pagamentos? (Ex: AGOSTO 2026)', ui.ButtonSet.OK_CANCEL);
   if (res.getSelectedButton() != ui.Button.OK) return;
-  const mesTarget = res.getResponseText().trim().toUpperCase();
+  const { mes: mesTarget, ano: anoTarget } = parseMesAno(res.getResponseText());
   if (!mesTarget) return;
 
   const hBase = getHeaderMap(baseSheet);
+  const hPag = getHeaderMap(pagSheet);
   const dataBase = baseSheet.getDataRange().getValues();
   let influON = dataBase.filter(r => r[0] === true || r[0].toString().toUpperCase() === 'ON');
 
@@ -337,12 +346,15 @@ function lancarPagamentosDoMes() {
     let nome = r[hBase['INFLU_KEY']-1];
     let valor = r[hBase['VALOR_TOTAL']-1];
     let pix = r[hBase['CHAVE_PIX']-1];
-    if (nome) lPag.push([nome, mesTarget, valor, pix, 'em aberto', '', '']);
+    if (nome) lPag.push(montarLinha(hPag, {
+      INFLU_KEY: nome, MES_REFERENCIA: mesTarget, ANO_REFERENCIA: anoTarget,
+      VALOR_TOTAL: valor, CHAVE_PIX: pix, STATUS_PAGAMENTO: 'em aberto'
+    }));
   });
 
   if (lPag.length > 0) {
-    pagSheet.getRange(pagSheet.getLastRow() + 1, 1, lPag.length, 7).setValues(lPag);
-    ui.alert('Concluído', `${lPag.length} pagamentos avulsos de ${mesTarget} foram lançados!`, ui.ButtonSet.OK);
+    pagSheet.getRange(pagSheet.getLastRow() + 1, 1, lPag.length, lPag[0].length).setValues(lPag);
+    ui.alert('Concluído', `${lPag.length} pagamentos avulsos de ${mesTarget}/${anoTarget} foram lançados!`, ui.ButtonSet.OK);
   }
 }
 
@@ -582,154 +594,6 @@ function onFormSubmit(e) {
 // ======================================================
 // 11. NOVO MOTOR DE SINCRONIZAÇÃO REVERSA (PORTAL -> MÃE)
 // ======================================================
-function puxarAtualizacoesDoPortal() {
-  const ssMae = SpreadsheetApp.getActiveSpreadsheet();
-  const shMae = ssMae.getSheetByName(SETUP.ABAS.BASE); 
-  
-  if (!shMae) {
-    ssMae.toast("Aba 'BASE DE DADOS' não encontrada na planilha mãe.", "Erro");
-    return;
-  }
-  
-  let ssPortal;
-  try {
-    // Conexão fixa com a sua Planilha de Apoio externa
-    ssPortal = SpreadsheetApp.openById("1289Eu3hk-L3GnHbNwAfxgHy3UfVnjfB0LnlHEMoOg1M");
-  } catch(e) {
-    ssMae.toast("Não foi possível conectar à planilha do Portal. Verifique as permissões de acesso.", "Erro");
-    return;
-  }
-  
-  // Procura pela aba ativa de cadastros no Portal
-  const shPortal = ssPortal.getSheetByName("BASE DE APOIO") || ssPortal.getSheetByName("CADASTROS") || ssPortal.getSheets()[0];
-  if (!shPortal || shPortal.getLastRow() < 2) {
-    ssMae.toast("Aba do portal vazia ou sem registros para processar.", "Aviso");
-    return;
-  }
-  
-  const hMae = getHeaderMap(shMae);
-  const hPortal = getHeaderMap(shPortal);
-  const dataMae = shMae.getDataRange().getValues();
-  const dataPortal = shPortal.getDataRange().getValues();
-  
-  let contagemAtualizacoes = 0;
-  let contagemNovos = 0;
-  ssMae.toast("Buscando atualizações e novos cadastros no portal...", "Integração");
-  
-  // Mapeia as influenciadoras que já existem na Planilha Mãe
-  const mapaMae = {};
-  for (let i = 1; i < dataMae.length; i++) {
-    let chave = dataMae[i][hMae['INFLU_KEY'] - 1];
-    if (chave) {
-      mapaMae[chave.toString().trim().toUpperCase()] = i + 1;
-    }
-  }
-  
-  // Campos operacionais que serão importados/sincronizados
-  const camposParaSync = [
-    'INFLUENCIADORA_RAZAO_SOCIAL',
-    'EMAIL',
-    'CHAVE_PIX',
-    'INFLUENCIADORA_CNPJ',
-    'CEP',
-    'NUMERO',
-    'COMPLEMENTO'
-  ];
-  
-  for (let j = 1; j < dataPortal.length; j++) {
-    // Fallback inteligente: aceita colunas chamadas 'INFLU_KEY', 'NOME' ou a primeira coluna da planilha de apoio
-    let chavePortal = dataPortal[j][hPortal['INFLU_KEY'] - 1] || dataPortal[j][hPortal['NOME'] - 1] || dataPortal[j][0];
-    if (!chavePortal) continue;
-    
-    let chaveLookup = chavePortal.toString().trim().toUpperCase();
-    let linhaMae = mapaMae[chaveLookup];
-    
-    if (linhaMae) {
-      // --------------------------------------------------
-      // REVISÃO DE EXISTENTE: Atualiza dados caso tenham mudado
-      // --------------------------------------------------
-      let mudouAlgo = false;
-      let mudouEndereco = false;
-      
-      camposParaSync.forEach(campo => {
-        if (hPortal[campo] && hMae[campo]) {
-          let valorPortal = dataPortal[j][hPortal[campo] - 1];
-          let valorMae = dataMae[linhaMae - 1][hMae[campo] - 1];
-          
-          if (valorPortal !== undefined && valorPortal.toString().trim() !== valorMae.toString().trim()) {
-            shMae.getRange(linhaMae, hMae[campo]).setValue(valorPortal);
-            mudouAlgo = true;
-            
-            if (campo === 'CEP' || campo === 'NUMERO' || campo === 'COMPLEMENTO') {
-              mudouEndereco = true;
-            }
-          }
-        }
-      });
-      
-      if (mudouAlgo) {
-        contagemAtualizacoes++;
-        
-        // Se alterou o bloco de endereço, limpa o composto e força revalidação da API
-        if (mudouEndereco) {
-          if (hMae['INFLUENCIADORA_ENDERECO']) shMae.getRange(linhaMae, hMae['INFLUENCIADORA_ENDERECO']).setValue("");
-          let novoCep = shMae.getRange(linhaMae, hMae['CEP']).getValue();
-          preencherEnderecoPorCEP(shMae, linhaMae, novoCep, hMae);
-        }
-      }
-      
-    } else {
-      // --------------------------------------------------
-      // NOVO CADASTRO: Cria uma nova linha na planilha mãe
-      // --------------------------------------------------
-      const novaLinha = new Array(shMae.getLastColumn()).fill("");
-      
-      // 1. Define o status padrão de segurança como OFF
-      novaLinha[0] = "OFF"; 
-      
-      // 2. Insere o Nome/Chave da Influenciadora
-      if (hMae['INFLU_KEY']) {
-        novaLinha[hMae['INFLU_KEY'] - 1] = chaveLookup;
-      }
-      
-      // 3. Mapeia e injeta as informações dinamicamente nas colunas certas da Mãe
-      camposParaSync.forEach(campo => {
-        if (hPortal[campo] && hMae[campo]) {
-          novaLinha[hMae[campo] - 1] = dataPortal[j][hPortal[campo] - 1];
-        }
-      });
-      
-      // 4. Salva a nova linha de forma limpa na base
-      shMae.appendRow(novaLinha);
-      let ultimaLinhaMae = shMae.getLastRow();
-      
-      // 5. Dispara a API de CEP imediatamente para estruturar o endereço completo da nova linha
-      if (hMae['CEP']) {
-        let novoCep = shMae.getRange(ultimaLinhaMae, hMae['CEP']).getValue();
-        preencherEnderecoPorCEP(shMae, ultimaLinhaMae, novoCep, hMae);
-      }
-      
-      contagemNovos++;
-    }
-  }
-  
-  // --------------------------------------------------
-  // RETORNO VISUAL AO USUÁRIO
-  // --------------------------------------------------
-  if (contagemAtualizacoes > 0 || contagemNovos > 0) {
-    SpreadsheetApp.flush();
-    organizarEPintarBase(); // Executa ordenação alfabética e formatação de cores (Verde/Vermelho)
-    
-    let relatório = "Sincronização com o Portal Concluída!\n\n";
-    if (contagemNovos > 0) relatório += `🔹 ${contagemNovos} novos cadastros adicionados.\n`;
-    if (contagemAtualizacoes > 0) relatório += `🔄 ${contagemAtualizacoes} fichas de dados atualizadas.\n`;
-    
-    SpreadsheetApp.getUi().alert("Sincronização Reversa", relatório, SpreadsheetApp.getUi().ButtonSet.OK);
-  } else {
-    SpreadsheetApp.getUi().alert("Portal Sincronizado", "Nenhum dado novo ou alteração foi encontrada no Portal.", SpreadsheetApp.getUi().ButtonSet.OK);
-  }
-}
-
 // ======================================================
 // 12. METODOS AUXILIARES (ENDEREÇOS, CORES E CONVERSÕES)
 // ======================================================
@@ -811,6 +675,31 @@ function getHeaderMap(sh) {
   return m;
 }
 
+// Monta uma linha (array posicional) a partir de um mapa de cabe\u00e7alho e um objeto
+// {NOME_CABECALHO: valor} \u2014 robusto \u00e0 ordem real das colunas na aba, evita
+// listas literais posicionais que quebram quando a estrutura da aba muda.
+function montarLinha(h, campos) {
+  const maxCol = Math.max(0, ...Object.values(h));
+  const linha = new Array(maxCol).fill('');
+  Object.keys(campos).forEach(k => {
+    if (h[k]) linha[h[k] - 1] = campos[k];
+  });
+  return linha;
+}
+
+// Extrai {mes, ano} de um texto livre "M\u00caS ANO" (ex: "AGOSTO 2026"). Se o ano
+// n\u00e3o vier no texto, assume o ano corrente \u2014 mant\u00e9m compat\u00edvel com quem digitar
+// s\u00f3 o nome do m\u00eas por h\u00e1bito.
+function parseMesAno(textoBruto) {
+  const bruto = (textoBruto || '').trim().toUpperCase();
+  const partes = bruto.split(/\s+/);
+  const ultimaParte = partes[partes.length - 1];
+  if (/^\d{4}$/.test(ultimaParte)) {
+    return { mes: partes.slice(0, -1).join(' '), ano: parseInt(ultimaParte, 10) };
+  }
+  return { mes: bruto, ano: new Date().getFullYear() };
+}
+
 function textToNumber(t) {
   if (t === "" || t === null || t === undefined) return 0;
   if (typeof t === 'number') return Math.floor(t);
@@ -835,13 +724,20 @@ function setupERP() {
   const response = ui.alert("Setup Estrutural", "Deseja verificar e criar abas de histórico faltantes?", ui.ButtonSet.YES_NO);
   if(response !== ui.Button.YES) return;
 
+  // ATIVACOES/HISTORICO_CONT ganharam ID (UUID estável, substitui número de linha
+  // como idAtivacao — corrige corrida em finalizarEnvioResumable) e ANO_REFERENCIA
+  // (MES_REFERENCIA sozinho não distingue campanhas do mesmo mês em anos diferentes).
+  // PAGAMENTOS/HISTORICO_PAG ganharam só ANO_REFERENCIA (mesmo motivo, sem ID —
+  // pagamentos não são resolvidos por ID estável neste momento).
+  // Ordem de colunas dos pares live/histórico deve casar 1:1 (arquivarGenerico
+  // copia a linha inteira por posição e só acrescenta DATA_ARQUIVAMENTO ao final).
   const estruturas = [
     { nome: SETUP.ABAS.FLUXO, colunas: ["INFLU_KEY", "ENDERECO", "STATUS_REVISAO", "MES_REFERENCIA", "RASTREIO", "DATA_DE_ENVIO", "STATUS_LOGISTICA"] },
     { nome: SETUP.ABAS.HISTORICO_FLUXO, colunas: ["INFLU_KEY", "ENDERECO", "STATUS_REVISAO", "MES_REFERENCIA", "RASTREIO", "DATA_DE_ENVIO", "STATUS_LOGISTICA", "DATA_ARQUIVAMENTO"] },
-    { nome: SETUP.ABAS.ATIVACOES, colunas: ["INFLU_KEY", "MES_REFERENCIA", "FORMATO", "DATA_APROVACAO", "DATA_ATIVACAO", "STATUS_CONTEUDO"] },
-    { nome: SETUP.ABAS.HISTORICO_CONT, colunas: ["INFLU_KEY", "MES_REFERENCIA", "FORMATO", "DATA_APROVACAO", "DATA_ATIVACAO", "STATUS_CONTEUDO", "DATA_ARQUIVAMENTO"] },
-    { nome: SETUP.ABAS.PAGAMENTOS, colunas: ["INFLU_KEY", "MES_REFERENCIA", "VALOR_TOTAL", "CHAVE_PIX", "STATUS_PAGAMENTO", "DATA_PAGAMENTO", "MENSAGEM_PIX"] },
-    { nome: SETUP.ABAS.HISTORICO_PAG, colunas: ["INFLU_KEY", "MES_REFERENCIA", "VALOR_TOTAL", "CHAVE_PIX", "STATUS_PAGAMENTO", "DATA_PAGAMENTO", "MENSAGEM_PIX", "DATA_ARQUIVAMENTO"] }
+    { nome: SETUP.ABAS.ATIVACOES, colunas: ["ID", "INFLU_KEY", "MES_REFERENCIA", "ANO_REFERENCIA", "FORMATO", "DATA_APROVACAO", "DATA_ATIVACAO", "STATUS_CONTEUDO", "LINK_ARQUIVO"] },
+    { nome: SETUP.ABAS.HISTORICO_CONT, colunas: ["ID", "INFLU_KEY", "MES_REFERENCIA", "ANO_REFERENCIA", "FORMATO", "DATA_APROVACAO", "DATA_ATIVACAO", "STATUS_CONTEUDO", "LINK_ARQUIVO", "DATA_ARQUIVAMENTO"] },
+    { nome: SETUP.ABAS.PAGAMENTOS, colunas: ["INFLU_KEY", "MES_REFERENCIA", "ANO_REFERENCIA", "VALOR_TOTAL", "CHAVE_PIX", "STATUS_PAGAMENTO", "DATA_PAGAMENTO", "MENSAGEM_PIX"] },
+    { nome: SETUP.ABAS.HISTORICO_PAG, colunas: ["INFLU_KEY", "MES_REFERENCIA", "ANO_REFERENCIA", "VALOR_TOTAL", "CHAVE_PIX", "STATUS_PAGAMENTO", "DATA_PAGAMENTO", "MENSAGEM_PIX", "DATA_ARQUIVAMENTO"] }
   ];
 
   estruturas.forEach(est => {
@@ -854,85 +750,4 @@ function setupERP() {
   });
   Logger.log("setupERP concluído: estrutura inicial criada");
   ui.alert("Sucesso", "Todas as abas operacionais e históricos mapeados foram verificados!", ui.ButtonSet.OK);
-}
-
-// ======================================================
-// FASE 1: CONFIGURAÇÃO VISUAL REMOTA DO PORTAL
-// ======================================================
-function configurarVisualDoPortal() {
-  const ssMae = SpreadsheetApp.getActiveSpreadsheet();
-  const PORTAL_ID = "1289Eu3hk-L3GnHbNwAfxgHy3UfVnjfB0LnlHEMoOg1M";
-  
-  let ssPortal;
-  try {
-    ssPortal = SpreadsheetApp.openById(PORTAL_ID);
-  } catch(e) {
-    ssMae.toast("❌ Erro: Não foi possível acessar o Portal. Verifique as permissões.", "Fase 1");
-    return;
-  }
-  
-  let shPortal = ssPortal.getSheetByName("BASE DE APOIO") || ssPortal.getSheets()[0];
-  let headers = shPortal.getRange(1, 1, 1, shPortal.getLastColumn() || 1).getValues()[0];
-  
-  // 1. Localizar colunas chave e criar a coluna de Confirmação, se não existir
-  let colPix = headers.indexOf("CHAVE_PIX") + 1;
-  let colCep = headers.indexOf("CEP") + 1;
-  let colRevisados = headers.indexOf("DADOS_REVISADOS") + 1;
-  
-  if (colRevisados === 0) {
-    colRevisados = headers.length + 1;
-    shPortal.getRange(1, colRevisados).setValue("DADOS_REVISADOS")
-      .setBackground("#cd0005").setFontColor("#ffffff").setFontWeight("bold");
-  }
-  
-  const maxRows = shPortal.getMaxRows();
-  if (maxRows > 1) {
-    // 2. Inserir Caixas de Seleção (Checkboxes) na coluna inteira
-    shPortal.getRange(2, colRevisados, maxRows - 1, 1).insertCheckboxes();
-  }
-  
-  // 3. Inserir Notas de Responsabilidade nos Cabeçalhos
-  if (colPix > 0) {
-    shPortal.getRange(1, colPix).setNote("ATENÇÃO: Revise sua chave com cuidado.\nPagamentos enviados para chaves incorretas cadastradas aqui não poderão ser estornados.");
-  }
-  if (colCep > 0) {
-    shPortal.getRange(1, colCep).setNote("ATENÇÃO: A alteração de endereço implica no redirecionamento imediato dos próximos envios logísticos.");
-  }
-  shPortal.getRange(1, colRevisados).setNote("Obrigatório: Marque esta caixa para confirmar que os dados sensíveis (PIX/Endereço) estão corretos para a próxima campanha.");
-  
-  // 4. Configurar Alerta Visual (Formatação Condicional)
-  shPortal.clearConditionalFormatRules(); 
-  
-  const converterParaLetra = (coluna) => {
-    let temp, letra = '';
-    while (coluna > 0) {
-      temp = (coluna - 1) % 26;
-      letra = String.fromCharCode(temp + 65) + letra;
-      coluna = (coluna - temp - 1) / 26;
-    }
-    return letra;
-  };
-  
-  if (colPix > 0 && colRevisados > 0) {
-    let letraPix = converterParaLetra(colPix);
-    let letraRev = converterParaLetra(colRevisados);
-    
-    // Regra injetada usando sintaxe pt-BR nativa conforme padrão local
-    const formulaRegra = `=E($${letraPix}2<>""; $${letraRev}2=FALSO)`;
-    const rangeAlerta = shPortal.getRange(2, colPix, maxRows - 1, 1); 
-    
-    let regraAlerta = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied(formulaRegra)
-      .setBackground("#F4CCCC") // Fundo vermelho
-      .setFontColor("#CC0000") // Texto vermelho escuro
-      .setRanges([rangeAlerta])
-      .build();
-      
-    let regrasAtuais = shPortal.getConditionalFormatRules();
-    regrasAtuais.push(regraAlerta);
-    shPortal.setConditionalFormatRules(regrasAtuais);
-  }
-  
-  SpreadsheetApp.flush();
-  ssMae.toast("🚀 Fase 1 Concluída: Layout, checkboxes e alertas aplicados no Portal com sucesso!", "Setup Automatizado");
 }

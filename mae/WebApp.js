@@ -9,10 +9,20 @@ const SCRIPT_PROP_PASTA_RAIZ = "PASTA_RAIZ_ENTREGAS";
 // ======================================================
 // CONFIGURAÇÕES E MAPEAMENTO DE COLUNAS
 // ======================================================
+// BASE DE DADOS é agora a fonte única de leitura do Portal (login, perfil,
+// briefing, pagamentos, histórico) — BASE DE APOIO saiu do fluxo. As colunas
+// fixas abaixo continuam válidas porque BASE DE APOIO sempre foi um espelho
+// posicional de BASE DE DADOS (ver mae/Sincronizador.js, agora desativado).
+// ID_PASTA_DRIVE deixou de ser uma coluna (era exclusiva do Portal, gravada
+// só em BASE DE APOIO) e virou PropertiesService, chave por cupom — ver
+// getIdPastaDriveCupom/setIdPastaDriveCupom.
+// ATIVACOES/PAGAMENTOS/HISTORICO_* usam getHeaderMap() (nomes de cabeçalho,
+// não posição fixa) porque ganharam colunas novas (ID, ANO_REFERENCIA) e
+// porque o resto do projeto (Código.js) já resolve essas abas por nome.
 const MAP = {
   BASE: {
-    NOME_ABA: "BASE DE APOIO", // Corrigido: era "BASE", a aba real se chama "BASE DE APOIO"
-    INFLU_KEY: 2, // B (faltava, quebrava getInfluKeyByCupom)
+    NOME_ABA: "BASE DE DADOS",
+    INFLU_KEY: 2, // B
     CUPOM: 3, // C
     NOME: 4, // D
     EMAIL: 5, // E
@@ -24,28 +34,10 @@ const MAP = {
     COMPLEMENTO: 11, // K
     CIDADE: 13, // M
     UF: 14, // N
-    VALOR: 16, // P - VALOR_TOTAL (faltava, quebrava getPerfil)
-    ID_PASTA_DRIVE: 32 // AF (Nova coluna, livre. A planilha real usa até a coluna 31 hoje;
-                        // era 25, que colidia com CIDADE_ASSINATURA já existente)
+    VALOR: 16 // P - VALOR_TOTAL
   },
-  ATIVACOES: {
-    NOME_ABA: "ATIVAÇÕES",
-    INFLU_KEY: 1, // A
-    MES: 2, // B
-    FORMATO: 3, // C
-    DATA_APROVACAO: 4, // D
-    DATA_ATIVACAO: 5, // E
-    STATUS: 6, // F
-    LINK_ARQUIVO: 7 // G (Nova coluna)
-  },
-  PAGAMENTOS: {
-    NOME_ABA: "PAGAMENTOS",
-    INFLU_KEY: 1, // A
-    MES: 2, // B
-    VALOR: 3, // C
-    STATUS: 5, // E
-    DATA_PAGAMENTO: 6 // F
-  },
+  ATIVACOES: { NOME_ABA: "ATIVAÇÕES" },
+  PAGAMENTOS: { NOME_ABA: "PAGAMENTOS" },
   BRIEFING: {
     NOME_ABA: "BRIEFING",
     INFLU_KEY: 1, // A
@@ -54,23 +46,16 @@ const MAP = {
     RESUMO: 4, // D
     // Mapeamento dinâmico baseado no formato
   },
-  HISTORICO_CONT: {
-    NOME_ABA: "HISTÓRICO DE CONTEÚDOS",
-    INFLU_KEY: 1,
-    MES: 2,
-    FORMATO: 3,
-    DATA_APROVACAO: 4,
-    DATA_ATIVACAO: 5,
-    STATUS: 6
-  },
-  HISTORICO_PAG: {
-    NOME_ABA: "HISTÓRICO DE PAGAMENTOS",
-    INFLU_KEY: 1,
-    MES: 2,
-    VALOR: 3,
-    STATUS: 5,
-    DATA_PAGAMENTO: 6
-  }
+  HISTORICO_CONT: { NOME_ABA: "HISTÓRICO DE CONTEÚDOS" },
+  HISTORICO_PAG: { NOME_ABA: "HISTÓRICO DE PAGAMENTOS" }
+};
+
+// Ordem cronológica dos meses (nomes em maiúsculo, como gravados nas abas)
+// para ordenar períodos no seletor do portal.
+const ORDEM_MESES = {
+  "JANEIRO": 1, "FEVEREIRO": 2, "MARÇO": 3, "MARCO": 3, "ABRIL": 4,
+  "MAIO": 5, "JUNHO": 6, "JULHO": 7, "AGOSTO": 8, "SETEMBRO": 9,
+  "OUTUBRO": 10, "NOVEMBRO": 11, "DEZEMBRO": 12
 };
 
 // ======================================================
@@ -100,12 +85,13 @@ function include(filename) {
 // si é sempre JSON: {"action": "...", ...params}.
 var API_ACOES = {
   login: function (p) { return login(p.cupom, p.senha); },
-  getPendencias: function (p) { return getPendencias(p.token, p.mesAno); },
+  getPendencias: function (p) { return getPendencias(p.token, p.mes, p.ano); },
   getBriefing: function (p) { return getBriefing(p.token, p.idAtivacao); },
-  getPagamentos: function (p) { return getPagamentos(p.token, p.mesAno); },
-  getHistorico: function (p) { return getHistorico(p.token, p.mesAno); },
+  getPagamentos: function (p) { return getPagamentos(p.token, p.mes, p.ano); },
+  getHistorico: function (p) { return getHistorico(p.token, p.mes, p.ano); },
   getPerfil: function (p) { return getPerfil(p.token); },
-  updatePerfil: function (p) { return updatePerfil(p.token, p.dadosAtualizados); }
+  updatePerfil: function (p) { return updatePerfil(p.token, p.dadosAtualizados); },
+  listarPeriodos: function (p) { return listarPeriodos(p.token); }
 };
 
 function doPost(e) {
@@ -193,7 +179,7 @@ function validarToken(token) {
 // FUNÇÕES DE DADOS (CONTRATOS)
 // ======================================================
 
-function getPendencias(token, mesAno) {
+function getPendencias(token, mes, ano) {
   try {
     const cupom = validarToken(token);
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
@@ -203,33 +189,38 @@ function getPendencias(token, mesAno) {
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
-    let influKey, dados;
+    let influKey, dados, h;
     try {
       influKey = getInfluKeyByCupom(ss, cupom);
       if (!influKey) return { ok: false, erro: "USUARIO_NAO_ENCONTRADO" };
       if (!abaAtivacoes) return { ok: true, itens: [] };
+      h = getHeaderMap(abaAtivacoes);
       dados = abaAtivacoes.getDataRange().getValues();
     } finally {
       lock.releaseLock();
     }
 
+    const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
+    const anoFiltro = ano ? parseInt(ano, 10) : null;
     const itens = [];
 
     for (let i = 1; i < dados.length; i++) {
-      let rowInfluKey = (dados[i][MAP.ATIVACOES.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
-      let rowMes = (dados[i][MAP.ATIVACOES.MES - 1] || "").toString().trim().toUpperCase();
+      let rowInfluKey = (dados[i][h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+      let rowMes = (dados[i][h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+      let rowAno = h['ANO_REFERENCIA'] ? parseInt(dados[i][h['ANO_REFERENCIA'] - 1], 10) : null;
 
-      // Filtra por influenciadora e mês (se fornecido)
-      if (rowInfluKey === influKey && (!mesAno || rowMes === mesAno.toUpperCase())) {
-        let statusBruto = (dados[i][MAP.ATIVACOES.STATUS - 1] || "").toString().toLowerCase();
+      // Filtra por influenciadora e período (mês/ano, cada um opcional)
+      if (rowInfluKey === influKey && (!mesFiltro || rowMes === mesFiltro) && (!anoFiltro || rowAno === anoFiltro)) {
+        let statusBruto = (dados[i][h['STATUS_CONTEUDO'] - 1] || "").toString().toLowerCase();
         let statusNormalizado = normalizarStatusAtivacao(statusBruto);
+        let idLinha = h['ID'] ? dados[i][h['ID'] - 1] : "";
 
         itens.push({
-          idAtivacao: i + 1, // Usando o número da linha como ID
-          formato: dados[i][MAP.ATIVACOES.FORMATO - 1],
-          campanha: rowMes,
-          dataEntrega: formatarData(dados[i][MAP.ATIVACOES.DATA_APROVACAO - 1]),
-          dataAprovacao: formatarData(dados[i][MAP.ATIVACOES.DATA_ATIVACAO - 1]),
+          idAtivacao: idLinha || ("ROW" + (i + 1)), // fallback transitório se a coluna ID ainda não existir
+          formato: dados[i][h['FORMATO'] - 1],
+          campanha: rowMes + (rowAno ? " " + rowAno : ""),
+          dataEntrega: formatarData(dados[i][h['DATA_APROVACAO'] - 1]),
+          dataAprovacao: formatarData(dados[i][h['DATA_ATIVACAO'] - 1]),
           status: statusNormalizado,
           temBriefing: true
         });
@@ -253,28 +244,32 @@ function getBriefing(token, idAtivacao) {
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
-    let influKey, dadosAtivacao, rowInfluKey, mes, formato, dadosBriefing;
+    let influKey, dadosAtivacao, rowInfluKey, mes, formato, dadosBriefing, h;
     try {
       influKey = getInfluKeyByCupom(ss, cupom);
 
-      // 1. Buscar detalhes da ativação
-      const linhaAtivacao = parseInt(idAtivacao);
+      // 1. Buscar detalhes da ativação, resolvendo pelo ID estável (não mais
+      // pelo número da linha — evita corrida se a aba for editada entre a
+      // listagem de pendências e a abertura do briefing).
+      h = getHeaderMap(abaAtivacoes);
+      const linhaAtivacao = encontrarLinhaAtivacaoPorId(abaAtivacoes, h, idAtivacao);
 
-      if (linhaAtivacao < 2 || linhaAtivacao > abaAtivacoes.getLastRow()) {
+      if (linhaAtivacao < 2) {
         return { ok: false, erro: "ATIVACAO_NAO_ENCONTRADA" };
       }
 
       dadosAtivacao = abaAtivacoes.getRange(linhaAtivacao, 1, 1, abaAtivacoes.getLastColumn()).getValues()[0];
-      rowInfluKey = (dadosAtivacao[MAP.ATIVACOES.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
+      rowInfluKey = (dadosAtivacao[h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
 
       if (rowInfluKey !== influKey) {
         return { ok: false, erro: "ACESSO_NEGADO" };
       }
 
-      mes = (dadosAtivacao[MAP.ATIVACOES.MES - 1] || "").toString().trim().toUpperCase();
-      formato = (dadosAtivacao[MAP.ATIVACOES.FORMATO - 1] || "").toString().trim().toUpperCase();
+      mes = (dadosAtivacao[h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+      formato = (dadosAtivacao[h['FORMATO'] - 1] || "").toString().trim().toUpperCase();
 
-      // 2. Buscar o briefing correspondente
+      // 2. Buscar o briefing correspondente (só por MES — BRIEFING não ganhou
+      // ANO_REFERENCIA neste momento; ver ressalva no relatório final)
       if (!abaBriefing) return { ok: false, erro: "ABA_BRIEFING_NAO_ENCONTRADA" };
 
       dadosBriefing = abaBriefing.getDataRange().getValues();
@@ -307,8 +302,8 @@ function getBriefing(token, idAtivacao) {
       ok: true,
       campanha: mes,
       formato: formato,
-      dataEntrega: formatarData(dadosAtivacao[MAP.ATIVACOES.DATA_APROVACAO - 1]),
-      dataAprovacao: formatarData(dadosAtivacao[MAP.ATIVACOES.DATA_ATIVACAO - 1]),
+      dataEntrega: formatarData(dadosAtivacao[h['DATA_APROVACAO'] - 1]),
+      dataAprovacao: formatarData(dadosAtivacao[h['DATA_ATIVACAO'] - 1]),
       textoBriefing: textoBriefing
     };
   } catch (e) {
@@ -316,7 +311,7 @@ function getBriefing(token, idAtivacao) {
   }
 }
 
-function getPagamentos(token, mesAno) {
+function getPagamentos(token, mes, ano) {
   try {
     const cupom = validarToken(token);
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
@@ -326,27 +321,31 @@ function getPagamentos(token, mesAno) {
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
-    let influKey, dados;
+    let influKey, dados, h;
     try {
       influKey = getInfluKeyByCupom(ss, cupom);
       if (!abaPagamentos) return { ok: true, totalPrevisto: 0, totalPago: 0, itens: [] };
+      h = getHeaderMap(abaPagamentos);
       dados = abaPagamentos.getDataRange().getValues();
     } finally {
       lock.releaseLock();
     }
 
+    const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
+    const anoFiltro = ano ? parseInt(ano, 10) : null;
     const itens = [];
     let totalPrevisto = 0;
     let totalPago = 0;
 
     for (let i = 1; i < dados.length; i++) {
-      let rowInfluKey = (dados[i][MAP.PAGAMENTOS.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
-      let rowMes = (dados[i][MAP.PAGAMENTOS.MES - 1] || "").toString().trim().toUpperCase();
+      let rowInfluKey = (dados[i][h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+      let rowMes = (dados[i][h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+      let rowAno = h['ANO_REFERENCIA'] ? parseInt(dados[i][h['ANO_REFERENCIA'] - 1], 10) : null;
 
-      if (rowInfluKey === influKey && (!mesAno || rowMes === mesAno.toUpperCase())) {
-        let statusBruto = (dados[i][MAP.PAGAMENTOS.STATUS - 1] || "").toString().toLowerCase();
+      if (rowInfluKey === influKey && (!mesFiltro || rowMes === mesFiltro) && (!anoFiltro || rowAno === anoFiltro)) {
+        let statusBruto = (dados[i][h['STATUS_PAGAMENTO'] - 1] || "").toString().toLowerCase();
         let etapa = normalizarStatusPagamento(statusBruto);
-        let valor = extrairValorNumerico(dados[i][MAP.PAGAMENTOS.VALOR - 1]);
+        let valor = extrairValorNumerico(dados[i][h['VALOR_TOTAL'] - 1]);
 
         if (etapa === "PAGO") {
           totalPago += valor;
@@ -356,11 +355,11 @@ function getPagamentos(token, mesAno) {
 
         itens.push({
           idPagamento: i + 1,
-          referencia: rowMes,
-          valor: dados[i][MAP.PAGAMENTOS.VALOR - 1],
+          referencia: rowMes + (rowAno ? " " + rowAno : ""),
+          valor: dados[i][h['VALOR_TOTAL'] - 1],
           etapa: etapa,
           dataPrevista: "",
-          dataPagamento: formatarData(dados[i][MAP.PAGAMENTOS.DATA_PAGAMENTO - 1])
+          dataPagamento: formatarData(dados[i][h['DATA_PAGAMENTO'] - 1])
         });
       }
     }
@@ -376,7 +375,7 @@ function getPagamentos(token, mesAno) {
   }
 }
 
-function getHistorico(token, mesAno) {
+function getHistorico(token, mes, ano) {
   try {
     const cupom = validarToken(token);
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
@@ -387,31 +386,35 @@ function getHistorico(token, mesAno) {
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
-    let influKey, dadosCont, dadosPag;
+    let influKey, dadosCont, dadosPag, hCont, hPag;
     try {
       influKey = getInfluKeyByCupom(ss, cupom);
-      if (abaHistCont) dadosCont = abaHistCont.getDataRange().getValues();
-      if (abaHistPag) dadosPag = abaHistPag.getDataRange().getValues();
+      if (abaHistCont) { hCont = getHeaderMap(abaHistCont); dadosCont = abaHistCont.getDataRange().getValues(); }
+      if (abaHistPag) { hPag = getHeaderMap(abaHistPag); dadosPag = abaHistPag.getDataRange().getValues(); }
     } finally {
       lock.releaseLock();
     }
 
+    const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
+    const anoFiltro = ano ? parseInt(ano, 10) : null;
     const ativacoes = [];
     const pagamentos = [];
 
     // Histórico de Conteúdos
     if (dadosCont) {
       for (let i = 1; i < dadosCont.length; i++) {
-        let rowInfluKey = (dadosCont[i][MAP.HISTORICO_CONT.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
-        let rowMes = (dadosCont[i][MAP.HISTORICO_CONT.MES - 1] || "").toString().trim().toUpperCase();
+        let rowInfluKey = (dadosCont[i][hCont['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+        let rowMes = (dadosCont[i][hCont['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+        let rowAno = hCont['ANO_REFERENCIA'] ? parseInt(dadosCont[i][hCont['ANO_REFERENCIA'] - 1], 10) : null;
 
-        if (rowInfluKey === influKey && (!mesAno || rowMes === mesAno.toUpperCase())) {
+        if (rowInfluKey === influKey && (!mesFiltro || rowMes === mesFiltro) && (!anoFiltro || rowAno === anoFiltro)) {
+          let idLinha = hCont['ID'] ? dadosCont[i][hCont['ID'] - 1] : "";
           ativacoes.push({
-            idAtivacao: "H" + (i + 1),
-            formato: dadosCont[i][MAP.HISTORICO_CONT.FORMATO - 1],
-            campanha: rowMes,
-            dataEntrega: formatarData(dadosCont[i][MAP.HISTORICO_CONT.DATA_APROVACAO - 1]),
-            dataAprovacao: formatarData(dadosCont[i][MAP.HISTORICO_CONT.DATA_ATIVACAO - 1]),
+            idAtivacao: "H" + (idLinha || (i + 1)),
+            formato: dadosCont[i][hCont['FORMATO'] - 1],
+            campanha: rowMes + (rowAno ? " " + rowAno : ""),
+            dataEntrega: formatarData(dadosCont[i][hCont['DATA_APROVACAO'] - 1]),
+            dataAprovacao: formatarData(dadosCont[i][hCont['DATA_ATIVACAO'] - 1]),
             status: "PUBLICADO",
             temBriefing: false
           });
@@ -422,17 +425,18 @@ function getHistorico(token, mesAno) {
     // Histórico de Pagamentos
     if (dadosPag) {
       for (let i = 1; i < dadosPag.length; i++) {
-        let rowInfluKey = (dadosPag[i][MAP.HISTORICO_PAG.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
-        let rowMes = (dadosPag[i][MAP.HISTORICO_PAG.MES - 1] || "").toString().trim().toUpperCase();
+        let rowInfluKey = (dadosPag[i][hPag['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+        let rowMes = (dadosPag[i][hPag['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+        let rowAno = hPag['ANO_REFERENCIA'] ? parseInt(dadosPag[i][hPag['ANO_REFERENCIA'] - 1], 10) : null;
 
-        if (rowInfluKey === influKey && (!mesAno || rowMes === mesAno.toUpperCase())) {
+        if (rowInfluKey === influKey && (!mesFiltro || rowMes === mesFiltro) && (!anoFiltro || rowAno === anoFiltro)) {
           pagamentos.push({
             idPagamento: "H" + (i + 1),
-            referencia: rowMes,
-            valor: dadosPag[i][MAP.HISTORICO_PAG.VALOR - 1],
+            referencia: rowMes + (rowAno ? " " + rowAno : ""),
+            valor: dadosPag[i][hPag['VALOR_TOTAL'] - 1],
             etapa: "PAGO",
             dataPrevista: "",
-            dataPagamento: formatarData(dadosPag[i][MAP.HISTORICO_PAG.DATA_PAGAMENTO - 1])
+            dataPagamento: formatarData(dadosPag[i][hPag['DATA_PAGAMENTO'] - 1])
           });
         }
       }
@@ -537,6 +541,86 @@ function updatePerfil(token, dadosAtualizados) {
 // FUNÇÕES AUXILIARES
 // ======================================================
 
+// ID_PASTA_DRIVE migrou de coluna (exclusiva de BASE DE APOIO) para
+// PropertiesService, chave por cupom — evita que BASE DE DADOS precise de
+// uma coluna de uso exclusivo do Portal.
+function getIdPastaDriveCupom(cupom) {
+  return PropertiesService.getScriptProperties().getProperty("PASTA_DRIVE_" + cupom);
+}
+
+function setIdPastaDriveCupom(cupom, id) {
+  PropertiesService.getScriptProperties().setProperty("PASTA_DRIVE_" + cupom, id);
+}
+
+// Resolve a linha real de uma ativação a partir do ID estável (UUID, coluna
+// ID) em vez do número de linha — corrige a corrida em que uma edição na aba
+// (inserção/remoção de linha) entre a listagem de pendências e o envio de
+// material desalinhava idAtivacao do restante do fluxo.
+// Fallback "ROWn": aceita o número de linha literal só na transição, para
+// abas que ainda não tenham a coluna ID preenchida.
+function encontrarLinhaAtivacaoPorId(abaAtivacoes, h, idAtivacao) {
+  const idStr = (idAtivacao || "").toString().trim();
+  if (idStr.indexOf("ROW") === 0) {
+    const linha = parseInt(idStr.substring(3), 10);
+    return (linha >= 2 && linha <= abaAtivacoes.getLastRow()) ? linha : -1;
+  }
+  if (!h['ID'] || abaAtivacoes.getLastRow() < 2) return -1;
+  const idsColuna = abaAtivacoes.getRange(2, h['ID'], abaAtivacoes.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < idsColuna.length; i++) {
+    if ((idsColuna[i][0] || "").toString().trim() === idStr) return i + 2;
+  }
+  return -1;
+}
+
+// Lista os períodos (mês/ano) com dados para a influenciadora logada, para o
+// seletor de período do portal navegar por campanha real em vez de um índice
+// fixo 0-11 sem ano.
+function listarPeriodos(token) {
+  try {
+    const cupom = validarToken(token);
+    if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const influKey = getInfluKeyByCupom(ss, cupom);
+    if (!influKey) return { ok: false, erro: "USUARIO_NAO_ENCONTRADO" };
+
+    const nomesAbas = [
+      MAP.ATIVACOES.NOME_ABA,
+      MAP.PAGAMENTOS.NOME_ABA,
+      MAP.HISTORICO_CONT.NOME_ABA,
+      MAP.HISTORICO_PAG.NOME_ABA
+    ];
+
+    const periodos = {}; // chave "MES|ANO" -> {mes, ano}
+    nomesAbas.forEach(function (nomeAba) {
+      const aba = ss.getSheetByName(nomeAba);
+      if (!aba || aba.getLastRow() < 2) return;
+      const h = getHeaderMap(aba);
+      if (!h['MES_REFERENCIA'] || !h['INFLU_KEY']) return;
+      const dados = aba.getDataRange().getValues();
+      for (let i = 1; i < dados.length; i++) {
+        const rowInfluKey = (dados[i][h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+        if (rowInfluKey !== influKey) continue;
+        const mes = (dados[i][h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+        if (!mes) continue;
+        const ano = h['ANO_REFERENCIA'] ? (parseInt(dados[i][h['ANO_REFERENCIA'] - 1], 10) || null) : null;
+        const chave = mes + "|" + (ano || "");
+        if (!periodos[chave]) periodos[chave] = { mes: mes, ano: ano };
+      }
+    });
+
+    const lista = Object.keys(periodos).map(function (k) { return periodos[k]; });
+    lista.sort(function (a, b) {
+      if (a.ano !== b.ano) return (b.ano || 0) - (a.ano || 0);
+      return (ORDEM_MESES[b.mes] || 0) - (ORDEM_MESES[a.mes] || 0);
+    });
+
+    return { ok: true, periodos: lista };
+  } catch (e) {
+    return { ok: false, erro: e.message };
+  }
+}
+
 function getInfluKeyByCupom(ss, cupom) {
   const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
   const dados = abaBase.getDataRange().getValues();
@@ -550,10 +634,14 @@ function getInfluKeyByCupom(ss, cupom) {
 }
 
 function normalizarStatusAtivacao(statusBruto) {
-  if (statusBruto.includes("falta") || statusBruto.includes("aberto")) return "AGUARDANDO_MATERIAL";
-  if (statusBruto.includes("aprova") || statusBruto.includes("revis")) return "EM_APROVACAO";
+  // Ordem importa: "aprovado" e "postado/publicado" são estados terminais e
+  // precisam ser checados antes de "aprova"/"revis" (em andamento), já que
+  // "aprovado".includes("aprova") é true — checar na ordem antiga fazia toda
+  // ativação aprovada cair sempre em EM_APROVACAO, nunca em APROVADO.
   if (statusBruto.includes("aprovado")) return "APROVADO";
   if (statusBruto.includes("postado") || statusBruto.includes("publicado")) return "PUBLICADO";
+  if (statusBruto.includes("aprova") || statusBruto.includes("revis")) return "EM_APROVACAO";
+  if (statusBruto.includes("falta") || statusBruto.includes("aberto")) return "AGUARDANDO_MATERIAL";
   return "AGUARDANDO_MATERIAL";
 }
 
@@ -597,20 +685,20 @@ function nomeFormatoPasta(formato) {
   return f || "OUTROS";
 }
 
-function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao) {
+function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao, hAtiv) {
   const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
   const dadosBase = abaBase.getDataRange().getValues();
-  let pastaInfluenciadoraId = null, linhaInflu = -1, nomeInflu = cupom;
+  let encontrouInflu = false, nomeInflu = cupom;
   for (let i = 1; i < dadosBase.length; i++) {
     if ((dadosBase[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
-      linhaInflu = i + 1;
-      pastaInfluenciadoraId = dadosBase[i][MAP.BASE.ID_PASTA_DRIVE - 1];
+      encontrouInflu = true;
       nomeInflu = (dadosBase[i][MAP.BASE.NOME - 1] || cupom).toString().trim();
       break;
     }
   }
-  if (linhaInflu === -1) throw new Error("USUARIO_NAO_ENCONTRADO");
+  if (!encontrouInflu) throw new Error("USUARIO_NAO_ENCONTRADO");
 
+  let pastaInfluenciadoraId = getIdPastaDriveCupom(cupom);
   let pastaInfluenciadora;
   try {
     pastaInfluenciadora = pastaInfluenciadoraId ? DriveApp.getFolderById(pastaInfluenciadoraId) : null;
@@ -622,7 +710,7 @@ function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao) {
     lock.waitLock(10000);
     try {
       // Re-checa após obter o lock: outra requisição concorrente pode já ter criado a pasta.
-      const idRecente = abaBase.getRange(linhaInflu, MAP.BASE.ID_PASTA_DRIVE).getValue();
+      const idRecente = getIdPastaDriveCupom(cupom);
       try {
         pastaInfluenciadora = idRecente ? DriveApp.getFolderById(idRecente) : null;
       } catch (e) {
@@ -636,15 +724,15 @@ function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao) {
         catch (e) { pastaRaiz = DriveApp.getFolderById(PASTA_MAE_ID); }
         pastaInfluenciadora = getOuCriarSubpasta(pastaRaiz, nomeInflu);
         pastaInfluenciadoraId = pastaInfluenciadora.getId();
-        abaBase.getRange(linhaInflu, MAP.BASE.ID_PASTA_DRIVE).setValue(pastaInfluenciadoraId);
+        setIdPastaDriveCupom(cupom, pastaInfluenciadoraId);
       }
     } finally {
       lock.releaseLock();
     }
   }
 
-  const mesAtivacao = (abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.MES).getValue() || "").toString().trim() || "SEM_MES";
-  const formatoAtivacao = abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.FORMATO).getValue();
+  const mesAtivacao = (abaAtivacoes.getRange(linhaAtivacao, hAtiv['MES_REFERENCIA']).getValue() || "").toString().trim() || "SEM_MES";
+  const formatoAtivacao = abaAtivacoes.getRange(linhaAtivacao, hAtiv['FORMATO']).getValue();
 
   const pastaMes = getOuCriarSubpasta(pastaInfluenciadora, mesAtivacao);
   return getOuCriarSubpasta(pastaMes, nomeFormatoPasta(formatoAtivacao));
@@ -659,14 +747,15 @@ function iniciarEnvioResumable(token, idAtivacao, nomeArquivo, mimeType, tamanho
     const influKey = getInfluKeyByCupom(ss, cupom);
 
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
-    const linhaAtivacao = parseInt(idAtivacao);
-    if (linhaAtivacao < 2 || linhaAtivacao > abaAtivacoes.getLastRow()) {
+    const hAtiv = getHeaderMap(abaAtivacoes);
+    const linhaAtivacao = encontrarLinhaAtivacaoPorId(abaAtivacoes, hAtiv, idAtivacao);
+    if (linhaAtivacao < 2) {
       return { ok: false, erro: "ATIVACAO_NAO_ENCONTRADA" };
     }
-    const rowInfluKey = (abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.INFLU_KEY).getValue() || "").toString().trim().toUpperCase();
+    const rowInfluKey = (abaAtivacoes.getRange(linhaAtivacao, hAtiv['INFLU_KEY']).getValue() || "").toString().trim().toUpperCase();
     if (rowInfluKey !== influKey) return { ok: false, erro: "ACESSO_NEGADO" };
 
-    const pastaFormato = obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao);
+    const pastaFormato = obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao, hAtiv);
 
     const url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable";
     const resposta = UrlFetchApp.fetch(url, {
@@ -697,19 +786,26 @@ function finalizarEnvioResumable(token, idAtivacao, fileId) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const influKey = getInfluKeyByCupom(ss, cupom);
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
-    const linhaAtivacao = parseInt(idAtivacao);
-    const rowInfluKey = (abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.INFLU_KEY).getValue() || "").toString().trim().toUpperCase();
-    if (rowInfluKey !== influKey) return { ok: false, erro: "ACESSO_NEGADO" };
-
     const linkArquivo = "https://drive.google.com/file/d/" + fileId + "/view";
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
-      const linkAnterior = abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.LINK_ARQUIVO).getValue();
+      // Re-resolve a linha dentro do lock: blinda contra edição concorrente da
+      // aba (inserção/remoção de linha) entre o upload e esta gravação — é o
+      // ponto frágil identificado para o "some após logout" (idAtivacao antes
+      // era o número de linha; agora é o ID estável, verificado de novo aqui).
+      const hAtiv = getHeaderMap(abaAtivacoes);
+      const linhaAtivacao = encontrarLinhaAtivacaoPorId(abaAtivacoes, hAtiv, idAtivacao);
+      if (linhaAtivacao < 2) return { ok: false, erro: "ATIVACAO_NAO_ENCONTRADA" };
+
+      const rowInfluKey = (abaAtivacoes.getRange(linhaAtivacao, hAtiv['INFLU_KEY']).getValue() || "").toString().trim().toUpperCase();
+      if (rowInfluKey !== influKey) return { ok: false, erro: "ACESSO_NEGADO" };
+
+      const linkAnterior = abaAtivacoes.getRange(linhaAtivacao, hAtiv['LINK_ARQUIVO']).getValue();
       const novoLink = linkAnterior ? (linkAnterior + "\n" + linkArquivo) : linkArquivo;
-      abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.LINK_ARQUIVO).setValue(novoLink);
-      abaAtivacoes.getRange(linhaAtivacao, MAP.ATIVACOES.STATUS).setValue("EM_APROVACAO");
+      abaAtivacoes.getRange(linhaAtivacao, hAtiv['LINK_ARQUIVO']).setValue(novoLink);
+      abaAtivacoes.getRange(linhaAtivacao, hAtiv['STATUS_CONTEUDO']).setValue("EM_APROVACAO");
     } finally {
       lock.releaseLock();
     }
