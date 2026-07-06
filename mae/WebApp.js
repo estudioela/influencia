@@ -258,7 +258,10 @@ function login(cupom, senha) {
           return {
             ok: true,
             token: token,
-            nome: dados[i][MAP.BASE.NOME - 1]
+            // Nome exibido no Portal passou a usar INFLU_KEY (coluna B), não mais
+            // INFLUENCIADORA_RAZAO_SOCIAL (coluna D, MAP.BASE.NOME) — pedido do
+            // usuário 2026-07-06, ver FLOW.md.
+            nome: dados[i][MAP.BASE.INFLU_KEY - 1]
           };
         }
       }
@@ -583,7 +586,7 @@ function getPerfil(token) {
         return {
           ok: true,
           dados: {
-            nome: dados[i][MAP.BASE.NOME - 1],
+            nome: dados[i][MAP.BASE.INFLU_KEY - 1],
             cnpj: dados[i][MAP.BASE.CNPJ - 1],
             chavePix: dados[i][MAP.BASE.CHAVE_PIX - 1],
             email: dados[i][MAP.BASE.EMAIL - 1],
@@ -777,7 +780,7 @@ function getNomeInfluByCupomCached(ss, cupom) {
   const dados = abaBase.getDataRange().getValues();
   for (let i = 1; i < dados.length; i++) {
     if ((dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
-      const nome = (dados[i][MAP.BASE.NOME - 1] || cupom).toString().trim();
+      const nome = (dados[i][MAP.BASE.INFLU_KEY - 1] || cupom).toString().trim();
       cache.put(chave, nome, 21600);
       return nome;
     }
@@ -799,9 +802,12 @@ function normalizarStatusAtivacao(statusBruto) {
 
 function normalizarStatusPagamento(statusBruto) {
   // A barra de progresso só avança com aprovação confirmada na planilha-mãe:
-  // "pago" é terminal (checado primeiro), "aprovado" avança um passo: tudo
-  // o mais (pendente, em análise, enviado, em aberto...) fica em PENDENTE.
+  // "pago" é terminal (checado primeiro), "aguardando" (solicitado ao
+  // financeiro, aguardando liberação — 2026-07-06) vem antes de "aprovado",
+  // "aprovado" avança mais um passo: tudo o mais (pendente, em análise,
+  // enviado, em aberto...) fica em PENDENTE.
   if (statusBruto.includes("pago")) return "PAGO";
+  if (statusBruto.includes("aguardando")) return "AGUARDANDO";
   if (statusBruto.includes("aprovado")) return "APROVADO";
   return "PENDENTE";
 }

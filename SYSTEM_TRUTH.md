@@ -29,7 +29,7 @@ Logout: `sairDoApp()` (Index.html) → `google.script.run.logout(token)` → `ma
 | `CADASTROS` | Google Form externo (fora do repo) | `onFormSubmit()` | Zona de pouso bruta |
 | `BRIEFING` | `gerarNovoMesCompleto()`, `onEdit()` (2 blocos), `sincronizarLooks()` | `getBriefing()` | Fallback de coluna pro campo RESUMO |
 | `ATIVAÇÕES` | `gerarNovoMesCompleto()`, `onEdit()`, `finalizarEnvioResumable()` (só grava `EM_APROVACAO`, fixo) | `getPendencias()`, `getBriefing()`, upload | `STATUS_CONTEUDO`→`APROVADO`/`POSTADO` é **manual**, sem função de código |
-| `PAGAMENTOS` | `gerarNovoMesCompleto()`, `lancarPagamentosDoMes()`, `onEdit()` (arquiva ao marcar "pago") | `getPagamentos()` | `STATUS_PAGAMENTO=PAGO` é **manual**; **não existe** derivação automática a partir de `STATUS_CONTEUDO` (achado corrigido nesta sessão, ver `FLOW.md`) |
+| `PAGAMENTOS` | `gerarNovoMesCompleto()`, `lancarPagamentosDoMes()`, `onEdit()` (arquiva ao marcar "pago") | `getPagamentos()` | `STATUS_PAGAMENTO=PAGO` é **manual**; **não existe** derivação automática a partir de `STATUS_CONTEUDO`; enum de status agora inclui `AGUARDANDO` (solicitado ao financeiro, 2026-07-06 — ver `FLOW.md`) |
 | `FLUXO LOGÍSTICO` | `gerarNovoMesCompleto()`, `onEdit()`, `atualizarRastreiosBRComerce()` | `gerarMensagemRevisao()` | — |
 | `HISTÓRICO_*` (3 abas) | `arquivarGenerico()` (automático via onEdit, ou manual via menu) | `getHistorico()`, `listarPeriodos()` | `HISTÓRICO LOGÍSTICO` não tem nenhuma leitura conhecida |
 | Abas legado (nome variável) | nenhuma | `getHistorico()`, `listarPeriodos()` via `listarAbasHistoricoLegado()` | Detecção por assinatura de cabeçalho |
@@ -44,6 +44,8 @@ Detalhe completo por aba: `SYSTEM_MAP.md`. Fluxos passo a passo: `FLOW.md`.
 INFLU_KEY=2, CUPOM=3, INFLUENCIADORA_RAZAO_SOCIAL=4, EMAIL=5, CHAVE_PIX=6,
 INFLUENCIADORA_CNPJ=7, CEP=8, RUA=9, NUMERO=10, COMPLEMENTO=11, CIDADE=13, UF=14, VALOR_TOTAL=16
 ```
+
+**Correção (2026-07-06, pedido do usuário)**: o campo `nome` devolvido por `login()`, `getPerfil()` e usado por `getNomeInfluByCupomCached()` (nomeia a pasta do Drive no upload) passou a ler `MAP.BASE.INFLU_KEY` (coluna B), não mais `MAP.BASE.NOME`/`INFLUENCIADORA_RAZAO_SOCIAL` (coluna D). O índice 4 continua mapeado (documenta a coluna D), só deixou de ser lido para exibição do nome.
 
 **Risco**: inserir ou remover uma coluna em `BASE DE DADOS` quebra `login()`/`getPerfil()`/`updatePerfil()` **silenciosamente** — lê a célula errada, não lança erro. Esse é o risco #1 documentado no sistema desde antes desta sessão, e foi a causa de um falso-positivo real no `SchemaExporter.js` nesta própria sessão (o checklist de integridade assumiu erroneamente que o texto do cabeçalho devia bater com o nome da propriedade — não precisa, já que `MAP.BASE` nunca lê por nome).
 

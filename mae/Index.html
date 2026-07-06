@@ -872,10 +872,11 @@ var STATUS_CLASSES = {
   'APROVADO': 'pill-aprovado',
   'PUBLICADO': 'pill-publicado'
 };
-var ETAPA_ORDEM = ['PENDENTE','APROVADO','PAGO'];
+var ETAPA_ORDEM = ['PENDENTE','APROVADO','AGUARDANDO','PAGO'];
 var ETAPA_LABELS = {
   'PENDENTE': 'Pendente',
   'APROVADO': 'Aprovado',
+  'AGUARDANDO': 'Aguardando liberação',
   'PAGO': 'Pago'
 };
 
@@ -1041,20 +1042,22 @@ function mostrarToast(msg, tipo){
    FORMATAÇÃO
    ========================================================== */
 function formatarData(valor){
+  // O backend (mae/WebApp.js:formatarData()) já devolve toda data como string
+  // "dd/MM/yyyy" pronta. Reprocessar essa string aqui com `new Date(string)`
+  // é a causa raiz do bug de inversão de data: o construtor Date do
+  // JavaScript interpreta strings com barra como MM/DD/AAAA (formato dos
+  // EUA), então "10/07/2026" (10 de julho) virava 7 de outubro sempre que o
+  // dia era <= 12. Por isso strings recebidas do backend só passam direto —
+  // só uma instância real de Date (ainda usada por alguma chamada futura) é
+  // reformatada aqui.
   if(!valor) return '-';
-  var d;
   if(valor instanceof Date){
-    d = valor;
-  } else if(typeof valor === 'string'){
-    d = new Date(valor);
-    if(isNaN(d.getTime())) return valor;
-  } else {
-    return String(valor);
+    var dia = String(valor.getDate()).padStart(2,'0');
+    var mes = String(valor.getMonth()+1).padStart(2,'0');
+    var ano = valor.getFullYear();
+    return dia + '/' + mes + '/' + ano;
   }
-  var dia = String(d.getDate()).padStart(2,'0');
-  var mes = String(d.getMonth()+1).padStart(2,'0');
-  var ano = d.getFullYear();
-  return dia + '/' + mes + '/' + ano;
+  return String(valor);
 }
 
 function formatarMoeda(valor){

@@ -14,6 +14,8 @@
 - **SAÍDA**: token de sessão ou `{ok:false, erro:"CODIGO"}`.
   destino: front-end (`fazerLogin()` faz `switch` por código de erro).
 
+**Correção (2026-07-06, pedido do usuário)**: o nome exibido no Portal (`nome`, campo devolvido por `login()` e por `getPerfil()`) passou a vir de `MAP.BASE.INFLU_KEY` (coluna B), não mais de `MAP.BASE.NOME` (coluna D, header real `INFLUENCIADORA_RAZAO_SOCIAL`). Mesma troca aplicada em `getNomeInfluByCupomCached()` (usada para nomear a pasta do Drive no upload), por consistência — `INFLU_KEY` já é o identificador canônico usado em `ATIVAÇÕES`/`PAGAMENTOS`/`BRIEFING`/`HISTORICO_*`. `MAP.BASE.NOME` continua definido no `MAP` (documenta a coluna D), só não é mais lido para exibição.
+
 ---
 
 ## FLOW: Sessão (validação / logout)
@@ -88,7 +90,7 @@
 | `MES_REFERENCIA` | mês da campanha |
 | `VALOR_TOTAL` | valor do pagamento |
 | `CHAVE_PIX` | chave PIX da influenciadora |
-| `STATUS_PAGAMENTO` | status do pagamento (`PENDENTE` \| `APROVADO` \| `PAGO`) |
+| `STATUS_PAGAMENTO` | status do pagamento (`PENDENTE` \| `APROVADO` \| `AGUARDANDO` \| `PAGO`) |
 | `DATA_PAGAMENTO` | data em que o pagamento foi efetivado |
 | `MENSAGEM_PIX` | mensagem formatada para envio via PIX |
 
@@ -96,6 +98,8 @@
 - atualização de status ocorre **exclusivamente** em `STATUS_PAGAMENTO` — nenhuma outra coluna é tocada por essa operação.
 - `DATA_PAGAMENTO` só é preenchida quando `STATUS_PAGAMENTO = PAGO` (efeito colateral condicional, não uma escrita independente).
 - proibido criar novas colunas ou inferir campos fora deste schema.
+
+**Novo status `AGUARDANDO` (2026-07-06, pedido do usuário)**: significa "pagamento já solicitado ao financeiro, aguardando liberação" — fica entre `APROVADO` e `PAGO`. Reconhecido por `normalizarStatusPagamento()` (`mae/WebApp.js` ~L800, substring `"aguardando"`, checado antes de `"aprovado"`) e refletido em `ETAPA_ORDEM`/`ETAPA_LABELS` (`mae/Index.html` ~L875). Não dispara arquivamento (`onEdit()`/`arquivarGenerico()` só arquiva em `"pago"`) e conta em `totalPrevisto` (não em `totalPago`) em `getPagamentos()`, mesmo comportamento de `PENDENTE`/`APROVADO`. Não confundir com `AGUARDANDO_MATERIAL` (`normalizarStatusAtivacao()`, aba `ATIVAÇÕES`, campo `STATUS_CONTEUDO`) — são camadas independentes, só compartilham o prefixo do nome.
 
 ### CORREÇÃO DE ARQUITETURA #1 (fonte: usuário, 2026-07-05)
 
@@ -228,6 +232,26 @@ Sub-fluxo fechado por leitura de código — sem pendências. **Correção**: tr
 ## Validação de existência de arquivos (2026-07-05)
 
 Confirmado via `ls`: `mae/Index.html`, `mae/WebApp.js`, `mae/Código.js` existem no repositório. Todos os fluxos acima apontam exclusivamente para esses três arquivos (mais destinos externos ao repo: Google Drive, planilha externa por influenciadora, Google Form). Nenhum caminho órfão encontrado.
+
+---
+
+## Correção: inversão de data (MM/DD exibido em vez de DD/MM) — 2026-07-06
+
+**Causa raiz**: `mae/WebApp.js:formatarData()` (~L809) já devolvia toda data como string pronta `"dd/MM/yyyy"` (via `Utilities.formatDate(data, "GMT-3", "dd/MM/yyyy")`) para todo campo de data enviado ao front-end (`dataEntrega`/`dataAprovacao` em `getPendencias()`/`getBriefing()`/`getHistorico()`, `dataPagamento` em `getPagamentos()`/`getHistorico()`). O front-end tinha sua própria `formatarData()` (`mae/Index.html` ~L1044) que **reprocessava essa string já formatada** com `new Date(valor)`. O construtor `Date` do JavaScript interpreta string com barra como `MM/DD/AAAA` (formato dos EUA), então qualquer data com dia ≤ 12 (ambíguo) saía invertida — ex.: backend manda `"10/07/2026"` (10 de julho), front-end reprocessa como outubro/7, remonta a string e exibe `"07/10/2026"`. Datas com dia > 12 escapavam do bug por acidente (`new Date()` retornava inválido e a função caía no fallback que devolve a string original inalterada).
+
+**Correção**: `mae/Index.html:formatarData()` não reprocessa mais string nenhuma — só reformata quando recebe uma instância real de `Date` (branch mantido por segurança, hoje nenhuma chamada real passa uma); toda string vinda do backend (já em `dd/MM/yyyy`) passa direto. Backend não precisou de nenhuma mudança — já usava `dd/MM/yyyy` em todo `Utilities.formatDate()` do projeto (`mae/WebApp.js`, `mae/Código.js`), confirmado por leitura de código.
+
+**Fluxos validados** (todos os pontos que chamam `formatarData()` do front-end): `FLOW: Dashboard/Pendências`, `FLOW: Briefing`, `FLOW: Pagamentos`, `FLOW: Histórico`.
+
+**Arquivo alterado**: `mae/Index.html` (função `formatarData()`, ~L1044). Nenhuma mudança em `mae/WebApp.js`/`mae/Código.js` — a origem dos dados já estava correta.
+
+---
+
+## Verificações pontuais (2026-07-06, pedido do usuário — sem dependência de código encontrada)
+
+- **`CIDADE_ASSINATURA`**: nenhuma referência em `mae/*.js`/`mae/*.html` — campo não é lido nem gravado por nenhuma função hoje. Só passa a existir em código quando o cadastro via Portal (ver pendência de fluxo abaixo) for implementado; até lá, não há o que alterar.
+- **`DATA_ASSINATURA` (coluna Z de `BASE DE DADOS`)**: nenhuma referência em `mae/*.js`/`mae/*.html` — nenhuma função lê, grava ou depende dessa coluna. Remoção da coluna na planilha pode ser feita diretamente pelo usuário, sem impacto no código deste repositório. Como a coluna Z fica à direita de todas as colunas de `MAP.BASE` resolvidas por índice fixo (`mae/WebApp.js`, máximo hoje é `VALOR: 16`/coluna P), removê-la não desloca nenhum índice fixo existente.
+- **`INFLU_SHEET_URL`**: já é exclusivamente manual. Único ponto de escrita no código é `salvarDadosSidebarV2()` (`mae/SidebarBackend.js` ~L97), acionado pela Sidebar do ERP (`mae/Sidebar.html`) quando a equipe preenche o campo "looks" manualmente. `sincronizarLooks()` (`mae/Código.js` ~L431) só lê o valor para abrir a planilha externa — não escreve. Nenhuma automação de preenchimento existe ou foi removida; comportamento já é o solicitado.
 
 ---
 
