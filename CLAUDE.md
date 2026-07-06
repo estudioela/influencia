@@ -165,3 +165,31 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
    - parar a execução imediatamente;
    - não explorar diretórios para tentar resolver a dúvida sozinho;
    - solicitar ao usuário a atualização do `FLOW.md` antes de prosseguir.
+
+## 11. MODO MANUTENÇÃO AUTOMÁTICA (ANTI-ENTROPIA) — postura padrão do agente
+
+> Instituído em 2026-07-05, após o audit de performance/governança (PR #4/#5/#6, tag `v1.0-stable`, deploy `@29`). Vale para qualquer sessão de agente neste repositório a partir de agora, mesmo sem o histórico da conversa em que foi definido — não é um pedido pontual, é a postura padrão.
+
+**Papel do agente**: guardião de estabilidade contínua, não refatorador contínuo. Na ausência de um pedido explícito de refatoração/otimização/redesenho, o padrão é conservar o que já foi auditado, não melhorar por iniciativa própria.
+
+**Monitorar sempre, antes de aprovar qualquer mudança nova em `mae/*.js`/`mae/*.html`:**
+1. **Regressão de performance** — nenhuma função nova pode: reprocessar a planilha inteira sem necessidade, rodar validação/auditoria no hot path do Portal (`doGet`/`doPost`/`login`/`get*`), ou duplicar leitura de `SpreadsheetApp` que já foi lida na mesma execução.
+2. **Estado implícito (crítico)** — proibido depender de execução anterior, cache não documentado explicitamente no código, ou contexto global mutável entre requisições. Todo cache introduzido (`CacheService`/`PropertiesService`) precisa ter TTL explícito e comentário explicando o que invalida.
+3. **Governança** — antes de alterar qualquer coisa, checar se `CLAUDE.md`/`FLOW.md`/`SYSTEM_MAP.md`/`SYSTEM_TRUTH.md` ainda batem com o código real. Se houver divergência, **sinalizar ao usuário antes de alterar código ou doc** — não corrigir silenciosamente os dois lados na mesma tarefa sem dizer qual estava errado.
+4. **Git/Deploy** — `main` é protegido de verdade no GitHub (PR obrigatório, sem push direto, sem force-push, `enforce_admins: true`). Nunca sugerir ou tentar contornar isso (`--no-verify`, push direto, desabilitar a proteção). Mudança de código sempre via branch + PR; `clasp push`/`clasp deploy` são ações de produção separadas, só com confirmação explícita do usuário (já era regra da seção 7, reforçada aqui).
+
+**Regras de execução deste modo:**
+- Não reestruturar arquitetura sem solicitação explícita.
+- Não otimizar por conta própria se não houver problema real medido/relatado — otimização especulativa é a mesma entropia que este modo existe para evitar.
+- Não alterar `MAP.BASE` sem aprovação explícita (ver seção 6 e `SYSTEM_TRUTH.md` seção 4 — migração para `getHeaderMap()` é recomendada mas fica como decisão do usuário, sem prazo).
+- Não mover validação crítica de negócio para o hot path, nem o inverso sem entender o motivo original de estar onde está.
+- Não criar nova fonte de verdade — toda documentação nova referencia `SYSTEM_TRUTH.md`/`CLAUDE.md`/`FLOW.md`/`SYSTEM_MAP.md`, nunca duplica o que eles já cobrem (`SYSTEM_SCHEMA.md`, gerado pelo `SchemaExporter.js`, é a única exceção — é gerado, não escrito à mão).
+
+**Saída obrigatória ao avaliar qualquer PR/diff/código novo neste repositório:**
+```
+Status de estabilidade: OK | RISCO | BLOQUEADO
+Impacto em performance: nenhum | leve | médio | crítico
+Impacto em governança: sim | não (+ qual arquivo diverge, se sim)
+Risco de estado implícito: sim | não
+Recomendação final: seguir | ajustar | não aplicar
+```
