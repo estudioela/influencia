@@ -213,14 +213,23 @@ function gerarSchemaPlanilha(ss) {
 // já documenta: MAP.BASE (mae/WebApp.js) usa índice fixo de coluna, não
 // getHeaderMap(). Se alguém inserir/remover coluna em BASE DE DADOS, login e
 // perfil quebram silenciosamente (leem célula errada, sem erro). Este check
-// lê o cabeçalho real de BASE DE DADOS e compara com o que MAP.BASE espera
-// em cada posição — o mapeamento abaixo vem literalmente dos comentários
-// originais de MAP.BASE (mae/WebApp.js ~L29-44), não é inventado.
+// lê o cabeçalho real de BASE DE DADOS e compara com o nome real esperado em
+// cada posição.
+//
+// Os nomes de propriedade em MAP.BASE (NOME, CNPJ) são só aliases internos
+// do JS — não precisam bater com o texto literal do cabeçalho, porque
+// MAP.BASE nunca lê por nome. O cabeçalho real das colunas D/G é
+// INFLUENCIADORA_RAZAO_SOCIAL/INFLUENCIADORA_CNPJ (confirmado de forma
+// independente por Código.js:onFormSubmit(), que usa getHeaderMap() e
+// referencia esses dois nomes exatos para gravar nas mesmas colunas) — não
+// "NOME"/"CNPJ" como uma primeira versão deste checklist assumiu por engano
+// (2026-07-05, corrigido após 1ª execução real do QA Shadow apontar falso
+// positivo nessas duas colunas).
 // ======================================================
 
 const INTEGRIDADE_MAP_BASE_ESPERADO = {
-  2: 'INFLU_KEY', 3: 'CUPOM', 4: 'NOME', 5: 'EMAIL', 6: 'CHAVE_PIX',
-  7: 'CNPJ', 8: 'CEP', 9: 'RUA', 10: 'NUMERO', 11: 'COMPLEMENTO',
+  2: 'INFLU_KEY', 3: 'CUPOM', 4: 'INFLUENCIADORA_RAZAO_SOCIAL', 5: 'EMAIL', 6: 'CHAVE_PIX',
+  7: 'INFLUENCIADORA_CNPJ', 8: 'CEP', 9: 'RUA', 10: 'NUMERO', 11: 'COMPLEMENTO',
   13: 'CIDADE', 14: 'UF', 16: 'VALOR_TOTAL'
 };
 
