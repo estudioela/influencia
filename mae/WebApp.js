@@ -20,9 +20,13 @@ const LOGIN_BLOQUEIO_SEGUNDOS = 900; // 15 minutos
 // fixas abaixo continuam válidas porque BASE DE APOIO sempre foi um espelho
 // posicional de BASE DE DADOS (mae/Sincronizador.js, que fazia essa sincronia,
 // foi removido do repositório — ver CLAUDE.md seção 6, "Legado já removido").
-// ID_PASTA_DRIVE deixou de ser uma coluna (era exclusiva do Portal, gravada
-// só em BASE DE APOIO) e virou PropertiesService, chave por cupom — ver
-// getIdPastaDriveCupom/setIdPastaDriveCupom.
+// PASTA_DRIVE_LINK (coluna de BASE DE DADOS, resolvida por getHeaderMap() —
+// não faz parte de MAP.BASE) é a fonte única de qual pasta do Drive pertence
+// a cada influenciadora — ver obterOuCriarPastaInfluenciadoraPorLinha().
+// Passou por PropertiesService (chave por cupom) entre 2026-07-0x e
+// 2026-07-06; revertido a pedido do usuário porque a equipe precisa ver/
+// editar o link direto na planilha. getIdPastaDriveCupom() ainda existe só
+// como migração de leitura de pastas criadas nesse período intermediário.
 // ATIVACOES/PAGAMENTOS/HISTORICO_* usam getHeaderMap() (nomes de cabeçalho,
 // não posição fixa) porque ganharam colunas novas (ID, ANO_REFERENCIA) e
 // porque o resto do projeto (Código.js) já resolve essas abas por nome.
@@ -657,15 +661,15 @@ function updatePerfil(token, dadosAtualizados) {
 // FUNÇÕES AUXILIARES
 // ======================================================
 
-// ID_PASTA_DRIVE migrou de coluna (exclusiva de BASE DE APOIO) para
-// PropertiesService, chave por cupom — evita que BASE DE DADOS precise de
-// uma coluna de uso exclusivo do Portal.
+// ID_PASTA_DRIVE morava só em PropertiesService (chave por cupom, nunca
+// visível/editável pela equipe). Revertido em 2026-07-06 (pedido do
+// usuário): BASE DE DADOS.PASTA_DRIVE_LINK volta a ser a fonte única —
+// ver obterOuCriarPastaInfluenciadoraPorLinha() abaixo. getIdPastaDriveCupom
+// continua existindo só como migração de leitura (pasta já criada antes
+// desta mudança, para uma influenciadora cuja PASTA_DRIVE_LINK ainda esteja
+// vazia na planilha) — nada mais grava em PropertiesService a partir de agora.
 function getIdPastaDriveCupom(cupom) {
   return PropertiesService.getScriptProperties().getProperty("PASTA_DRIVE_" + cupom);
-}
-
-function setIdPastaDriveCupom(cupom, id) {
-  PropertiesService.getScriptProperties().setProperty("PASTA_DRIVE_" + cupom, id);
 }
 
 // Resolve a linha real de uma ativação a partir do ID estável (UUID, coluna
@@ -846,6 +850,52 @@ function nomeFormatoPasta(formato) {
   return f || "OUTROS";
 }
 
+// Extrai o ID de pasta de uma URL do Drive (ex.:
+// "https://drive.google.com/drive/folders/<ID>") — usado para reaproveitar
+// a pasta já anotada em BASE.PASTA_DRIVE_LINK sem depender de um formato
+// exato de URL.
+function extrairIdPastaDrive(url) {
+  if (!url) return null;
+  const m = String(url).match(/[-\w]{25,}/);
+  return m ? m[0] : null;
+}
+
+// Fonte única de "qual pasta pertence a esta influenciadora": BASE DE
+// DADOS.PASTA_DRIVE_LINK (2026-07-06, pedido do usuário — reverte o uso de
+// PropertiesService). Chamado tanto na geração do primeiro briefing
+// (mae/Código.js:gerarNovoMesCompleto()) quanto no primeiro upload de
+// material (obterOuCriarPastaDestino() abaixo) — sempre a mesma função, para
+// as duas automações nunca criarem uma segunda pasta para a mesma
+// influenciadora. Se a coluna já tiver um link, ele é reaproveitado; se
+// vier vazia mas existir uma pasta legada em PropertiesService (criada
+// antes desta mudança), essa pasta legada é reaproveitada e só então
+// migrada para a coluna; só cria pasta nova se nenhuma das duas existir.
+function obterOuCriarPastaInfluenciadoraPorLinha(abaBase, hBase, linhaBase, nomeInflu, cupomLegado) {
+  const linkAtual = hBase['PASTA_DRIVE_LINK'] ? (abaBase.getRange(linhaBase, hBase['PASTA_DRIVE_LINK']).getValue() || "").toString().trim() : "";
+  let idPasta = extrairIdPastaDrive(linkAtual);
+  if (!idPasta && cupomLegado) idPasta = getIdPastaDriveCupom(cupomLegado);
+
+  if (idPasta) {
+    try {
+      const pastaExistente = DriveApp.getFolderById(idPasta);
+      if (hBase['PASTA_DRIVE_LINK'] && !linkAtual) {
+        abaBase.getRange(linhaBase, hBase['PASTA_DRIVE_LINK']).setValue(pastaExistente.getUrl());
+      }
+      return pastaExistente;
+    } catch (e) {
+      // Link/ID inválido (pasta apagada manualmente etc.) — cria uma nova abaixo.
+    }
+  }
+
+  const propRaiz = PropertiesService.getScriptProperties().getProperty(SCRIPT_PROP_PASTA_RAIZ);
+  let pastaRaiz;
+  try { pastaRaiz = DriveApp.getFolderById(propRaiz || PASTA_MAE_ID); }
+  catch (e) { pastaRaiz = DriveApp.getFolderById(PASTA_MAE_ID); }
+  const pastaNova = getOuCriarSubpasta(pastaRaiz, nomeInflu);
+  if (hBase['PASTA_DRIVE_LINK']) abaBase.getRange(linhaBase, hBase['PASTA_DRIVE_LINK']).setValue(pastaNova.getUrl());
+  return pastaNova;
+}
+
 function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao, hAtiv) {
   // Antes lia BASE DE DADOS inteira aqui de novo (já tinha sido lida em
   // iniciarEnvioResumable para achar influKey) — agora usa o mesmo cache
@@ -854,37 +904,26 @@ function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao, hAtiv)
   const nomeInflu = getNomeInfluByCupomCached(ss, cupom);
   if (!nomeInflu) throw new Error("USUARIO_NAO_ENCONTRADO");
 
-  let pastaInfluenciadoraId = getIdPastaDriveCupom(cupom);
-  let pastaInfluenciadora;
-  try {
-    pastaInfluenciadora = pastaInfluenciadoraId ? DriveApp.getFolderById(pastaInfluenciadoraId) : null;
-  } catch (e) {
-    pastaInfluenciadora = null;
-  }
-  if (!pastaInfluenciadora) {
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    try {
-      // Re-checa após obter o lock: outra requisição concorrente pode já ter criado a pasta.
-      const idRecente = getIdPastaDriveCupom(cupom);
-      try {
-        pastaInfluenciadora = idRecente ? DriveApp.getFolderById(idRecente) : null;
-      } catch (e) {
-        pastaInfluenciadora = null;
-      }
-
-      if (!pastaInfluenciadora) {
-        const propRaiz = PropertiesService.getScriptProperties().getProperty(SCRIPT_PROP_PASTA_RAIZ);
-        let pastaRaiz;
-        try { pastaRaiz = DriveApp.getFolderById(propRaiz || PASTA_MAE_ID); }
-        catch (e) { pastaRaiz = DriveApp.getFolderById(PASTA_MAE_ID); }
-        pastaInfluenciadora = getOuCriarSubpasta(pastaRaiz, nomeInflu);
-        pastaInfluenciadoraId = pastaInfluenciadora.getId();
-        setIdPastaDriveCupom(cupom, pastaInfluenciadoraId);
-      }
-    } finally {
-      lock.releaseLock();
+  const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+  const hBase = getHeaderMap(abaBase);
+  const dadosBase = abaBase.getDataRange().getValues();
+  let linhaBase = -1;
+  for (let i = 1; i < dadosBase.length; i++) {
+    if ((dadosBase[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
+      linhaBase = i + 1;
+      break;
     }
+  }
+  if (linhaBase < 0) throw new Error("USUARIO_NAO_ENCONTRADO");
+
+  let pastaInfluenciadora;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    // Re-lê dentro do lock: outra requisição concorrente pode já ter criado/gravado a pasta.
+    pastaInfluenciadora = obterOuCriarPastaInfluenciadoraPorLinha(abaBase, hBase, linhaBase, nomeInflu, cupom);
+  } finally {
+    lock.releaseLock();
   }
 
   const mesAtivacao = (abaAtivacoes.getRange(linhaAtivacao, hAtiv['MES_REFERENCIA']).getValue() || "").toString().trim() || "SEM_MES";

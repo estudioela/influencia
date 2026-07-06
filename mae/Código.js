@@ -99,17 +99,24 @@ function gerarNovoMesCompleto() {
   const hPag = getHeaderMap(pagSheet);
   let baseData = baseSheet.getDataRange().getValues();
   
-  let influON = baseData.filter(r => r[0] === true || r[0].toString().toUpperCase() === 'ON').map(r => ({
-    nome: r[hBase['INFLU_KEY']-1], 
-    cupom: r[hBase['CUPOM']-1], 
-    pasta: r[hBase['PASTA_DRIVE_LINK']-1],
-    endereco: r[hBase['INFLUENCIADORA_ENDERECO']-1],
-    valor: r[hBase['VALOR_TOTAL']-1],
-    pix: r[hBase['CHAVE_PIX']-1],
-    qReels: textToNumber(r[hBase['REELS_TEXTO']-1]),
-    qCarrosel: textToNumber(r[hBase['CARROSSEL_TEXTO']-1]),
-    qStories: textToNumber(r[hBase['STORIES_TEXTO']-1])
-  }));
+  // linhaBase (índice original em baseData, +1 pro número real da linha na
+  // planilha) é preservado aqui pra permitir gravar de volta PASTA_DRIVE_LINK
+  // quando a pasta da influenciadora for criada automaticamente abaixo.
+  let influON = baseData
+    .map((r, idx) => ({ r: r, linhaBase: idx + 1 }))
+    .filter(o => o.r[0] === true || o.r[0].toString().toUpperCase() === 'ON')
+    .map(o => ({
+      nome: o.r[hBase['INFLU_KEY']-1],
+      cupom: o.r[hBase['CUPOM']-1],
+      pasta: o.r[hBase['PASTA_DRIVE_LINK']-1],
+      linhaBase: o.linhaBase,
+      endereco: o.r[hBase['INFLUENCIADORA_ENDERECO']-1],
+      valor: o.r[hBase['VALOR_TOTAL']-1],
+      pix: o.r[hBase['CHAVE_PIX']-1],
+      qReels: textToNumber(o.r[hBase['REELS_TEXTO']-1]),
+      qCarrosel: textToNumber(o.r[hBase['CARROSSEL_TEXTO']-1]),
+      qStories: textToNumber(o.r[hBase['STORIES_TEXTO']-1])
+    }));
 
   if (!influON.length) return ui.alert('Aviso', 'Nenhuma influenciadora ativa (ON) encontrada na base.', ui.ButtonSet.OK);
 
@@ -122,9 +129,24 @@ function gerarNovoMesCompleto() {
 
   influON.forEach((inf, i) => {
     let rowBrief = i + 2;
-    if (hBrief['INFLU_KEY']) briefingSheet.getRange(rowBrief, hBrief['INFLU_KEY']).setValue(inf.nome); 
+
+    // Ao receber o primeiro briefing (PASTA_DRIVE_LINK ainda vazia em BASE DE
+    // DADOS), cria a pasta da influenciadora no Drive e grava o link de volta
+    // na própria BASE — reaproveitada daqui pra frente, nunca recriada
+    // (obterOuCriarPastaInfluenciadoraPorLinha, mae/WebApp.js, é a mesma
+    // função usada no primeiro upload de material). 2026-07-06, pedido do usuário.
+    if (!inf.pasta && hBase['PASTA_DRIVE_LINK']) {
+      try {
+        const pastaInflu = obterOuCriarPastaInfluenciadoraPorLinha(baseSheet, hBase, inf.linhaBase, inf.nome, inf.cupom);
+        inf.pasta = pastaInflu.getUrl();
+      } catch (eDrive) {
+        Logger.log("gerarNovoMesCompleto: falha ao criar pasta Drive para %s: %s", inf.nome, eDrive.message);
+      }
+    }
+
+    if (hBrief['INFLU_KEY']) briefingSheet.getRange(rowBrief, hBrief['INFLU_KEY']).setValue(inf.nome);
     if (hBrief['CUPOM']) briefingSheet.getRange(rowBrief, hBrief['CUPOM']).setValue(inf.cupom);
-    if (hBrief['MES']) briefingSheet.getRange(rowBrief, hBrief['MES']).setValue(mesTarget); 
+    if (hBrief['MES']) briefingSheet.getRange(rowBrief, hBrief['MES']).setValue(mesTarget);
     if (hBrief['PASTA_DRIVE_LINK']) briefingSheet.getRange(rowBrief, hBrief['PASTA_DRIVE_LINK']).setValue(inf.pasta);
 
     listaFluxo.push([inf.nome, inf.endereco || "", "Aguardando Confirmação", mesTarget, '', '', 'pendente']);

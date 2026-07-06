@@ -62,7 +62,25 @@
   arquivo: `mae/WebApp.js` · funções: `iniciarEnvioResumable()` (~L822), `finalizarEnvioResumable()` (~L862), `encontrarLinhaAtivacaoPorId()` (~L636)
   origem dos dados: aba `ATIVAÇÕES` (localização da linha) + arquivo enviado pelo front-end
 - **SAÍDA**: arquivo salvo na pasta da influenciadora no Drive; status atualizado na planilha.
-  destino: Google Drive (pasta por influenciadora via `PropertiesService`) + aba `ATIVAÇÕES`.
+  destino: Google Drive (pasta por influenciadora) + aba `ATIVAÇÕES`.
+
+**Correção (2026-07-06, pedido do usuário — reverte decisão anterior)**: a pasta da influenciadora deixou de ser rastreada em `PropertiesService` (chave por cupom) e voltou a usar `BASE DE DADOS.PASTA_DRIVE_LINK` como fonte única, através de `obterOuCriarPastaInfluenciadoraPorLinha()` (`mae/WebApp.js` ~L841). Essa função também é chamada por `gerarNovoMesCompleto()` (`mae/Código.js`, ver `FLOW: Ciclo mensal — criação automática de pasta no Drive` abaixo), então upload e ciclo mensal nunca criam pastas duplicadas para a mesma influenciadora. `getIdPastaDriveCupom()` continua existindo só para migrar (ler, nunca mais gravar) pastas criadas no período em que o projeto usou `PropertiesService` (entre a introdução dessa mudança e 2026-07-06).
+
+---
+
+## FLOW: Ciclo mensal — criação automática de pasta no Drive (2026-07-06, pedido do usuário)
+
+> `gerarNovoMesCompleto()` em si (criação do rascunho mensal de Ativações/Fluxo/Pagamentos/Briefing) já existia e está documentada em `CLAUDE.md` seção 3/4 ("Ciclo mensal") — só a parte de criação de pasta no Drive é nova, adicionada aqui.
+
+- **ENTRADA**: execução via menu do ERP (" ERP ELÃ 6.2 → Planejamento & Campanhas → 1. Iniciar Novo Mês").
+  arquivo: `mae/Código.js` · função: `gerarNovoMesCompleto()` (~L82)
+- **PROCESSAMENTO**: para cada influenciadora ativa (ON), se `BASE DE DADOS.PASTA_DRIVE_LINK` estiver vazia no momento em que ela recebe sua primeira linha de `BRIEFING`, cria a pasta no Drive (nomeada com `INFLU_KEY`) e grava o link de volta na própria `BASE DE DADOS` — usa a mesma função de `FLOW: Envio de material` (`obterOuCriarPastaInfluenciadoraPorLinha()`, `mae/WebApp.js` ~L841), nunca duplica a lógica. Se já houver link, ele é reaproveitado e apenas espelhado em `BRIEFING.PASTA_DRIVE_LINK` (comportamento que já existia).
+  arquivo: `mae/Código.js` (chamada) + `mae/WebApp.js:obterOuCriarPastaInfluenciadoraPorLinha()` (execução) — mesmo projeto Apps Script, funções top-level compartilham namespace global entre arquivos.
+  origem dos dados: aba `BASE DE DADOS` (`PASTA_DRIVE_LINK`, `INFLU_KEY`, `CUPOM`)
+- **SAÍDA**: `BASE DE DADOS.PASTA_DRIVE_LINK` preenchida (só na primeira vez); `BRIEFING.PASTA_DRIVE_LINK` espelhado (todo mês, como já era).
+  destino: Google Drive (pasta raiz `PASTA_MAE_ID`/`PASTA_RAIZ_ENTREGAS`) + aba `BASE DE DADOS` + aba `BRIEFING`.
+
+**Atenção — dependência conhecida**: a reautorização OAuth do deploy para a Drive API está pendente de ação manual do usuário (`SYSTEM_TRUTH.md` seção 5, item 7; sintoma "Failed to fetch" em qualquer chamada real ao Drive). Esta automação só é testável de ponta a ponta depois dessa reautorização.
 
 ---
 
