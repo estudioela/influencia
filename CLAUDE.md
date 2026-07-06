@@ -89,7 +89,7 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - **Histórico**: `mae/Index.html:carregarHistorico()` (~L1440) → `mae/WebApp.js:getHistorico()` (~L441) → abas `HISTÓRICO DE CONTEÚDOS` + `HISTÓRICO DE PAGAMENTOS` + qualquer aba legado detectada.
 - **Perfil**: `mae/Index.html:carregarPerfil()`/`salvarPerfil()` (~L1500/1526) → `mae/WebApp.js:getPerfil()`/`updatePerfil()` (~L524/575) → aba `BASE DE DADOS`.
 - **Sincronização de looks (ERP, não é o Portal)**: `mae/Código.js:sincronizarLooks()` (~L411) — abre planilha externa **por influenciadora** (URL na própria `BASE DE DADOS`, coluna `INFLU_SHEET_URL`), não é a planilha de apoio antiga (essa foi removida, ver seção 6).
-- **Cadastro de nova influenciadora**: formulário externo (Google Form, vive no repo `estudioela/estudioela`, não aqui) → aba `CADASTROS` → `mae/Código.js:onFormSubmit()` (~L544) → aba `BASE DE DADOS`. Depende de trigger instalável (não verificável por código, ver seção 6).
+- **Cadastro de nova influenciadora**: dois caminhos de entrada, mesma lógica de mapeamento (`mae/Código.js:processarNovoCadastro()`, compartilhada). (1) Legado: formulário externo (Google Form, vive no repo `estudioela/estudioela`, não aqui) → aba `CADASTROS` → `onFormSubmit()` (~L629) → `processarNovoCadastro()`. Depende de trigger instalável (não verificável por código, ver seção 6). (2) Portal (2026-07-06, pedido do usuário): `portal.estudioela.com/jescri-cadastro` → `mae/Index.html:#tela-cadastro`/`enviarCadastro()` → `mae/WebApp.js:cadastrarInfluenciadora()` → grava em `CADASTROS` e chama `processarNovoCadastro()` — mesmo destino, `BASE DE DADOS`. Ver `FLOW.md` para os dois fluxos completos.
 
 ## 5. Dependências críticas
 

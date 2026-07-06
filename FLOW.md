@@ -234,16 +234,37 @@ Sub-fluxo fechado por leitura de código — sem pendências. **Correção**: tr
 
 ---
 
-## FLOW: Cadastro de nova influenciadora
+## FLOW: Cadastro de nova influenciadora (Google Forms — caminho legado)
 
 - **ENTRADA**: preenchimento de formulário externo (Google Form, repositório `estudioela/estudioela`, fora deste repo).
   arquivo: n/a (fora deste repo)
-- **PROCESSAMENTO**: submissão cai na aba `CADASTROS`, dispara trigger instalável de `onFormSubmit()`.
-  arquivo: `mae/Código.js` · função: `onFormSubmit()` (~L544)
+- **PROCESSAMENTO**: submissão cai na aba `CADASTROS`, dispara trigger instalável de `onFormSubmit()`, que delega a `processarNovoCadastro()` (função compartilhada com `FLOW: Cadastro via Portal` abaixo).
+  arquivo: `mae/Código.js` · funções: `onFormSubmit()` (~L629), `processarNovoCadastro()` (~L629, compartilhada)
   origem dos dados: aba `CADASTROS`
   nota: depende de trigger instalável configurado fora do código-fonte (painel de Triggers do Apps Script) — não verificável por código.
 - **SAÍDA**: novo registro de influenciadora.
   destino: aba `BASE DE DADOS`.
+
+**Status (2026-07-06)**: ainda funcional, mas o menu do ERP (`abrirPaginaCadastro()`, `mae/Código.js` ~L74) deixou de apontar para este Formulário e passou a abrir `portal.estudioela.com/jescri-cadastro` (ver fluxo abaixo) — pedido do usuário. O Formulário em si (fora deste repo) não foi desativado; só o atalho de menu mudou.
+
+---
+
+## FLOW: Cadastro via Portal (portal.estudioela.com/jescri-cadastro — 2026-07-06, pedido do usuário)
+
+> Substitui o Google Forms como caminho principal de cadastro. Mesma planilha, mesmas validações mínimas (nome de chamada, razão social, CNPJ, e-mail, CEP — únicos campos usados por `login()`/`getPerfil()`/preenchimento de endereço), mesma estrutura de dados. Não é uma tela nova com CSS próprio: é uma view a mais dentro do SPA único (`mae/Index.html`), reaproveitando os componentes já existentes (`.login-marca`/`.campo`/`.btn`).
+
+- **ENTRADA**: influenciadora acessa `portal.estudioela.com/jescri-cadastro` e preenche o formulário.
+  arquivo: página estática `jescri-cadastro/index.html` (branch `pages-portal`, mesmo padrão iframe do `index.html` raiz) → iframe aponta para o exec do Web App com `?mode=cadastro` → `mae/Index.html` (mesmo SPA do Portal) detecta `?mode=cadastro` em `location.search` (init, ~L1673) e abre direto em `#tela-cadastro` (~L611+), sem tentar restaurar sessão de login.
+  função de envio: `enviarCadastro()` (`mae/Index.html`, logo após `fazerLogin()`) → `chamar('cadastrarInfluenciadora', campos)`.
+- **PROCESSAMENTO**: `cadastrarInfluenciadora()` (`mae/WebApp.js`) valida os campos obrigatórios, grava uma linha em `CADASTROS` (mesmo layout que o Forms grava — `construirLinhaCadastro()`) e delega a `processarNovoCadastro()` (`mae/Código.js`, compartilhada com `onFormSubmit()` acima) para popular `BASE DE DADOS` — inclui CEP via BrasilAPI, `CIDADE_ASSINATURA` fixa em `"Nova Friburgo - RJ"` e nunca grava `DATA_ASSINATURA` (itens 3/4 do pedido do usuário).
+  arquivo: `mae/WebApp.js` · funções: `cadastrarInfluenciadora()`, `construirLinhaCadastro()`
+  arquivo: `mae/Código.js` · função: `processarNovoCadastro()` (compartilhada)
+  origem dos dados: formulário preenchido pela influenciadora (sem autenticação — endpoint público, mesma exposição de `doGet` sem `mode=qa`)
+- **SAÍDA**: novo registro em `CADASTROS` e em `BASE DE DADOS` (status inicial `OFF`, igual ao caminho do Forms — ativação continua manual pela equipe).
+  destino: abas `CADASTROS` + `BASE DE DADOS`.
+
+**Dependência de deploy**: a implantação do Web App é pinada por versão (ver `SYSTEM_TRUTH.md` seção 5, item 5) — `?mode=cadastro` só responde depois de um `clasp deploy` explícito publicando esta mudança.
+**Ação manual pendente**: a página `jescri-cadastro/index.html` foi preparada mas **não foi publicada** na branch `pages-portal` — é zona proibida (`CLAUDE.md` seção 7) que exige confirmação explícita por mudança, não coberta pela aprovação geral da arquitetura. Aguardando o usuário autorizar o push (ou publicar o arquivo manualmente).
 
 ---
 

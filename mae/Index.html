@@ -628,6 +628,59 @@
     </button>
   </section>
 
+  <!-- ============ TELA CADASTRO: NOVA INFLUENCIADORA ============ -->
+  <!-- Acessada via portal.estudioela.com/jescri-cadastro (?mode=cadastro),
+       substitui o Google Forms externo. Reaproveita os mesmos componentes
+       visuais da tela de login (.login-marca/.campo/.btn) — sem CSS novo. -->
+  <section id="tela-cadastro" class="tela sem-nav">
+    <div class="login-marca">
+      <h1>jescri</h1>
+      <p>cadastro de influenciadora</p>
+    </div>
+    <div id="cadastro-form">
+      <div class="campo">
+        <label for="cad-nome-chamada">nome de chamada</label>
+        <input type="text" id="cad-nome-chamada" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-razao-social">razão social</label>
+        <input type="text" id="cad-razao-social" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-cnpj">cnpj</label>
+        <input type="text" id="cad-cnpj" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-email">e-mail</label>
+        <input type="email" id="cad-email" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-chave-pix">chave pix (opcional)</label>
+        <input type="text" id="cad-chave-pix" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-cep">cep</label>
+        <input type="text" id="cad-cep" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-numero">número (opcional)</label>
+        <input type="text" id="cad-numero" autocomplete="off">
+      </div>
+      <div class="campo">
+        <label for="cad-complemento">complemento (opcional)</label>
+        <input type="text" id="cad-complemento" autocomplete="off">
+      </div>
+      <div class="campo-erro" id="cadastro-erro">preencha os campos obrigatórios.</div>
+      <button class="btn btn-primario" id="btn-cadastrar" onclick="enviarCadastro()">
+        <span>enviar cadastro</span>
+        <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+      </button>
+    </div>
+    <div id="cadastro-sucesso" style="display:none;text-align:center;">
+      <p>Cadastro recebido! Nossa equipe vai conferir e ativar seu acesso em breve.</p>
+    </div>
+  </section>
+
   <!-- ============ TELA 2: PENDENCIAS ============ -->
   <section id="tela-pendencias" class="tela">
     <div class="cabecalho">
@@ -1003,10 +1056,10 @@ function mostrarTela(id){
   for(var i=0;i<telas.length;i++){ telas[i].classList.remove('ativa'); }
   document.getElementById(id).classList.add('ativa');
 
-  document.body.classList.toggle('login-ativo', id === 'tela-login');
+  document.body.classList.toggle('login-ativo', id === 'tela-login' || id === 'tela-cadastro');
 
   var navIds = ['pendencias','pagamentos','historico','perfil'];
-  var mapa = {'tela-login':'login','tela-pendencias':'pendencias','tela-briefing':'briefing','tela-upload':'upload','tela-pagamentos':'pagamentos','tela-historico':'historico','tela-perfil':'perfil'};
+  var mapa = {'tela-login':'login','tela-cadastro':'cadastro','tela-pendencias':'pendencias','tela-briefing':'briefing','tela-upload':'upload','tela-pagamentos':'pagamentos','tela-historico':'historico','tela-perfil':'perfil'};
   navIds.forEach(function(n){
     document.getElementById('nav-'+n).classList.remove('ativo');
   });
@@ -1107,6 +1160,52 @@ async function fazerLogin(){
   } finally {
     btn.disabled = false;
     btn.textContent = 'Entrar';
+  }
+}
+
+/* ==========================================================
+   CADASTRO (portal.estudioela.com/jescri-cadastro)
+   ========================================================== */
+async function enviarCadastro(){
+  var campos = {
+    nomeChamada: document.getElementById('cad-nome-chamada').value.trim(),
+    razaoSocial: document.getElementById('cad-razao-social').value.trim(),
+    cnpj: document.getElementById('cad-cnpj').value.trim(),
+    email: document.getElementById('cad-email').value.trim(),
+    chavePix: document.getElementById('cad-chave-pix').value.trim(),
+    cep: document.getElementById('cad-cep').value.trim(),
+    numero: document.getElementById('cad-numero').value.trim(),
+    complemento: document.getElementById('cad-complemento').value.trim()
+  };
+  var erroEl = document.getElementById('cadastro-erro');
+  erroEl.classList.remove('visivel');
+
+  // Mesma obrigatoriedade que o Formulário externo já impunha nesses campos
+  // (únicos usados por login()/getPerfil()/preenchimento de endereço).
+  if(!campos.nomeChamada || !campos.razaoSocial || !campos.cnpj || !campos.email || !campos.cep){
+    erroEl.textContent = 'Preencha nome de chamada, razão social, CNPJ, e-mail e CEP.';
+    erroEl.classList.add('visivel');
+    return;
+  }
+
+  var btn = document.getElementById('btn-cadastrar');
+  btn.disabled = true;
+
+  try{
+    var res = await chamar('cadastrarInfluenciadora', campos);
+    if(res && res.ok){
+      document.getElementById('cadastro-form').style.display = 'none';
+      document.getElementById('cadastro-sucesso').style.display = 'block';
+    } else {
+      erroEl.textContent = (res && res.erro === 'CAMPOS_OBRIGATORIOS')
+        ? 'Preencha nome de chamada, razão social, CNPJ, e-mail e CEP.'
+        : 'Não foi possível enviar. Tente novamente em instantes.';
+      erroEl.classList.add('visivel');
+    }
+  } catch(e){
+    // erro já tratado em chamar()
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1571,7 +1670,15 @@ document.body.classList.add('login-ativo');
 document.getElementById('input-senha').addEventListener('keydown', function(e){
   if(e.key === 'Enter') fazerLogin();
 });
-tentarRestaurarSessao();
+
+// portal.estudioela.com/jescri-cadastro carrega este mesmo SPA com
+// ?mode=cadastro (repassado pelo iframe estático até o exec do Web App) —
+// abre direto na tela de cadastro, sem tentar restaurar sessão de login.
+if(new URLSearchParams(window.location.search).get('mode') === 'cadastro'){
+  mostrarTela('tela-cadastro');
+} else {
+  tentarRestaurarSessao();
+}
 </script>
 </body>
 </html>

@@ -25,8 +25,8 @@ Logout: `sairDoApp()` (Index.html) → `google.script.run.logout(token)` → `ma
 
 | Aba | Escreve | Lê | Observação |
 |---|---|---|---|
-| `BASE DE DADOS` | `onFormSubmit()`, `preencherEnderecoPorCEP()`, `updatePerfil()`, sidebar, `gerarNovoMesCompleto()`/`obterOuCriarPastaDestino()` (só `PASTA_DRIVE_LINK`, via `getHeaderMap()`) | `login()`, `getPerfil()`, `gerarNovoMesCompleto()` | **Única aba com índice fixo (`MAP.BASE`)** — ver seção 4. `PASTA_DRIVE_LINK` fica fora de `MAP.BASE`, resolvida por nome. |
-| `CADASTROS` | Google Form externo (fora do repo) | `onFormSubmit()` | Zona de pouso bruta |
+| `BASE DE DADOS` | `processarNovoCadastro()` (via `onFormSubmit()` ou `cadastrarInfluenciadora()`), `preencherEnderecoPorCEP()`, `updatePerfil()`, sidebar, `gerarNovoMesCompleto()`/`obterOuCriarPastaDestino()` (só `PASTA_DRIVE_LINK`, via `getHeaderMap()`) | `login()`, `getPerfil()`, `gerarNovoMesCompleto()` | **Única aba com índice fixo (`MAP.BASE`)** — ver seção 4. `PASTA_DRIVE_LINK` fica fora de `MAP.BASE`, resolvida por nome. |
+| `CADASTROS` | Google Form externo (fora do repo) **ou** `cadastrarInfluenciadora()` (`mae/WebApp.js`, cadastro via Portal — 2026-07-06) | `onFormSubmit()`/`processarNovoCadastro()` | Zona de pouso bruta — dois caminhos de entrada, mesmo destino |
 | `BRIEFING` | `gerarNovoMesCompleto()`, `onEdit()` (2 blocos), `sincronizarLooks()` | `getBriefing()` | Fallback de coluna pro campo RESUMO |
 | `ATIVAÇÕES` | `gerarNovoMesCompleto()`, `onEdit()`, `finalizarEnvioResumable()` (só grava `EM_APROVACAO`, fixo) | `getPendencias()`, `getBriefing()`, upload | `STATUS_CONTEUDO`→`APROVADO`/`POSTADO` é **manual**, sem função de código |
 | `PAGAMENTOS` | `gerarNovoMesCompleto()`, `lancarPagamentosDoMes()`, `onEdit()` (arquiva ao marcar "pago") | `getPagamentos()` | `STATUS_PAGAMENTO=PAGO` é **manual**; **não existe** derivação automática a partir de `STATUS_CONTEUDO`; enum de status agora inclui `AGUARDANDO` (solicitado ao financeiro, 2026-07-06 — ver `FLOW.md`) |

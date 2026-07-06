@@ -160,6 +160,11 @@ function doGet(e) {
     }
   }
 
+  // CADASTRO (portal.estudioela.com/jescri-cadastro, ?mode=cadastro) e o
+  // Portal normal servem o MESMO template 'Index' — a tela de cadastro é uma
+  // view a mais dentro do SPA (mae/Index.html:#tela-cadastro), não um HTML
+  // separado. O próprio front-end lê ?mode=cadastro em location.search e
+  // decide a tela inicial; nenhum branch novo é necessário aqui.
   // Alterado de 'test' para 'Index' conforme solicitado
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
@@ -195,7 +200,8 @@ var API_ACOES = {
   // google.script.run diretamente (mae/Index.html:chamar()), não este shim,
   // mas mantê-lo incompleto é uma divergência de roteamento por si só.
   iniciarEnvioResumable: function (p) { return iniciarEnvioResumable(p.token, p.idAtivacao, p.nomeArquivo, p.mimeType, p.tamanhoBytes); },
-  finalizarEnvioResumable: function (p) { return finalizarEnvioResumable(p.token, p.idAtivacao, p.fileId); }
+  finalizarEnvioResumable: function (p) { return finalizarEnvioResumable(p.token, p.idAtivacao, p.fileId); },
+  cadastrarInfluenciadora: function (p) { return cadastrarInfluenciadora(p.dadosForm); }
 };
 
 function doPost(e) {
@@ -653,6 +659,68 @@ function updatePerfil(token, dadosAtualizados) {
     }
   } catch (e) {
     Logger.log("updatePerfil: EXCEPTION message=%s stack=%s", e.message, e.stack);
+    return { ok: false, erro: "ERRO_INTERNO" };
+  }
+}
+
+// Monta a linha de CADASTROS (mesmo layout que o Google Forms grava, cada
+// campo resolvido pela mesma substring usada por processarNovoCadastro() —
+// mae/Código.js) a partir do objeto vindo da tela de cadastro do Portal.
+function construirLinhaCadastro(hCad, dadosForm) {
+  const maxCol = Math.max(0, ...Object.values(hCad));
+  const linha = new Array(maxCol).fill("");
+  const setV = (str, valor) => { for (let k in hCad) if (k.includes(str)) { linha[hCad[k] - 1] = valor || ""; return; } };
+  setV("CHAMADA", dadosForm.nomeChamada);
+  setV("MAIL", dadosForm.email);
+  setV("PIX", dadosForm.chavePix);
+  setV("RAZAO", dadosForm.razaoSocial);
+  setV("CNPJ", dadosForm.cnpj);
+  setV("CEP", dadosForm.cep);
+  setV("NUMERO", dadosForm.numero);
+  setV("COMPLEMENTO", dadosForm.complemento);
+  return linha;
+}
+
+// Cadastro de nova influenciadora via portal.estudioela.com/jescri-cadastro
+// (substitui o Google Forms externo — 2026-07-06, pedido do usuário). Grava
+// em CADASTROS no mesmo layout que o Forms grava (mantém histórico bruto) e
+// delega a mesma lógica de mapeamento/validação/CEP de onFormSubmit() —
+// processarNovoCadastro(), mae/Código.js — para BASE DE DADOS. Mesmas
+// validações mínimas que o Formulário já impunha nesses campos (únicos
+// usados por login()/getPerfil()/preenchimento de endereço).
+function cadastrarInfluenciadora(dadosForm) {
+  try {
+    dadosForm = dadosForm || {};
+    const nomeChamada = (dadosForm.nomeChamada || "").toString().trim();
+    const razaoSocial = (dadosForm.razaoSocial || "").toString().trim();
+    const cnpj = (dadosForm.cnpj || "").toString().trim();
+    const email = (dadosForm.email || "").toString().trim();
+    const cep = (dadosForm.cep || "").toString().trim();
+
+    if (!nomeChamada || !razaoSocial || !cnpj || !email || !cep) {
+      return { ok: false, erro: "CAMPOS_OBRIGATORIOS" };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetBase = ss.getSheetByName(SETUP.ABAS.BASE);
+    const sheetCadastros = ss.getSheetByName(SETUP.ABAS.CADASTROS);
+    if (!sheetBase || !sheetCadastros) return { ok: false, erro: "ERRO_INTERNO" };
+
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      const hCad = getHeaderMap(sheetCadastros);
+      const hBase = getHeaderMap(sheetBase);
+      const linhaCadastro = construirLinhaCadastro(hCad, dadosForm);
+      sheetCadastros.appendRow(linhaCadastro);
+      processarNovoCadastro(hCad, hBase, sheetBase, linhaCadastro);
+    } finally {
+      lock.releaseLock();
+    }
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("cadastrarInfluenciadora: EXCEPTION message=%s stack=%s", e.message, e.stack);
     return { ok: false, erro: "ERRO_INTERNO" };
   }
 }

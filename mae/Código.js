@@ -42,7 +42,7 @@ function onOpen() {
     .addSeparator()
     
     .addSubMenu(ui.createMenu(" Cadastros & Configurações")
-      .addItem(" 1. Abrir Formulário de Cadastro", "abrirPaginaCadastro")
+      .addItem(" 1. Abrir Cadastro (Portal)", "abrirPaginaCadastro")
       .addItem(" 2. Preencher Endereço por CEP (Aba Base)", "atualizarEnderecoLinhaSelecionada")
       .addItem(" 3. Executar Limpeza e Arquivamento Geral", "menuArquivarTudo")
       .addItem(" 4. Estruturar Planilha (Setup Inicial)", "setupERP")
@@ -71,9 +71,14 @@ function onOpen() {
     .addToUi();
 }
 
+// Apontava para o Google Forms externo (estudioela.com/cliente/jescri-cadastro/)
+// — trocado para o cadastro nativo do Portal (portal.estudioela.com/jescri-cadastro,
+// ver mae/Index.html:#tela-cadastro + mae/WebApp.js:cadastrarInfluenciadora())
+// a pedido do usuário, 2026-07-06. O Formulário antigo continua funcionando
+// (onFormSubmit() não foi removido), só deixou de ser o atalho deste menu.
 function abrirPaginaCadastro() {
-  const html = HtmlService.createHtmlOutput(`<script>window.open('https://estudioela.com/cliente/jescri-cadastro/', '_blank');google.script.host.close();</script>`);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Redirecionando para o Formulário...');
+  const html = HtmlService.createHtmlOutput(`<script>window.open('https://portal.estudioela.com/jescri-cadastro', '_blank');google.script.host.close();</script>`);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Redirecionando para o Cadastro...');
 }
 
 // ======================================================
@@ -624,55 +629,72 @@ function arquivarGenerico(orig, dest, colNome, chavesArray, silent) {
 }
 
 // ======================================================
-// 9. AUTOMATIZAÇÃO DE CADASTROS (WEBHOOK FORM / ONFORMSUBMIT)
+// 9. AUTOMATIZAÇÃO DE CADASTROS (WEBHOOK FORM / ONFORMSUBMIT + PORTAL)
 // ======================================================
+// Mapeamento CADASTROS -> BASE DE DADOS, compartilhado entre onFormSubmit()
+// (Google Forms externo) e cadastrarInfluenciadora() (mae/WebApp.js, cadastro
+// via portal.estudioela.com/jescri-cadastro — 2026-07-06, pedido do usuário).
+// Uma única lógica de validação/normalização/CEP para os dois caminhos de
+// entrada, ambos gravando na mesma BASE DE DADOS.
+function processarNovoCadastro(hCad, hBase, sheetBase, rowData) {
+  const nova = new Array(sheetBase.getLastColumn()).fill("");
+
+  const getV = (str) => { for(let k in hCad) if(k.includes(str)) return rowData[hCad[k]-1] ? String(rowData[hCad[k]-1]).trim() : ""; return ""; };
+
+  let [vN, vE, vP, vR, vC, vCep, vNum, vComp] = [getV("CHAMADA"), getV("MAIL"), getV("PIX"), getV("RAZAO"), getV("CNPJ"), getV("CEP"), getV("NUMERO"), getV("COMPLEMENTO")];
+
+  if(hBase['INFLU_KEY']) nova[hBase['INFLU_KEY']-1] = vN.toUpperCase();
+  if(hBase['EMAIL']) nova[hBase['EMAIL']-1] = vE.toLowerCase();
+  if(hBase['INFLUENCIADORA_RAZAO_SOCIAL']) nova[hBase['INFLUENCIADORA_RAZAO_SOCIAL']-1] = vR.toUpperCase();
+  if(hBase['INFLUENCIADORA_CNPJ']) nova[hBase['INFLUENCIADORA_CNPJ']-1] = vC ? "'" + vC : "";
+  if(hBase['CHAVE_PIX']) nova[hBase['CHAVE_PIX']-1] = vP ? "'" + vP : "";
+
+  let rawCep = vCep ? vCep.replace(/\D/g, "") : "";
+  if(hBase['CEP']) nova[hBase['CEP']-1] = rawCep ? "'" + rawCep : "";
+  if(hBase['NUMERO']) nova[hBase['NUMERO']-1] = vNum ? "'" + vNum : "";
+  if(hBase['COMPLEMENTO']) nova[hBase['COMPLEMENTO']-1] = vComp;
+
+  if (rawCep && rawCep.length === 8) {
+    try {
+      let resCep = JSON.parse(UrlFetchApp.fetch("https://brasilapi.com.br/api/cep/v1/" + rawCep, {muteHttpExceptions: true}).getContentText());
+      if (resCep.city) {
+        if(hBase['RUA']) nova[hBase['RUA']-1] = (resCep.street || "").toUpperCase();
+        if(hBase['BAIRRO']) nova[hBase['BAIRRO']-1] = (resCep.neighborhood || "").toUpperCase();
+        if(hBase['CIDADE']) nova[hBase['CIDADE']-1] = (resCep.city || "").toUpperCase();
+        if(hBase['UF']) nova[hBase['UF']-1] = (resCep.state || "").toUpperCase();
+
+        if(hBase['INFLUENCIADORA_ENDERECO']) {
+          let cepF = rawCep.substring(0,5) + "-" + rawCep.substring(5);
+          let compT = vComp ? ", " + vComp : "";
+          nova[hBase['INFLUENCIADORA_ENDERECO']-1] = `${resCep.street || ""}, ${vNum || "S/N"}${compT}, ${resCep.neighborhood || ""} - ${resCep.city || ""}/${resCep.state || ""}, ${cepF}`.toUpperCase();
+        }
+      }
+    } catch(err){}
+  }
+
+  // Cidade de assinatura do contrato é fixa (não depende mais de
+  // preenchimento dinâmico) e DATA_ASSINATURA deixou de ser gravada —
+  // pedido do usuário, 2026-07-06. Ambos defensivos (só gravam se a coluna
+  // existir na aba), como o resto desta função.
+  if (hBase['CIDADE_ASSINATURA']) nova[hBase['CIDADE_ASSINATURA']-1] = "Nova Friburgo - RJ";
+
+  nova[0] = "OFF";
+  sheetBase.appendRow(nova);
+  organizarEPintarBase();
+}
+
 function onFormSubmit(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheetBase = ss.getSheetByName(SETUP.ABAS.BASE); 
+    const sheetBase = ss.getSheetByName(SETUP.ABAS.BASE);
     const sheetCadastros = ss.getSheetByName(SETUP.ABAS.CADASTROS);
     if (!sheetBase || !sheetCadastros) return;
-    
-    const hBase = getHeaderMap(sheetBase); 
+
+    const hBase = getHeaderMap(sheetBase);
     const hCad = getHeaderMap(sheetCadastros);
     let rowData = (e && e.range) ? e.range.getValues()[0] : sheetCadastros.getRange(sheetCadastros.getLastRow(), 1, 1, sheetCadastros.getLastColumn()).getValues()[0];
-    const nova = new Array(sheetBase.getLastColumn()).fill("");
-    
-    const getV = (str) => { for(let k in hCad) if(k.includes(str)) return rowData[hCad[k]-1] ? String(rowData[hCad[k]-1]).trim() : ""; return ""; };
-    
-    let [vN, vE, vP, vR, vC, vCep, vNum, vComp] = [getV("CHAMADA"), getV("MAIL"), getV("PIX"), getV("RAZAO"), getV("CNPJ"), getV("CEP"), getV("NUMERO"), getV("COMPLEMENTO")];
-    
-    if(hBase['INFLU_KEY']) nova[hBase['INFLU_KEY']-1] = vN.toUpperCase();
-    if(hBase['EMAIL']) nova[hBase['EMAIL']-1] = vE.toLowerCase();
-    if(hBase['INFLUENCIADORA_RAZAO_SOCIAL']) nova[hBase['INFLUENCIADORA_RAZAO_SOCIAL']-1] = vR.toUpperCase();
-    if(hBase['INFLUENCIADORA_CNPJ']) nova[hBase['INFLUENCIADORA_CNPJ']-1] = vC ? "'" + vC : "";
-    if(hBase['CHAVE_PIX']) nova[hBase['CHAVE_PIX']-1] = vP ? "'" + vP : "";
-    
-    let rawCep = vCep ? vCep.replace(/\D/g, "") : "";
-    if(hBase['CEP']) nova[hBase['CEP']-1] = rawCep ? "'" + rawCep : "";
-    if(hBase['NUMERO']) nova[hBase['NUMERO']-1] = vNum ? "'" + vNum : "";
-    if(hBase['COMPLEMENTO']) nova[hBase['COMPLEMENTO']-1] = vComp;
-    
-    if (rawCep && rawCep.length === 8) {
-      try {
-        let resCep = JSON.parse(UrlFetchApp.fetch("https://brasilapi.com.br/api/cep/v1/" + rawCep, {muteHttpExceptions: true}).getContentText());
-        if (resCep.city) {
-          if(hBase['RUA']) nova[hBase['RUA']-1] = (resCep.street || "").toUpperCase();
-          if(hBase['BAIRRO']) nova[hBase['BAIRRO']-1] = (resCep.neighborhood || "").toUpperCase();
-          if(hBase['CIDADE']) nova[hBase['CIDADE']-1] = (resCep.city || "").toUpperCase();
-          if(hBase['UF']) nova[hBase['UF']-1] = (resCep.state || "").toUpperCase();
-          
-          if(hBase['INFLUENCIADORA_ENDERECO']) {
-            let cepF = rawCep.substring(0,5) + "-" + rawCep.substring(5);
-            let compT = vComp ? ", " + vComp : "";
-            nova[hBase['INFLUENCIADORA_ENDERECO']-1] = `${resCep.street || ""}, ${vNum || "S/N"}${compT}, ${resCep.neighborhood || ""} - ${resCep.city || ""}/${resCep.state || ""}, ${cepF}`.toUpperCase();
-          }
-        }
-      } catch(err){}
-    }
-    nova[0] = "OFF"; 
-    sheetBase.appendRow(nova);
-    organizarEPintarBase();
+
+    processarNovoCadastro(hCad, hBase, sheetBase, rowData);
   } catch(fatalError) {}
 }
 
