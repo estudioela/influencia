@@ -100,7 +100,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: rastreamento logístico de envio de produtos/looks — endereço, status de revisão, código de rastreio, status de entrega.
 
-**Colunas** (`Código.js:setupERP()` ~L735): `INFLU_KEY`, `ENDERECO`, `STATUS_REVISAO`, `MES_REFERENCIA`, `RASTREIO`, `DATA_DE_ENVIO`, `STATUS_LOGISTICA`.
+**Colunas**: definidas em `Código.js:setupERP()` ~L735; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui — evita ficar desatualizada se a aba ganhar/perder coluna).
 
 **Funções que escrevem:**
 - `Código.js:gerarNovoMesCompleto()` (~L118) — cria linha inicial (`"Aguardando Confirmação"`, status `"pendente"`).
@@ -122,7 +122,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: unidade de trabalho central — cada peça de conteúdo (REEL/CARROSSEL/STORIES) por influenciadora/mês, com status e arquivo enviado.
 
-**Colunas** (`Código.js:setupERP()` ~L737): `ID`, `INFLU_KEY`, `MES_REFERENCIA`, `ANO_REFERENCIA`, `FORMATO`, `DATA_APROVACAO`, `DATA_ATIVACAO`, `STATUS_CONTEUDO`, `LINK_ARQUIVO`.
+**Colunas**: definidas em `Código.js:setupERP()` ~L737; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui).
 
 **Funções que escrevem:**
 - `Código.js:gerarNovoMesCompleto()` (~L124-138) — cria uma linha por unidade contratada (`ID`=UUID, `STATUS_CONTEUDO`='em aberto').
@@ -146,7 +146,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: controle financeiro por influenciadora/mês — valor, PIX, status de pagamento, data de pagamento, mensagem de cobrança.
 
-**Colunas** (`Código.js:setupERP()` ~L739): `INFLU_KEY`, `MES_REFERENCIA`, `ANO_REFERENCIA`, `VALOR_TOTAL`, `CHAVE_PIX`, `STATUS_PAGAMENTO`, `DATA_PAGAMENTO`, `MENSAGEM_PIX`.
+**Colunas**: definidas em `Código.js:setupERP()` ~L739; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui). Inclui `ANO_REFERENCIA` (achado abaixo).
 
 **⚠️ Divergência de schema**: o schema informado anteriormente pelo usuário (7 colunas, sem `ANO_REFERENCIA`) não bate com o código real, que tem 8 colunas incluindo `ANO_REFERENCIA` (usada em `getPagamentos()`, `listarPeriodos()`, `gerarNovoMesCompleto()`).
 
@@ -169,7 +169,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: arquivo de ativações finalizadas ("postado"), fora da operação corrente.
 
-**Colunas**: mesmas de `ATIVAÇÕES` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L738).
+**Colunas**: mesmas de `ATIVAÇÕES` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L738); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`).
 
 **Funções que escrevem**: `Código.js:arquivarGenerico()` (~L509-539) — chamada por `onEdit()` (`ATIVAÇÕES.STATUS_CONTEUDO`→"postado") ou `menuArquivarTudo()` (manual).
 
@@ -185,7 +185,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: arquivo de pagamentos já efetivados ("pago").
 
-**Colunas**: mesmas de `PAGAMENTOS` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L740).
+**Colunas**: mesmas de `PAGAMENTOS` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L740); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`).
 
 **Funções que escrevem**: `Código.js:arquivarGenerico()` — chamada por `onEdit()` (`PAGAMENTOS.STATUS_PAGAMENTO`→"pago") ou `menuArquivarTudo()` (manual).
 
@@ -201,7 +201,7 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 
 **Propósito**: arquivo de entregas logísticas concluídas.
 
-**Colunas**: mesmas de `FLUXO LOGÍSTICO` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L736).
+**Colunas**: mesmas de `FLUXO LOGÍSTICO` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L736); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`).
 
 **Funções que escrevem**: `Código.js:arquivarGenerico()` — chamada por `arquivarFluxo()` (dentro de `atualizarRastreiosBRComerce()`, ~L482) ou `menuArquivarTudo()` (~L495).
 
@@ -249,3 +249,4 @@ O `FLOW.md` documenta um sub-fluxo "`STATUS_CONTEUDO` → `STATUS_PAGAMENTO` (FE
 4. Schema real de `PAGAMENTOS` tem 8 colunas (inclui `ANO_REFERENCIA`), não 7 como informado anteriormente.
 5. `HISTÓRICO LOGÍSTICO` não tem nenhuma função de leitura no código — é o único destino de arquivamento sem consumo conhecido.
 6. `onFormSubmit()` e o trigger de `onEdit()` continuam não-verificáveis por código quanto a estarem de fato instalados (mesma ressalva já registrada no `CLAUDE.md` seção 6).
+7. **Confirmado (auditoria de performance, 2026-07-05): SchemaExporter/QA Shadow não rodam no hot path do Portal.** `doGet()` (`WebApp.js` ~L99-116) só aciona `runQA_E2E()` com `mode=qa` **e** token correto — nenhuma função real do Portal (`login`, `get*`, `updatePerfil`, `iniciarEnvioResumable`, `finalizarEnvioResumable`) referencia SchemaExporter ou qualquer função de auditoria. No ERP, a única chamada síncrona a schema é `exportarSchemaAoIniciarNovoMes()` dentro de `gerarNovoMesCompleto()` — ação de menu, uma vez por ciclo mensal, não hot path de usuário. Não reinvestigar esse ponto sem motivo novo.

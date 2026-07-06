@@ -173,8 +173,6 @@ Sub-fluxo fechado por leitura de código — sem pendências. **Correção**: tr
 - `DATA_PAGAMENTO` → **automático**, via `onEdit()` (~L269-270, `mae/Código.js`) → `arquivarGenerico()` (~L527-528).
 - Efeito colateral real, não previsto na descrição original: a linha é **arquivada imediatamente** em `HISTORICO_PAG`, saindo de `PAGAMENTOS`.
 
-**Bloqueio remanescente (FRAMEWORK LOCK MODE, `CLAUDE.md` seção 10):** o comportamento (automático, timestamp atual, disparado por `STATUS_PAGAMENTO = PAGO`) está confirmado. Falta apenas o **nome exato da função** e linha aproximada em `mae/Código.js` (ou `mae/WebApp.js`, se for o caso) — "provavelmente `onEdit`" não é confirmação suficiente para preencher o campo função exata exigido pelo protocolo. Não localizo isso por busca própria; assim que confirmado, este sub-fluxo fecha sem nenhuma pendência.
-
 ---
 
 ## FLOW: Histórico
