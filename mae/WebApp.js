@@ -18,7 +18,8 @@ const LOGIN_BLOQUEIO_SEGUNDOS = 900; // 15 minutos
 // BASE DE DADOS é agora a fonte única de leitura do Portal (login, perfil,
 // briefing, pagamentos, histórico) — BASE DE APOIO saiu do fluxo. As colunas
 // fixas abaixo continuam válidas porque BASE DE APOIO sempre foi um espelho
-// posicional de BASE DE DADOS (ver mae/Sincronizador.js, agora desativado).
+// posicional de BASE DE DADOS (mae/Sincronizador.js, que fazia essa sincronia,
+// foi removido do repositório — ver CLAUDE.md seção 6, "Legado já removido").
 // ID_PASTA_DRIVE deixou de ser uma coluna (era exclusiva do Portal, gravada
 // só em BASE DE APOIO) e virou PropertiesService, chave por cupom — ver
 // getIdPastaDriveCupom/setIdPastaDriveCupom.
@@ -69,7 +70,16 @@ const ORDEM_MESES = {
 // não seguem um nome fixo, então são descobertas pela assinatura do
 // cabeçalho (INFLU_KEY + MES_REFERENCIA), não pelo nome da aba. Reused por
 // getHistorico() e listarPeriodos() para não duplicar a descoberta.
-function listarAbasHistoricoLegado(ss) {
+//
+// A varredura de TODAS as abas da planilha (ss.getSheets() + getHeaderMap
+// por aba desconhecida) é cara e não muda entre uma chamada e outra — só
+// muda se alguém criar/renomear uma aba. Por isso o resultado (nome + tipo,
+// não os dados) fica em cache por CACHE_ABAS_LEGADO_TTL segundos; os dados de
+// cada aba legado continuam sendo lidos frescos a cada chamada.
+const CACHE_ABAS_LEGADO_KEY = "abas_legado_v1";
+const CACHE_ABAS_LEGADO_TTL = 300; // 5 min
+
+function detectarAbasHistoricoLegado(ss) {
   const nomesConhecidos = {};
   [MAP.ATIVACOES.NOME_ABA, MAP.PAGAMENTOS.NOME_ABA, MAP.HISTORICO_CONT.NOME_ABA,
    MAP.HISTORICO_PAG.NOME_ABA, MAP.BASE.NOME_ABA, MAP.BRIEFING.NOME_ABA].forEach(function (n) {
@@ -87,9 +97,25 @@ function listarAbasHistoricoLegado(ss) {
     if (!h['INFLU_KEY'] || !h['MES_REFERENCIA']) return;
     const tipo = h['STATUS_CONTEUDO'] ? 'CONTEUDO' : (h['STATUS_PAGAMENTO'] ? 'PAGAMENTO' : null);
     if (!tipo) return;
-    abasLegado.push({ sheet: sheet, h: h, tipo: tipo });
+    abasLegado.push({ nome: nome, tipo: tipo });
   });
   return abasLegado;
+}
+
+function listarAbasHistoricoLegado(ss) {
+  const cache = CacheService.getScriptCache();
+  const cacheado = cache.get(CACHE_ABAS_LEGADO_KEY);
+  let metadados;
+  if (cacheado) {
+    metadados = JSON.parse(cacheado);
+  } else {
+    metadados = detectarAbasHistoricoLegado(ss);
+    cache.put(CACHE_ABAS_LEGADO_KEY, JSON.stringify(metadados), CACHE_ABAS_LEGADO_TTL);
+  }
+  return metadados.map(function (m) {
+    const sheet = ss.getSheetByName(m.nome);
+    return sheet ? { sheet: sheet, h: getHeaderMap(sheet), tipo: m.tipo } : null;
+  }).filter(Boolean);
 }
 
 // ======================================================
@@ -249,18 +275,13 @@ function getPendencias(token, mes, ano) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
 
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    let influKey, dados, h;
-    try {
-      influKey = getInfluKeyByCupom(ss, cupom);
-      if (!influKey) return { ok: false, erro: "USUARIO_NAO_ENCONTRADO" };
-      if (!abaAtivacoes) return { ok: true, itens: [] };
-      h = getHeaderMap(abaAtivacoes);
-      dados = abaAtivacoes.getDataRange().getValues();
-    } finally {
-      lock.releaseLock();
-    }
+    // Só leitura — sem LockService (nada aqui escreve na planilha; travar
+    // leitura serializava requisições sem nenhuma corrida real a proteger).
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
+    if (!influKey) return { ok: false, erro: "USUARIO_NAO_ENCONTRADO" };
+    if (!abaAtivacoes) return { ok: true, itens: [] };
+    const h = getHeaderMap(abaAtivacoes);
+    const dados = abaAtivacoes.getDataRange().getValues();
 
     const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
     const anoFiltro = ano ? parseInt(ano, 10) : null;
@@ -305,40 +326,35 @@ function getBriefing(token, idAtivacao) {
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
     const abaBriefing = ss.getSheetByName(MAP.BRIEFING.NOME_ABA);
 
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
+    // Só leitura — sem LockService (nada aqui escreve na planilha).
     let influKey, dadosAtivacao, rowInfluKey, mes, formato, dadosBriefing, h;
-    try {
-      influKey = getInfluKeyByCupom(ss, cupom);
+    influKey = getInfluKeyByCupomCached(ss, cupom);
 
-      // 1. Buscar detalhes da ativação, resolvendo pelo ID estável (não mais
-      // pelo número da linha — evita corrida se a aba for editada entre a
-      // listagem de pendências e a abertura do briefing).
-      h = getHeaderMap(abaAtivacoes);
-      const linhaAtivacao = encontrarLinhaAtivacaoPorId(abaAtivacoes, h, idAtivacao);
+    // 1. Buscar detalhes da ativação, resolvendo pelo ID estável (não mais
+    // pelo número da linha — evita corrida se a aba for editada entre a
+    // listagem de pendências e a abertura do briefing).
+    h = getHeaderMap(abaAtivacoes);
+    const linhaAtivacao = encontrarLinhaAtivacaoPorId(abaAtivacoes, h, idAtivacao);
 
-      if (linhaAtivacao < 2) {
-        return { ok: false, erro: "ATIVACAO_NAO_ENCONTRADA" };
-      }
-
-      dadosAtivacao = abaAtivacoes.getRange(linhaAtivacao, 1, 1, abaAtivacoes.getLastColumn()).getValues()[0];
-      rowInfluKey = (dadosAtivacao[h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
-
-      if (rowInfluKey !== influKey) {
-        return { ok: false, erro: "ACESSO_NEGADO" };
-      }
-
-      mes = (dadosAtivacao[h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
-      formato = (dadosAtivacao[h['FORMATO'] - 1] || "").toString().trim().toUpperCase();
-
-      // 2. Buscar o briefing correspondente (só por MES — BRIEFING não ganhou
-      // ANO_REFERENCIA neste momento; ver ressalva no relatório final)
-      if (!abaBriefing) return { ok: false, erro: "ABA_BRIEFING_NAO_ENCONTRADA" };
-
-      dadosBriefing = abaBriefing.getDataRange().getValues();
-    } finally {
-      lock.releaseLock();
+    if (linhaAtivacao < 2) {
+      return { ok: false, erro: "ATIVACAO_NAO_ENCONTRADA" };
     }
+
+    dadosAtivacao = abaAtivacoes.getRange(linhaAtivacao, 1, 1, abaAtivacoes.getLastColumn()).getValues()[0];
+    rowInfluKey = (dadosAtivacao[h['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
+
+    if (rowInfluKey !== influKey) {
+      return { ok: false, erro: "ACESSO_NEGADO" };
+    }
+
+    mes = (dadosAtivacao[h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
+    formato = (dadosAtivacao[h['FORMATO'] - 1] || "").toString().trim().toUpperCase();
+
+    // 2. Buscar o briefing correspondente (só por MES — BRIEFING não ganhou
+    // ANO_REFERENCIA neste momento; ver ressalva no relatório final)
+    if (!abaBriefing) return { ok: false, erro: "ABA_BRIEFING_NAO_ENCONTRADA" };
+
+    dadosBriefing = abaBriefing.getDataRange().getValues();
 
     let textoBriefing = "Briefing não encontrado para este formato/mês.";
     let resumoMes = "";
@@ -391,17 +407,11 @@ function getPagamentos(token, mes, ano) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaPagamentos = ss.getSheetByName(MAP.PAGAMENTOS.NOME_ABA);
 
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    let influKey, dados, h;
-    try {
-      influKey = getInfluKeyByCupom(ss, cupom);
-      if (!abaPagamentos) return { ok: true, totalPrevisto: 0, totalPago: 0, itens: [] };
-      h = getHeaderMap(abaPagamentos);
-      dados = abaPagamentos.getDataRange().getValues();
-    } finally {
-      lock.releaseLock();
-    }
+    // Só leitura — sem LockService (nada aqui escreve na planilha).
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
+    if (!abaPagamentos) return { ok: true, totalPrevisto: 0, totalPago: 0, itens: [] };
+    const h = getHeaderMap(abaPagamentos);
+    const dados = abaPagamentos.getDataRange().getValues();
 
     const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
     const anoFiltro = ano ? parseInt(ano, 10) : null;
@@ -457,20 +467,15 @@ function getHistorico(token, mes, ano) {
     const abaHistCont = ss.getSheetByName(MAP.HISTORICO_CONT.NOME_ABA);
     const abaHistPag = ss.getSheetByName(MAP.HISTORICO_PAG.NOME_ABA);
 
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    let influKey, dadosCont, dadosPag, hCont, hPag, abasLegado;
-    try {
-      influKey = getInfluKeyByCupom(ss, cupom);
-      if (abaHistCont) { hCont = getHeaderMap(abaHistCont); dadosCont = abaHistCont.getDataRange().getValues(); }
-      if (abaHistPag) { hPag = getHeaderMap(abaHistPag); dadosPag = abaHistPag.getDataRange().getValues(); }
-      // Abas de histórico anteriores à consolidação (inclusive ocultas/desativadas)
-      abasLegado = listarAbasHistoricoLegado(ss).map(function (a) {
-        return { tipo: a.tipo, h: a.h, dados: a.sheet.getDataRange().getValues() };
-      });
-    } finally {
-      lock.releaseLock();
-    }
+    // Só leitura — sem LockService (nada aqui escreve na planilha).
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
+    let dadosCont, dadosPag, hCont, hPag;
+    if (abaHistCont) { hCont = getHeaderMap(abaHistCont); dadosCont = abaHistCont.getDataRange().getValues(); }
+    if (abaHistPag) { hPag = getHeaderMap(abaHistPag); dadosPag = abaHistPag.getDataRange().getValues(); }
+    // Abas de histórico anteriores à consolidação (inclusive ocultas/desativadas)
+    const abasLegado = listarAbasHistoricoLegado(ss).map(function (a) {
+      return { tipo: a.tipo, h: a.h, dados: a.sheet.getDataRange().getValues() };
+    });
 
     const mesFiltro = mes ? mes.toString().trim().toUpperCase() : null;
     const anoFiltro = ano ? parseInt(ano, 10) : null;
@@ -539,14 +544,8 @@ function getPerfil(token) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
 
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    let dados;
-    try {
-      dados = abaBase.getDataRange().getValues();
-    } finally {
-      lock.releaseLock();
-    }
+    // Só leitura — sem LockService (nada aqui escreve na planilha).
+    const dados = abaBase.getDataRange().getValues();
 
     for (let i = 1; i < dados.length; i++) {
       let cupomPlanilha = (dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase();
@@ -666,7 +665,7 @@ function listarPeriodos(token) {
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const influKey = getInfluKeyByCupom(ss, cupom);
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
     if (!influKey) return { ok: false, erro: "USUARIO_NAO_ENCONTRADO" };
 
     const nomesAbas = [
@@ -716,6 +715,42 @@ function getInfluKeyByCupom(ss, cupom) {
   for (let i = 1; i < dados.length; i++) {
     if ((dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
       return (dados[i][MAP.BASE.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
+    }
+  }
+  return null;
+}
+
+// influKey não muda durante a sessão do token (6h) — cada função do Portal
+// que só precisa traduzir cupom→influKey não precisa reler BASE DE DADOS
+// inteira a cada requisição. Cache por cupom (não por token), mesma duração
+// da sessão; se o cadastro mudar de influKey no meio da sessão (não deveria
+// acontecer, mas não é impedido por código), o cache expira em no máximo 6h.
+function getInfluKeyByCupomCached(ss, cupom) {
+  const cache = CacheService.getScriptCache();
+  const chave = "influkey_" + cupom;
+  const cacheado = cache.get(chave);
+  if (cacheado) return cacheado;
+  const influKey = getInfluKeyByCupom(ss, cupom);
+  if (influKey) cache.put(chave, influKey, 21600);
+  return influKey;
+}
+
+// Mesma lógica de cache acima, para o nome da influenciadora (usado só na
+// criação/localização da pasta de Drive em obterOuCriarPastaDestino) — evita
+// uma segunda leitura completa de BASE DE DADOS na mesma requisição de envio
+// de material, que antes lia a aba inteira de novo só para achar o nome.
+function getNomeInfluByCupomCached(ss, cupom) {
+  const cache = CacheService.getScriptCache();
+  const chave = "nomeinflu_" + cupom;
+  const cacheado = cache.get(chave);
+  if (cacheado) return cacheado;
+  const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+  const dados = abaBase.getDataRange().getValues();
+  for (let i = 1; i < dados.length; i++) {
+    if ((dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
+      const nome = (dados[i][MAP.BASE.NOME - 1] || cupom).toString().trim();
+      cache.put(chave, nome, 21600);
+      return nome;
     }
   }
   return null;
@@ -777,17 +812,12 @@ function nomeFormatoPasta(formato) {
 }
 
 function obterOuCriarPastaDestino(ss, cupom, abaAtivacoes, linhaAtivacao, hAtiv) {
-  const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
-  const dadosBase = abaBase.getDataRange().getValues();
-  let encontrouInflu = false, nomeInflu = cupom;
-  for (let i = 1; i < dadosBase.length; i++) {
-    if ((dadosBase[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
-      encontrouInflu = true;
-      nomeInflu = (dadosBase[i][MAP.BASE.NOME - 1] || cupom).toString().trim();
-      break;
-    }
-  }
-  if (!encontrouInflu) throw new Error("USUARIO_NAO_ENCONTRADO");
+  // Antes lia BASE DE DADOS inteira aqui de novo (já tinha sido lida em
+  // iniciarEnvioResumable para achar influKey) — agora usa o mesmo cache
+  // por cupom (getNomeInfluByCupomCached), eliminando a segunda leitura
+  // completa da aba na mesma requisição de envio de material.
+  const nomeInflu = getNomeInfluByCupomCached(ss, cupom);
+  if (!nomeInflu) throw new Error("USUARIO_NAO_ENCONTRADO");
 
   let pastaInfluenciadoraId = getIdPastaDriveCupom(cupom);
   let pastaInfluenciadora;
@@ -835,7 +865,7 @@ function iniciarEnvioResumable(token, idAtivacao, nomeArquivo, mimeType, tamanho
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const influKey = getInfluKeyByCupom(ss, cupom);
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
 
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
     const hAtiv = getHeaderMap(abaAtivacoes);
@@ -875,7 +905,7 @@ function finalizarEnvioResumable(token, idAtivacao, fileId) {
     if (!cupom) return { ok: false, erro: "SESSAO_EXPIRADA" };
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const influKey = getInfluKeyByCupom(ss, cupom);
+    const influKey = getInfluKeyByCupomCached(ss, cupom);
     const abaAtivacoes = ss.getSheetByName(MAP.ATIVACOES.NOME_ABA);
     const linkArquivo = "https://drive.google.com/file/d/" + fileId + "/view";
 

@@ -181,12 +181,19 @@ function createOnOpenTrigger() {
 function onEdit(e) {
   if (!e || !e.range) return;
   try {
-    const sh = e.range.getSheet(); 
-    const name = sh.getName(); 
-    const h = getHeaderMap(sh);
-    const row = e.range.getRow(); 
+    const sh = e.range.getSheet();
+    const name = sh.getName();
+    const row = e.range.getRow();
     const col = e.range.getColumn();
     if (row < 2) return;
+
+    // Este trigger dispara para QUALQUER edição em QUALQUER aba da planilha
+    // (CADASTROS, HISTÓRICO_*, abas legado, etc.) — sai cedo, antes de ler o
+    // cabeçalho, se a aba editada não for uma das tratadas abaixo.
+    const ABAS_TRATADAS = [SETUP.ABAS.BRIEFING, SETUP.ABAS.ATIVACOES, SETUP.ABAS.BASE, SETUP.ABAS.PAGAMENTOS, SETUP.ABAS.FLUXO];
+    if (ABAS_TRATADAS.indexOf(name) === -1) return;
+
+    const h = getHeaderMap(sh);
 
     if (name === SETUP.ABAS.BRIEFING) {
       let colHeader = sh.getRange(1, col).getValue().toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ /g, "_");
