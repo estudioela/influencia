@@ -1300,7 +1300,8 @@ function formatarTamanho(bytes){
 
             var iniciarRes = await chamar('iniciarEnvioResumable', STATE.token, STATE.ativacaoAtual, file.name, file.type || 'application/octet-stream', file.size);
             if(!iniciarRes.ok){
-              throw new Error(iniciarRes.erro || ('Não foi possível iniciar o envio de ' + file.name + '.'));
+              var msgIniciar = iniciarRes.detalhes ? (iniciarRes.erro + ': ' + iniciarRes.detalhes) : iniciarRes.erro;
+              throw new Error(msgIniciar || ('Não foi possível iniciar o envio de ' + file.name + '.'));
             }
 
             var indiceArquivo = i;
@@ -1310,7 +1311,8 @@ function formatarTamanho(bytes){
 
             var finalizarRes = await chamar('finalizarEnvioResumable', STATE.token, STATE.ativacaoAtual, fileId);
             if(!finalizarRes.ok){
-              throw new Error(finalizarRes.erro || ('Não foi possível concluir o envio de ' + file.name + '.'));
+              var msgFinalizar = finalizarRes.detalhes ? (finalizarRes.erro + ': ' + finalizarRes.detalhes) : finalizarRes.erro;
+              throw new Error(msgFinalizar || ('Não foi possível concluir o envio de ' + file.name + '.'));
             }
 
             atualizarBarraProgresso((i+1) / arquivos.length);
@@ -1367,7 +1369,10 @@ async function enviarArquivoResumable(uploadUrl, file, onProgress){
     } else {
       var txt = '';
       try{ txt = await resp.text(); } catch(e){}
-      throw new Error('Falha no envio (status ' + resp.status + ').');
+      // txt era lido mas descartado — o erro exibido nunca dizia o motivo real
+      // devolvido pelo Google (ex.: sessão de upload expirada, permissão),
+      // só o status HTTP genérico.
+      throw new Error('Falha no envio (status ' + resp.status + ')' + (txt ? ': ' + txt : '') + '.');
     }
   }
   throw new Error('Upload não finalizado.');
