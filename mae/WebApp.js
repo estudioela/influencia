@@ -16,33 +16,20 @@ const LOGIN_BLOQUEIO_SEGUNDOS = 900; // 15 minutos
 // CONFIGURAÇÕES E MAPEAMENTO DE COLUNAS
 // ======================================================
 // BASE DE DADOS é agora a fonte única de leitura do Portal (login, perfil,
-// briefing, pagamentos, histórico) — BASE DE APOIO saiu do fluxo. As colunas
-// fixas abaixo continuam válidas porque BASE DE APOIO sempre foi um espelho
-// posicional de BASE DE DADOS (mae/Sincronizador.js, que fazia essa sincronia,
-// foi removido do repositório — ver CLAUDE.md seção 6, "Legado já removido").
-// ID_PASTA_DRIVE deixou de ser uma coluna (era exclusiva do Portal, gravada
-// só em BASE DE APOIO) e virou PropertiesService, chave por cupom — ver
+// briefing, pagamentos, histórico) — BASE DE APOIO saiu do fluxo. ID_PASTA_DRIVE
+// deixou de ser uma coluna (era exclusiva do Portal, gravada só em BASE DE
+// APOIO) e virou PropertiesService, chave por cupom — ver
 // getIdPastaDriveCupom/setIdPastaDriveCupom.
-// ATIVACOES/PAGAMENTOS/HISTORICO_* usam getHeaderMap() (nomes de cabeçalho,
-// não posição fixa) porque ganharam colunas novas (ID, ANO_REFERENCIA) e
-// porque o resto do projeto (Código.js) já resolve essas abas por nome.
+// BASE (2026-07-07) migrou de índice fixo para getHeaderMap() (nomes de
+// cabeçalho, não posição fixa) — mesmo motivo/mecanismo que ATIVACOES/
+// PAGAMENTOS/HISTORICO_* já usavam: colunas podem ser inseridas/removidas na
+// planilha sem quebrar login/perfil silenciosamente. Nomes reais de cabeçalho
+// (confirmados em Código.js:onFormSubmit()/gerarNovoMesCompleto()):
+// INFLU_KEY, CUPOM, INFLUENCIADORA_RAZAO_SOCIAL (nome), EMAIL, CHAVE_PIX,
+// INFLUENCIADORA_CNPJ (cnpj), CEP, RUA, NUMERO, COMPLEMENTO, CIDADE, UF,
+// VALOR_TOTAL (valor).
 const MAP = {
-  BASE: {
-    NOME_ABA: "BASE DE DADOS",
-    INFLU_KEY: 2, // B
-    CUPOM: 3, // C
-    NOME: 4, // D
-    EMAIL: 5, // E
-    CHAVE_PIX: 6, // F
-    CNPJ: 7, // G
-    CEP: 8, // H
-    RUA: 9, // I
-    NUMERO: 10, // J
-    COMPLEMENTO: 11, // K
-    CIDADE: 13, // M
-    UF: 14, // N
-    VALOR: 16 // P - VALOR_TOTAL
-  },
+  BASE: { NOME_ABA: "BASE DE DADOS" },
   ATIVACOES: { NOME_ABA: "ATIVAÇÕES" },
   PAGAMENTOS: { NOME_ABA: "PAGAMENTOS" },
   BRIEFING: {
@@ -169,49 +156,6 @@ function include(filename) {
 }
 
 // ======================================================
-// API JSON (para o SPA hospedado separadamente)
-// ======================================================
-// Shim aditivo: expõe as mesmas funções já usadas via google.script.run
-// (login, getPendencias, etc.) como um endpoint JSON, sem alterar nenhuma
-// delas. O corpo da requisição deve ser enviado como texto puro
-// (Content-Type: text/plain) para evitar preflight de CORS; o conteúdo em
-// si é sempre JSON: {"action": "...", ...params}.
-var API_ACOES = {
-  login: function (p) { return login(p.cupom, p.senha); },
-  getPendencias: function (p) { return getPendencias(p.token, p.mes, p.ano); },
-  getBriefing: function (p) { return getBriefing(p.token, p.idAtivacao); },
-  getPagamentos: function (p) { return getPagamentos(p.token, p.mes, p.ano); },
-  getHistorico: function (p) { return getHistorico(p.token, p.mes, p.ano); },
-  getPerfil: function (p) { return getPerfil(p.token); },
-  updatePerfil: function (p) { return updatePerfil(p.token, p.dadosAtualizados); },
-  listarPeriodos: function (p) { return listarPeriodos(p.token); },
-  logout: function (p) { return logout(p.token); },
-  // Faltavam aqui — quebrava a promessa do comentário acima ("expõe as mesmas
-  // funções já usadas via google.script.run"). O fluxo real do Portal usa
-  // google.script.run diretamente (mae/Index.html:chamar()), não este shim,
-  // mas mantê-lo incompleto é uma divergência de roteamento por si só.
-  iniciarEnvioResumable: function (p) { return iniciarEnvioResumable(p.token, p.idAtivacao, p.nomeArquivo, p.mimeType, p.tamanhoBytes); },
-  finalizarEnvioResumable: function (p) { return finalizarEnvioResumable(p.token, p.idAtivacao, p.fileId); }
-};
-
-function doPost(e) {
-  var resposta;
-  try {
-    var corpo = e && e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
-    var acao = corpo.action;
-    if (!acao || !API_ACOES[acao]) {
-      resposta = { ok: false, erro: "ACAO_INVALIDA" };
-    } else {
-      resposta = API_ACOES[acao](corpo);
-    }
-  } catch (err) {
-    resposta = { ok: false, erro: err.message };
-  }
-  return ContentService.createTextOutput(JSON.stringify(resposta))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ======================================================
 // AUTENTICAÇÃO E SESSÃO
 // ======================================================
 
@@ -233,6 +177,8 @@ function login(cupom, senha) {
     const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
     if (!abaBase) return { ok: false, erro: "ERRO_INTERNO" };
 
+    const hBase = getHeaderMap(abaBase);
+
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
     let dados;
@@ -243,8 +189,8 @@ function login(cupom, senha) {
     }
 
     for (let i = 1; i < dados.length; i++) {
-      let cupomPlanilha = (dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase();
-      let cnpjPlanilha = (dados[i][MAP.BASE.CNPJ - 1] || "").toString().replace(/\D/g, "");
+      let cupomPlanilha = (dados[i][hBase['CUPOM'] - 1] || "").toString().trim().toUpperCase();
+      let cnpjPlanilha = (dados[i][hBase['INFLUENCIADORA_CNPJ'] - 1] || "").toString().replace(/\D/g, "");
 
       if (cupomPlanilha === cupomLimpo) {
         let senhaCorreta = cnpjPlanilha.substring(0, 5);
@@ -258,7 +204,7 @@ function login(cupom, senha) {
           return {
             ok: true,
             token: token,
-            nome: dados[i][MAP.BASE.NOME - 1]
+            nome: dados[i][hBase['INFLUENCIADORA_RAZAO_SOCIAL'] - 1]
           };
         }
       }
@@ -378,9 +324,16 @@ function getBriefing(token, idAtivacao) {
 
     mes = (dadosAtivacao[h['MES_REFERENCIA'] - 1] || "").toString().trim().toUpperCase();
     formato = (dadosAtivacao[h['FORMATO'] - 1] || "").toString().trim().toUpperCase();
+    const anoAtivacao = h['ANO_REFERENCIA'] ? parseInt(dadosAtivacao[h['ANO_REFERENCIA'] - 1], 10) : null;
 
-    // 2. Buscar o briefing correspondente (só por MES — BRIEFING não ganhou
-    // ANO_REFERENCIA neste momento; ver ressalva no relatório final)
+    // 2. Buscar o briefing correspondente por MES + ANO_REFERENCIA — sem o
+    // ano, duas campanhas do mesmo mês em anos diferentes colidiam no mesmo
+    // registro de briefing (achado 2026-07-07). ANO_REFERENCIA em BRIEFING é
+    // coluna nova, resolvida por nome (getHeaderMap), mesmo com o resto de
+    // MAP.BRIEFING ainda usando índice fixo (INFLU_KEY/CUPOM/MES/RESUMO) —
+    // não expande esse escopo agora. Célula ANO_REFERENCIA vazia (ou coluna
+    // ainda não existente) na linha de BRIEFING = "casa com qualquer ano"
+    // (compatibilidade com dados legado migrados antes desta coluna existir).
     if (!abaBriefing) return { ok: false, erro: "ABA_BRIEFING_NAO_ENCONTRADA" };
 
     dadosBriefing = abaBriefing.getDataRange().getValues();
@@ -391,12 +344,16 @@ function getBriefing(token, idAtivacao) {
     // — resolve por nome, com o índice fixo (coluna D) só como último recurso.
     const hBrief = getHeaderMap(abaBriefing);
     const colResumo = hBrief['RESUMO'] || hBrief['RESUMO_DO_MES'] || hBrief['RESUMO_MES'] || MAP.BRIEFING.RESUMO;
+    const colAnoBriefing = hBrief['ANO_REFERENCIA'];
 
     for (let i = 1; i < dadosBriefing.length; i++) {
       let bInfluKey = (dadosBriefing[i][MAP.BRIEFING.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
       let bMes = (dadosBriefing[i][MAP.BRIEFING.MES - 1] || "").toString().trim().toUpperCase();
+      let bAnoBruto = colAnoBriefing ? dadosBriefing[i][colAnoBriefing - 1] : "";
+      let bAno = (bAnoBruto === "" || bAnoBruto === null || bAnoBruto === undefined) ? null : parseInt(bAnoBruto, 10);
+      let anoCasa = !anoAtivacao || bAno === null || bAno === anoAtivacao;
 
-      if (bInfluKey === influKey && bMes === mes) {
+      if (bInfluKey === influKey && bMes === mes && anoCasa) {
         resumoMes = (dadosBriefing[i][colResumo - 1] || "").toString().trim();
 
         // Encontrou a linha do briefing, agora extrai o texto baseado no formato
@@ -572,32 +529,33 @@ function getPerfil(token) {
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+    const hBase = getHeaderMap(abaBase);
 
     // Só leitura — sem LockService (nada aqui escreve na planilha).
     const dados = abaBase.getDataRange().getValues();
 
     for (let i = 1; i < dados.length; i++) {
-      let cupomPlanilha = (dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase();
+      let cupomPlanilha = (dados[i][hBase['CUPOM'] - 1] || "").toString().trim().toUpperCase();
 
       if (cupomPlanilha === cupom) {
         return {
           ok: true,
           dados: {
-            nome: dados[i][MAP.BASE.NOME - 1],
-            cnpj: dados[i][MAP.BASE.CNPJ - 1],
-            chavePix: dados[i][MAP.BASE.CHAVE_PIX - 1],
-            email: dados[i][MAP.BASE.EMAIL - 1],
+            nome: dados[i][hBase['INFLUENCIADORA_RAZAO_SOCIAL'] - 1],
+            cnpj: dados[i][hBase['INFLUENCIADORA_CNPJ'] - 1],
+            chavePix: dados[i][hBase['CHAVE_PIX'] - 1],
+            email: dados[i][hBase['EMAIL'] - 1],
             telefone: "",
-            cep: dados[i][MAP.BASE.CEP - 1],
-            rua: dados[i][MAP.BASE.RUA - 1],
-            numero: dados[i][MAP.BASE.NUMERO - 1],
-            complemento: dados[i][MAP.BASE.COMPLEMENTO - 1],
-            cidade: dados[i][MAP.BASE.CIDADE - 1],
-            estado: dados[i][MAP.BASE.UF - 1]
+            cep: dados[i][hBase['CEP'] - 1],
+            rua: dados[i][hBase['RUA'] - 1],
+            numero: dados[i][hBase['NUMERO'] - 1],
+            complemento: dados[i][hBase['COMPLEMENTO'] - 1],
+            cidade: dados[i][hBase['CIDADE'] - 1],
+            estado: dados[i][hBase['UF'] - 1]
           },
           somenteLeitura: {
             cupom: cupom,
-            valorTotal: dados[i][MAP.BASE.VALOR - 1]
+            valorTotal: dados[i][hBase['VALOR_TOTAL'] - 1]
           }
         };
       }
@@ -617,6 +575,7 @@ function updatePerfil(token, dadosAtualizados) {
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+    const hBase = getHeaderMap(abaBase);
 
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
@@ -624,17 +583,17 @@ function updatePerfil(token, dadosAtualizados) {
       const dados = abaBase.getDataRange().getValues();
 
       for (let i = 1; i < dados.length; i++) {
-        let cupomPlanilha = (dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase();
+        let cupomPlanilha = (dados[i][hBase['CUPOM'] - 1] || "").toString().trim().toUpperCase();
 
         if (cupomPlanilha === cupom) {
           const linha = i + 1;
 
           // Atualiza apenas os campos permitidos
-          if (dadosAtualizados.chavePix !== undefined) abaBase.getRange(linha, MAP.BASE.CHAVE_PIX).setValue(dadosAtualizados.chavePix);
-          if (dadosAtualizados.email !== undefined) abaBase.getRange(linha, MAP.BASE.EMAIL).setValue(dadosAtualizados.email);
-          if (dadosAtualizados.cep !== undefined) abaBase.getRange(linha, MAP.BASE.CEP).setValue(dadosAtualizados.cep);
-          if (dadosAtualizados.numero !== undefined) abaBase.getRange(linha, MAP.BASE.NUMERO).setValue(dadosAtualizados.numero);
-          if (dadosAtualizados.complemento !== undefined) abaBase.getRange(linha, MAP.BASE.COMPLEMENTO).setValue(dadosAtualizados.complemento);
+          if (dadosAtualizados.chavePix !== undefined) abaBase.getRange(linha, hBase['CHAVE_PIX']).setValue(dadosAtualizados.chavePix);
+          if (dadosAtualizados.email !== undefined) abaBase.getRange(linha, hBase['EMAIL']).setValue(dadosAtualizados.email);
+          if (dadosAtualizados.cep !== undefined) abaBase.getRange(linha, hBase['CEP']).setValue(dadosAtualizados.cep);
+          if (dadosAtualizados.numero !== undefined) abaBase.getRange(linha, hBase['NUMERO']).setValue(dadosAtualizados.numero);
+          if (dadosAtualizados.complemento !== undefined) abaBase.getRange(linha, hBase['COMPLEMENTO']).setValue(dadosAtualizados.complemento);
 
           return { ok: true };
         }
@@ -739,11 +698,12 @@ function listarPeriodos(token) {
 
 function getInfluKeyByCupom(ss, cupom) {
   const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+  const hBase = getHeaderMap(abaBase);
   const dados = abaBase.getDataRange().getValues();
 
   for (let i = 1; i < dados.length; i++) {
-    if ((dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
-      return (dados[i][MAP.BASE.INFLU_KEY - 1] || "").toString().trim().toUpperCase();
+    if ((dados[i][hBase['CUPOM'] - 1] || "").toString().trim().toUpperCase() === cupom) {
+      return (dados[i][hBase['INFLU_KEY'] - 1] || "").toString().trim().toUpperCase();
     }
   }
   return null;
@@ -774,10 +734,11 @@ function getNomeInfluByCupomCached(ss, cupom) {
   const cacheado = cache.get(chave);
   if (cacheado) return cacheado;
   const abaBase = ss.getSheetByName(MAP.BASE.NOME_ABA);
+  const hBase = getHeaderMap(abaBase);
   const dados = abaBase.getDataRange().getValues();
   for (let i = 1; i < dados.length; i++) {
-    if ((dados[i][MAP.BASE.CUPOM - 1] || "").toString().trim().toUpperCase() === cupom) {
-      const nome = (dados[i][MAP.BASE.NOME - 1] || cupom).toString().trim();
+    if ((dados[i][hBase['CUPOM'] - 1] || "").toString().trim().toUpperCase() === cupom) {
+      const nome = (dados[i][hBase['INFLUENCIADORA_RAZAO_SOCIAL'] - 1] || cupom).toString().trim();
       cache.put(chave, nome, 21600);
       return nome;
     }

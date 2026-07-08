@@ -51,7 +51,8 @@ function onOpen() {
       .addItem(" 6. Lançar Pagamento Extra/UGC (Sidebar)", "abrirSidebarPagamento")
       .addSeparator()
       .addItem(" 7. ⚠️ Limpar Histórico Oficial (IRREVERSÍVEL)", "limparHistoricoOficial")
-      .addItem(" 8. Remover Triggers Órfãos", "limparTriggersOrfaos"))
+      .addItem(" 8. Remover Triggers Órfãos", "limparTriggersOrfaos")
+      .addItem(" 9. Adicionar Coluna ANO_REFERENCIA em Briefing", "garantirColunaAnoReferenciaBriefing"))
 
     .addSeparator()
 
@@ -125,8 +126,9 @@ function gerarNovoMesCompleto() {
     let rowBrief = i + 2;
     if (hBrief['INFLU_KEY']) briefingSheet.getRange(rowBrief, hBrief['INFLU_KEY']).setValue(inf.nome); 
     if (hBrief['CUPOM']) briefingSheet.getRange(rowBrief, hBrief['CUPOM']).setValue(inf.cupom);
-    if (hBrief['MES']) briefingSheet.getRange(rowBrief, hBrief['MES']).setValue(mesTarget); 
+    if (hBrief['MES']) briefingSheet.getRange(rowBrief, hBrief['MES']).setValue(mesTarget);
     if (hBrief['PASTA_DRIVE_LINK']) briefingSheet.getRange(rowBrief, hBrief['PASTA_DRIVE_LINK']).setValue(inf.pasta);
+    if (hBrief['ANO_REFERENCIA']) briefingSheet.getRange(rowBrief, hBrief['ANO_REFERENCIA']).setValue(anoTarget);
 
     listaFluxo.push([inf.nome, inf.endereco || "", "Aguardando Confirmação", mesTarget, '', '', 'pendente']);
     listaPag.push(montarLinha(hPag, {
@@ -241,16 +243,27 @@ function onEdit(e) {
           let influKey = String(sh.getRange(row, h['INFLU_KEY']).getValue()).trim().toUpperCase();
           let mesRef = String(sh.getRange(row, h['MES_REFERENCIA']).getValue()).trim().toUpperCase();
           let formato = String(sh.getRange(row, h['FORMATO']).getValue()).trim().toUpperCase();
-          
+          let anoRef = h['ANO_REFERENCIA'] ? String(sh.getRange(row, h['ANO_REFERENCIA']).getValue()).trim() : "";
+
           let briefSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SETUP.ABAS.BRIEFING);
           if (briefSheet) {
             let hBrief = getHeaderMap(briefSheet);
             let dataBrief = briefSheet.getDataRange().getValues();
-            
+
+            // Casamento por MES + ANO_REFERENCIA (coluna nova em BRIEFING, ver
+            // garantirColunaAnoReferenciaBriefing()) — duas campanhas do mesmo
+            // MES em anos diferentes não podem colidir. Compatibilidade: se a
+            // célula ANO_REFERENCIA da linha de BRIEFING estiver vazia (ou a
+            // coluna ainda não existir), essa linha "casa com qualquer ano"
+            // (comportamento legado preservado).
             let idxBrief = dataBrief.findIndex(rb => {
               let rowInflu = (hBrief['INFLU_KEY'] ? rb[hBrief['INFLU_KEY']-1] : rb[0]) || "";
               let rowMes = (hBrief['MES'] ? rb[hBrief['MES']-1] : rb[2]) || "";
-              return String(rowInflu).trim().toUpperCase() === influKey && String(rowMes).trim().toUpperCase() === mesRef;
+              if (String(rowInflu).trim().toUpperCase() !== influKey || String(rowMes).trim().toUpperCase() !== mesRef) return false;
+              let rowAnoBruto = hBrief['ANO_REFERENCIA'] ? rb[hBrief['ANO_REFERENCIA']-1] : "";
+              let rowAno = (rowAnoBruto === null || rowAnoBruto === undefined) ? "" : String(rowAnoBruto).trim();
+              if (rowAno === "") return true;
+              return anoRef !== "" && rowAno === anoRef;
             });
             
             if (idxBrief !== -1) {
@@ -296,7 +309,10 @@ function onEdit(e) {
         sh.getRange(row, h['DATA_DE_ENVIO']).setValue(Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy"));
       }
     }
-  } catch(err) {}
+  } catch(err) {
+    Logger.log('onEdit: erro nao tratado (aba=%s, linha=%s, coluna=%s): %s',
+      e.range.getSheet().getName(), e.range.getRow(), e.range.getColumn(), (err && err.message) || err);
+  }
 }
 
 // ======================================================
@@ -591,6 +607,48 @@ function limparTriggersOrfaos() {
   ui.alert(orfaos.length + ' trigger(s) removido(s): ' + nomes);
 }
 
+// ======================================================
+// 8d. GARANTIR COLUNA ANO_REFERENCIA EM BRIEFING (2026-07-07)
+// ======================================================
+// Necessária para o casamento de propagação de DATA_APROVACAO (onEdit(),
+// bloco ATIVAÇÕES/DATA_ATIVACAO) distinguir campanhas do mesmo MES em anos
+// diferentes na aba BRIEFING. Ação manual de menu, idempotente e
+// não-destrutiva — se a coluna já existir, não faz nada; se não existir,
+// pede confirmação (mesmo padrão de limparHistoricoOficial()/
+// limparTriggersOrfaos()) e a adiciona como a última coluna do cabeçalho,
+// sem apagar ou reordenar nenhum dado existente.
+function garantirColunaAnoReferenciaBriefing() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SETUP.ABAS.BRIEFING);
+  if (!sh) {
+    ui.alert('Aba "' + SETUP.ABAS.BRIEFING + '" não encontrada — nenhuma coluna foi criada.');
+    return;
+  }
+
+  const h = getHeaderMap(sh);
+  if (h['ANO_REFERENCIA']) {
+    ui.alert('A coluna ANO_REFERENCIA já existe em "' + SETUP.ABAS.BRIEFING + '" — nada a fazer.');
+    return;
+  }
+
+  const resposta = ui.alert(
+    'Adicionar Coluna ANO_REFERENCIA',
+    'Isso vai adicionar a coluna ANO_REFERENCIA como a última coluna do cabeçalho de "' + SETUP.ABAS.BRIEFING + '", sem apagar ou reordenar nenhum dado existente. Confirma?',
+    ui.ButtonSet.YES_NO
+  );
+  if (resposta !== ui.Button.YES) {
+    ui.alert('Cancelado. Nenhuma coluna foi criada.');
+    return;
+  }
+
+  const novaCol = sh.getLastColumn() + 1;
+  sh.getRange(1, novaCol).setValue('ANO_REFERENCIA');
+  Logger.log('garantirColunaAnoReferenciaBriefing: coluna ANO_REFERENCIA criada em "%s" (executado por %s)',
+    SETUP.ABAS.BRIEFING, Session.getActiveUser().getEmail());
+  ui.alert('Coluna ANO_REFERENCIA criada com sucesso em "' + SETUP.ABAS.BRIEFING + '".');
+}
+
 function menuArquivarTudo() {
   let m1 = arquivarGenerico(SETUP.ABAS.ATIVACOES, SETUP.ABAS.HISTORICO_CONT, 'STATUS_CONTEUDO', ['postado'], false);
   let m2 = arquivarGenerico(SETUP.ABAS.PAGAMENTOS, SETUP.ABAS.HISTORICO_PAG, 'STATUS_PAGAMENTO', ['pago'], false);
@@ -685,12 +743,16 @@ function onFormSubmit(e) {
             nova[hBase['INFLUENCIADORA_ENDERECO']-1] = `${resCep.street || ""}, ${vNum || "S/N"}${compT}, ${resCep.neighborhood || ""} - ${resCep.city || ""}/${resCep.state || ""}, ${cepF}`.toUpperCase();
           }
         }
-      } catch(err){}
+      } catch(err){
+        Logger.log('onFormSubmit: erro ao buscar CEP %s (influ=%s): %s', rawCep, vN, (err && err.message) || err);
+      }
     }
-    nova[0] = "OFF"; 
+    nova[0] = "OFF";
     sheetBase.appendRow(nova);
     organizarEPintarBase();
-  } catch(fatalError) {}
+  } catch(fatalError) {
+    Logger.log('onFormSubmit: erro fatal nao tratado: %s', (fatalError && fatalError.message) || fatalError);
+  }
 }
 
 // ======================================================
