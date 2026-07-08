@@ -59,7 +59,7 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 
 - **Adicionar coluna ANO_REFERENCIA em Briefing (2026-07-07, ação manual, idempotente e não-destrutiva)**
   arquivo: `mae/Código.js`, função `garantirColunaAnoReferenciaBriefing()`, menu " ERP ELÃ 6.2 → Cadastros & Configurações → 9. Adicionar Coluna ANO_REFERENCIA em Briefing"
-  não mexer: sem entender que ela cria a coluna `ANO_REFERENCIA` como última coluna do cabeçalho de `BRIEFING` (se ainda não existir, com confirmação `ui.alert` antes) — necessária para `getBriefing()`/`onEdit()` casarem registros de `BRIEFING` por `MES`+`ANO_REFERENCIA` (ver item "Briefing" abaixo). Sem a coluna, o casamento cai no comportamento legado (qualquer ano casa). **Ainda não executada em produção** — pendente do usuário.
+  não mexer: sem entender que ela cria a coluna `ANO_REFERENCIA` como última coluna do cabeçalho de `BRIEFING` (se ainda não existir, com confirmação `ui.alert` antes) — necessária para `getBriefing()`/`onEdit()` casarem registros de `BRIEFING` por `MES`+`ANO_REFERENCIA` (ver item "Briefing" abaixo). Sem a coluna, o casamento cai no comportamento legado (qualquer ano casa). **Executada em produção pelo usuário em 2026-07-07** (coluna criada na planilha viva); permanece disponível no menu por ser idempotente (re-executar é no-op seguro).
   pode alterar: texto do diálogo de confirmação.
 
 - **Briefing (resumo do mês)**
