@@ -1,0 +1,179 @@
+<script>
+/**
+ * Lógica de APRESENTAÇÃO da V2. Não conhece regra de negócio nem planilha.
+ *
+ * Etapa 1: os dados são simulados aqui no cliente. A partir da Etapa 4 cada
+ * tela troca DADOS_MOCK por google.script.run → WebAppController, mantendo
+ * intactas as funções de render — é por isso que elas recebem os dados por
+ * parâmetro e devolvem string, sem ler nada de fora.
+ */
+
+var ROTAS = {
+  dashboard:  { titulo: 'painel',      template: 'view-dashboard'  },
+  briefing:   { titulo: 'briefing',    template: 'view-briefing'   },
+  envio:      { titulo: 'envio',       template: 'view-envio'      },
+  pagamentos: { titulo: 'pagamentos',  template: 'view-pagamentos' },
+  historico:  { titulo: 'histórico',   template: 'view-historico'  },
+  perfil:     { titulo: 'perfil',      template: 'view-perfil'     }
+};
+
+var ROTA_PADRAO = 'dashboard';
+
+/** Só estas aparecem na bottom nav; briefing e envio são alcançados pelo painel. */
+var ROTAS_DO_NAV = ['dashboard', 'pagamentos', 'historico', 'perfil'];
+
+function ehRotaValida(nome) {
+  return Object.prototype.hasOwnProperty.call(ROTAS, String(nome));
+}
+
+function resolverRota(nome) {
+  return ehRotaValida(nome) ? String(nome) : ROTA_PADRAO;
+}
+
+function tituloDaRota(nome) {
+  return ROTAS[resolverRota(nome)].titulo;
+}
+
+/**
+ * Todo dado exibido vem, mais cedo ou mais tarde, de célula de planilha —
+ * editável por terceiros. Interpolar sem escapar é injeção.
+ */
+function escaparHtml(valor) {
+  return String(valor === null || valor === undefined ? '' : valor)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderizarVazio(mensagem) {
+  return '<p class="tear-vazio">' + escaparHtml(mensagem) + '</p>';
+}
+
+function renderizarPendencias(itens) {
+  if (!itens || !itens.length) return renderizarVazio('nenhuma entrega pendente.');
+
+  return itens.map(function (item) {
+    return '<article class="tear-card">' +
+             '<div class="tear-card__titulo">' + escaparHtml(item.formato) + '</div>' +
+             '<div class="tear-card__meta">' + escaparHtml(item.ciclo) + '</div>' +
+             '<span class="tear-badge tear-badge--ativo">' + escaparHtml(item.estado) + '</span>' +
+           '</article>';
+  }).join('');
+}
+
+function renderizarPagamentos(itens) {
+  if (!itens || !itens.length) return renderizarVazio('nenhum pagamento no período.');
+
+  return itens.map(function (item) {
+    return '<article class="tear-card">' +
+             '<div class="tear-card__titulo">' + escaparHtml(item.ciclo) + '</div>' +
+             '<div class="tear-card__meta">' + escaparHtml(item.valor) + '</div>' +
+             '<span class="tear-badge">' + escaparHtml(item.estado) + '</span>' +
+           '</article>';
+  }).join('');
+}
+
+function renderizarHistorico(itens) {
+  if (!itens || !itens.length) return renderizarVazio('nada arquivado ainda.');
+
+  return itens.map(function (item) {
+    return '<article class="tear-card">' +
+             '<div class="tear-card__titulo">' + escaparHtml(item.formato) + '</div>' +
+             '<div class="tear-card__meta">' + escaparHtml(item.ciclo) + '</div>' +
+           '</article>';
+  }).join('');
+}
+
+function renderizarBriefing(briefing) {
+  if (!briefing) return renderizarVazio('sem briefing para o ciclo.');
+
+  return '<h2 class="ela-font-display ela-text-xl">' + escaparHtml(briefing.titulo) + '</h2>' +
+         '<p class="tear-card__meta">' + escaparHtml(briefing.resumo) + '</p>';
+}
+
+function renderizarPerfil(perfil) {
+  if (!perfil) return renderizarVazio('perfil indisponível.');
+
+  return ['nome', 'cupom', 'cidade'].map(function (campo) {
+    return '<div class="tear-card">' +
+             '<div class="tear-card__meta">' + escaparHtml(campo) + '</div>' +
+             '<div class="tear-card__titulo">' + escaparHtml(perfil[campo]) + '</div>' +
+           '</div>';
+  }).join('');
+}
+
+/* ── Dados simulados (Etapa 1) ────────────────────────────────────────────
+   Nomes fictícios de propósito: este repositório é público. Nenhum dado real
+   de influenciadora entra aqui. */
+var DADOS_MOCK = {
+  pendencias: [
+    { formato: 'reel',       ciclo: 'ciclo de julho', estado: 'aguardando material' },
+    { formato: 'carrossel',  ciclo: 'ciclo de julho', estado: 'em aprovação' }
+  ],
+  pagamentos: [
+    { ciclo: 'ciclo de junho', valor: 'R$ 0,00', estado: 'pago' },
+    { ciclo: 'ciclo de julho', valor: 'R$ 0,00', estado: 'pendente' }
+  ],
+  historico: [
+    { formato: 'stories', ciclo: 'ciclo de maio' }
+  ],
+  briefing: { titulo: 'ciclo de julho', resumo: 'conteúdo simulado — a Etapa 4 liga esta tela ao Controller.' },
+  perfil: { nome: 'influenciadora exemplo', cupom: 'EXEMPLO10', cidade: 'são paulo' }
+};
+
+var RENDERIZADORES = {
+  'lista:pendencias': function () { return renderizarPendencias(DADOS_MOCK.pendencias); },
+  'lista:pagamentos': function () { return renderizarPagamentos(DADOS_MOCK.pagamentos); },
+  'lista:historico':  function () { return renderizarHistorico(DADOS_MOCK.historico); },
+  'campo:briefing':   function () { return renderizarBriefing(DADOS_MOCK.briefing); },
+  'campo:perfil':     function () { return renderizarPerfil(DADOS_MOCK.perfil); }
+};
+
+/* ── Ligação com o DOM ──────────────────────────────────────────────────── */
+
+function preencherSlots(raiz) {
+  ['lista', 'campo'].forEach(function (tipo) {
+    var nos = raiz.querySelectorAll('[data-' + tipo + ']');
+    Array.prototype.forEach.call(nos, function (no) {
+      var chave = tipo + ':' + no.getAttribute('data-' + tipo);
+      var renderizar = RENDERIZADORES[chave];
+      if (renderizar) no.innerHTML = renderizar();
+    });
+  });
+}
+
+function navegar(rotaPedida) {
+  var rota = resolverRota(rotaPedida);
+  var alvo = document.getElementById('tear-view');
+  var modelo = document.getElementById(ROTAS[rota].template);
+
+  alvo.innerHTML = '';
+  alvo.appendChild(modelo.content.cloneNode(true));
+  preencherSlots(alvo);
+
+  document.getElementById('tear-titulo').textContent = tituloDaRota(rota);
+
+  var itens = document.querySelectorAll('.tear-nav__item[data-rota]');
+  Array.prototype.forEach.call(itens, function (item) {
+    if (item.getAttribute('data-rota') === rota) item.setAttribute('aria-current', 'page');
+    else item.removeAttribute('aria-current');
+  });
+}
+
+function iniciarApp() {
+  // Listener delegado: nenhum onclick inline, e funciona para os botões que
+  // só existem depois que um template é clonado.
+  document.addEventListener('click', function (evento) {
+    var gatilho = evento.target.closest('[data-rota]');
+    if (gatilho) navegar(gatilho.getAttribute('data-rota'));
+  });
+
+  navegar(ROTA_PADRAO);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', iniciarApp);
+}
+</script>

@@ -1,0 +1,137 @@
+<style>
+/* Componentes do Projeto Tear.
+   Nenhum valor literal: tudo sai dos tokens de design-system/core/variables.css.
+   Se faltar um token, crie o token — não escreva o valor aqui. */
+
+/* Sem isto, `width: 100%` + padding + borda estoura o contêiner: os cards
+   passavam da margem direita da tela. O núcleo do Design System não impõe
+   box-sizing, para não sequestrar a página de quem o consome. */
+.tear-shell,
+.tear-shell *,
+.tear-shell *::before,
+.tear-shell *::after {
+  box-sizing: border-box;
+}
+
+.tear-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.tear-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* ── Área da view ───────────────────────────────────────────────────── */
+.tear-view {
+  flex: 1;
+  /* Espaço para a nav fixa não cobrir o último item da lista. */
+  padding-bottom: calc(var(--ela-space-xl) + var(--ela-space-lg));
+}
+
+/* ── Card / item de lista ───────────────────────────────────────────── */
+.tear-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface-lowest);
+  border: 1px solid var(--hairline);
+  border-radius: var(--ela-radius-none);
+  padding: var(--ela-space-sm);
+  margin-bottom: var(--ela-space-xs);
+  transition: border-color var(--ela-duration-fast) var(--ela-easing-base);
+}
+
+.tear-card:hover,
+.tear-card:focus-visible {
+  border-color: var(--primary);
+}
+
+.tear-card__titulo {
+  font-family: var(--font-label);
+  font-size: var(--ela-font-size-md);
+  color: var(--text);
+}
+
+.tear-card__meta {
+  font-size: var(--ela-font-size-sm);
+  color: var(--text-muted);
+}
+
+/* ── Badge de estado ────────────────────────────────────────────────── */
+.tear-badge {
+  display: inline-block;
+  font-family: var(--font-label);
+  font-size: var(--ela-font-size-xs);
+  letter-spacing: var(--ela-letter-spacing-wide);
+  padding: var(--ela-space-3xs) var(--ela-space-2xs);
+  border: 1px solid var(--hairline);
+  color: var(--text-muted);
+}
+
+.tear-badge--ativo {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Estado vazio ───────────────────────────────────────────────────── */
+.tear-vazio {
+  text-align: center;
+  color: var(--text-faint);
+  padding: var(--ela-space-lg) var(--ela-space-sm);
+  font-size: var(--ela-font-size-sm);
+}
+
+/* ── Bottom nav ─────────────────────────────────────────────────────── */
+.tear-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--portal-shell-mobile);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: var(--surface-lowest);
+  border-top: 1px solid var(--hairline);
+  z-index: 20;
+}
+
+@media (min-width: 768px) {
+  .tear-nav { max-width: var(--portal-shell-desktop); }
+}
+
+.tear-nav__item {
+  flex: 1;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: var(--ela-space-xs) var(--ela-space-3xs);
+  font-family: var(--font-label);
+  font-size: var(--ela-font-size-xs);
+  letter-spacing: var(--ela-letter-spacing-wide);
+  color: var(--text-muted);
+  transition: color var(--ela-duration-fast) var(--ela-easing-base);
+}
+
+.tear-nav__item[aria-current="page"] {
+  color: var(--primary);
+}
+
+/* Banner de dados simulados. Sai quando a Etapa 4 ligar o Controller. */
+.tear-mock {
+  background: var(--bg-container-high);
+  color: var(--text-muted);
+  font-size: var(--ela-font-size-xs);
+  letter-spacing: var(--ela-letter-spacing-wide);
+  text-align: center;
+  padding: var(--ela-space-3xs);
+}
+</style>

@@ -298,3 +298,23 @@ Confirmado via `ls`: `mae/Index.html`, `mae/WebApp.js`, `mae/Código.js` existem
 **Estado da implementação (2026-07-09)**: `runV2SanityCheck()` (`tear/TestRunner_V2.js`) roda verde, 6/6 cenários, com `AtivacaoRepositoryFake` em JS puro. **Nunca executado dentro do Apps Script.** O `AtivacaoRepository` real nunca tocou uma planilha — as abas V2 não existem. Nenhum teste da suíte `test/` cobre a camada V2.
 
 **Pendências antes do cut-over**: (a) criar as abas V2 via `setupV2Database()` — ação manual, autorização explícita; (b) o listener delegado de `renderPendencias()` (`mae/Index.html`) tem um `else` catch-all que abriria a tela de upload para qualquer `data-acao` desconhecida — trocar por `switch` com `default` antes de adicionar uma terceira ação; (c) os vocabulários não se correspondem: `STATUS_CONTEUDO` da V1 tem 5 valores (restringidos por validação de célula), `ESTADOS_ATIVACAO` da V2 tem 13.
+
+---
+
+## FLOW: Casca navegável da V2 (camada de apresentação, Etapa 1)
+
+> Regras arquiteturais em `CLAUDE.md` seção 13. Aqui, só a sequência e o estado.
+
+- **ENTRADA**: `GET` na URL do Web App do projeto `tear/`.
+  arquivo: `tear/Roteador.js` · função: `doGet()` — serve `Index.html`. É a fronteira HTTP, e **não toca `SpreadsheetApp`/`DriveApp`/`PropertiesService`**: quem faz a ponte com o domínio é o `WebAppController`.
+- **MONTAGEM**: `tear/Index.html` (shell) resolve `include()` na ordem obrigatória `styles_core` → `styles_theme` → `components_ui`, e injeta `components_nav`, `views` e `app`.
+  `tear/styles_core.html` e `tear/styles_theme.html` são **espelhos gerados** de `design-system/` — não editar à mão; `test/styles-sync.test.js` detecta divergência.
+- **NAVEGAÇÃO**: `tear/app.html` mantém 6 rotas (`dashboard`, `briefing`, `envio`, `pagamentos`, `historico`, `perfil`); a bottom nav expõe 4. `navegar()` clona o `<template>` da rota para o único ponto de montagem (`#tear-view`) e preenche os slots `data-lista`/`data-campo`.
+  Sem handler inline: um listener delegado em `document` lê `data-rota`. É o que faz funcionar o botão que só passa a existir depois do clone (ex.: "briefing do mês", no painel).
+- **SAÍDA**: HTML renderizado. Todo dado passa por `escaparHtml()` antes de ser interpolado — na V2 esse dado virá de célula de planilha, editável por terceiros.
+
+**Estado da implementação (2026-07-09)**: a casca é navegável, mas os dados são **simulados** (`DADOS_MOCK`, em `tear/app.html`); um banner na tela declara isso. Nenhuma chamada `google.script.run` existe ainda: a UI **não fala com o Controller**. Os renderizadores (`renderizarPendencias()`, `renderizarPagamentos()`, `renderizarHistorico()`, `renderizarBriefing()`, `renderizarPerfil()`) recebem os dados por parâmetro e devolvem string, justamente para que a Etapa 4 troque a origem sem tocá-los. Cobertura em `test/tear-shell.test.js` (primeiro teste da suíte a cobrir `tear/`) e `test/styles-sync.test.js`.
+
+**Web App**: `tear/appsscript.json` passou a declarar `webapp` com `executeAs: USER_DEPLOYING` e `access: MYSELF` — deliberadamente fechado. A V2 **não tem autenticação** (o `login()` vive em `mae/WebApp.js`), então abrir o acesso antes da Etapa 7 exporia dado real numa URL pública. Nunca foi feito `clasp push` deste projeto.
+
+**Pendências**: (a) a Etapa 3 precisa dar superfície de leitura ao `AtivacaoService` (hoje só expõe `alterarEstado()`) e ao `WebAppController` (só `handleAtivacaoUpdate()`); (b) `envio` é um esqueleto — Etapa 6; (c) o protótipo `stitch_1_v2/` usa Tailwind por CDN e `onclick` inline, e **nada disso atravessa** para o que o Apps Script serve (travado em `test/styles-sync.test.js`).

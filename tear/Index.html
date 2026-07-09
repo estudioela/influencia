@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+
+    <!-- A ordem é obrigatória: o tema sobrescreve o núcleo por cascata, e as
+         variáveis precisam existir antes de qualquer regra que as consuma.
+         Invertida, as divergências do produto somem em silêncio.
+         Ver design-system/adapters/apps-script.md. -->
+    <?!= include('styles_core'); ?>
+    <?!= include('styles_theme'); ?>
+    <?!= include('components_ui'); ?>
+  </head>
+
+  <body class="ela-bg ela-text ela-font-body ela-case-brand">
+    <div class="portal-shell tear-shell">
+      <header class="tear-header ela-flex ela-items-center ela-justify-between ela-p-sm">
+        <h1 id="tear-titulo" class="ela-font-display ela-text-lg ela-m-0">painel</h1>
+      </header>
+
+      <p class="tear-mock ela-m-0">dados simulados — etapa 1</p>
+
+      <main id="tear-view" class="tear-view ela-p-sm" aria-live="polite"></main>
+
+      <?!= include('components_nav'); ?>
+    </div>
+
+    <?!= include('views'); ?>
+    <?!= include('app'); ?>
+  </body>
+</html>

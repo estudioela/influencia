@@ -8,3 +8,8 @@ _backup_cleanup_*/
 _backup_stitch_consolidacao_*/
 _archive_legacy_stitch/
 **/.git
+
+# Dados exportados da planilha de produção — contêm PII (PIX, CNPJ, e-mail, endereço).
+# Nunca versionar: este repositório é público.
+tools/*.csv
+dados_limpos.json

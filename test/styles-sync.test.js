@@ -60,3 +60,49 @@ describe('mae/styles_*.html — espelho do design-system', () => {
     expect(index).not.toMatch(/--primary\s*:\s*#8f0002/);
   });
 });
+
+// A V2 é um projeto Apps Script separado (tear/), com allowlist própria — logo,
+// uma segunda cópia do mesmo CSS. Vale a mesma trava: design-system/ é a fonte.
+describe('tear/styles_*.html — espelho do design-system', () => {
+  test('styles_core.html contém variables.css e utility-classes.css na íntegra', () => {
+    const espelho = ler('tear', 'styles_core.html');
+
+    expect(espelho).toContain(ler('design-system', 'core', 'variables.css'));
+    expect(espelho).toContain(ler('design-system', 'core', 'utility-classes.css'));
+  });
+
+  test('styles_theme.html contém o tema na íntegra', () => {
+    expect(ler('tear', 'styles_theme.html')).toContain(ler('design-system', 'themes', 'portal.css'));
+  });
+
+  test('os espelhos são HTML válidos para o HtmlService (um <style> fechado)', () => {
+    for (const arquivo of ['styles_core.html', 'styles_theme.html']) {
+      const conteudo = ler('tear', arquivo);
+
+      expect(conteudo.match(/<style>/g)).toHaveLength(1);
+      expect(conteudo.match(/<\/style>/g)).toHaveLength(1);
+      expect(conteudo.indexOf('<style>')).toBeLessThan(conteudo.indexOf('</style>'));
+    }
+  });
+
+  test('Index.html inclui núcleo antes do tema', () => {
+    const index = ler('tear', 'Index.html');
+
+    const posNucleo = index.indexOf("include('styles_core')");
+    const posTema = index.indexOf("include('styles_theme')");
+
+    expect(posNucleo).toBeGreaterThan(-1);
+    expect(posTema).toBeGreaterThan(posNucleo);
+  });
+
+  // O protótipo do Stitch carrega Tailwind e Google Fonts por CDN e usa onclick
+  // inline. Nada disso pode atravessar para o que o Apps Script serve.
+  test('nada do protótipo vaza para os arquivos servidos', () => {
+    for (const arquivo of ['Index.html', 'views.html', 'app.html', 'components_nav.html', 'components_ui.html']) {
+      const conteudo = ler('tear', arquivo);
+
+      expect(conteudo).not.toMatch(/cdn\.tailwindcss\.com/);
+      expect(conteudo).not.toMatch(/\son[a-z]+\s*=\s*["']/);
+    }
+  });
+});
