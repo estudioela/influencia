@@ -162,6 +162,8 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 
 ## 9. EXECUTION PROTOCOL (MANDATORY FOR ALL AGENTS)
 
+> ⚠️ **Leia a seção 12 antes de aplicar esta seção.** Desde 2026-07-08, a **seção 12 (MODO V2 — EVOLUÇÃO AUTORIZADA)** suspende a proibição de exploração e de refatoração dentro de `mae/`, `test/` e `docs/`. Fora desse escopo, esta seção continua valendo.
+
 > Este arquivo (`CLAUDE.md`) tem precedência sobre qualquer comportamento padrão do agente.
 
 - Proibida a exploração livre do repositório. Nenhum agente deve varrer diretórios ou "descobrir" estrutura por conta própria.
@@ -174,7 +176,9 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
   3. **função** (nome exato, com linha aproximada se houver)
   Só depois disso a edição pode prosseguir.
 
-## 10. FRAMEWORK LOCK MODE (INDUSTRIAL EXECUTION GUARANTEE)
+## 10. FRAMEWORK LOCK MODE (INDUSTRIAL EXECUTION GUARANTEE) — SUSPENSO PARA O ESCOPO DA V2
+
+> ⚠️ **SUPERADA PELA SEÇÃO 12 desde 2026-07-08.** Para o trabalho da V2 (refatoração, modularização, débito técnico, UX, funcionalidades novas em `mae/`, `test/`, `docs/`), esta seção **não se aplica**: exploração e reestruturação estão autorizadas, com a contrapartida de atualizar o `FLOW.md` no mesmo PR. Esta seção permanece em vigor para tudo que estiver **fora** do escopo da seção 12.2 — em especial, qualquer mudança de comportamento em produção.
 
 > Esta seção substitui a exceção de busca exploratória prevista na seção 9. A partir daqui, não existe mais exceção: se o fluxo não está no `FLOW.md`, a tarefa não é executada, ponto final.
 
@@ -195,6 +199,8 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
    - solicitar ao usuário a atualização do `FLOW.md` antes de prosseguir.
 
 ## 11. MODO MANUTENÇÃO AUTOMÁTICA (ANTI-ENTROPIA) — postura padrão do agente
+
+> ⚠️ **Emendada pela seção 12 desde 2026-07-08.** A postura "guardião de estabilidade, não refatorador" continua sendo o padrão **fora** do escopo da V2. Dentro do escopo da seção 12.2, refatorar é a tarefa — mas **todos os monitoramentos abaixo (performance, estado implícito, governança, git/deploy) e a saída obrigatória continuam valendo integralmente**.
 
 > Instituído em 2026-07-05, após o audit de performance/governança (PR #4/#5/#6, tag `v1.0-stable`, deploy `@29`). Vale para qualquer sessão de agente neste repositório a partir de agora, mesmo sem o histórico da conversa em que foi definido — não é um pedido pontual, é a postura padrão.
 
@@ -221,3 +227,68 @@ Impacto em governança: sim | não (+ qual arquivo diverge, se sim)
 Risco de estado implícito: sim | não
 Recomendação final: seguir | ajustar | não aplicar
 ```
+
+## 12. MODO V2 — EVOLUÇÃO AUTORIZADA (vigente desde 2026-07-08)
+
+> **Autorização explícita e permanente do usuário**, dada em 2026-07-08. Esta seção **substitui a seção 10** (FRAMEWORK LOCK MODE) e **emenda a seção 11** (MODO MANUTENÇÃO) para o escopo definido em 12.2. Fora desse escopo, as seções 10 e 11 continuam valendo na íntegra.
+>
+> **Por que existe**: as seções 10 e 11 foram escritas para a fase de estabilização da V1 e proibiam explicitamente refatorar, reorganizar arquitetura e explorar o repositório. A V2 é exatamente esse trabalho. Sem esta seção, um agente é obrigado a recusar a tarefa — e estaria certo.
+
+### 12.1 A stack não muda
+
+A V2 é desenvolvida **mantendo integralmente a infraestrutura atual**:
+
+- **Frontend**: GitHub Pages
+- **Backend**: Google Apps Script
+- **Banco de dados**: Google Sheets
+- **Arquivos**: Google Drive
+- **Versionamento**: Git/GitHub
+
+**Suspenso, não em discussão nesta fase** (reclassificado como pesquisa para uma futura **V3**): Supabase, PostgreSQL, ETL, migração de banco, Next.js, qualquer schema de nova infraestrutura. Material preservado em `docs/V2_ESPECIFICACAO_TECNICA.md` (marcado como suspenso) e no repo `estudioela/plataforma`, tag `v3-research-parked`. **Não implementar.**
+
+### 12.2 O que passa a ser autorizado e incentivado
+
+Dentro de `mae/`, `test/` e `docs/`:
+
+- **Refatoração arquitetural** — separar responsabilidades, extrair módulos, isolar camadas.
+- **Modularização** — quebrar arquivos monolíticos (`mae/Index.html`, `mae/WebApp.js`, `mae/Código.js`) em unidades coesas.
+- **Redução de débito técnico** — eliminar acoplamento, duplicação e leituras redundantes de planilha.
+- **Reorganização do código** — renomear, mover e reagrupar funções por domínio.
+- **Melhorias de UX/UI** — no Portal e nas sidebars do ERP.
+- **Funcionalidades novas** — dentro da stack (ex.: módulo de Contratos).
+- **Exploração do repositório** — `grep`, leitura de diretórios e busca de código passam a ser **permitidos** em `mae/`, `test/` e `docs/`. A seção 10 fica suspensa neste escopo.
+
+**Contrapartida obrigatória**: todo fluxo tocado é documentado ou atualizado no `FLOW.md` **no mesmo PR**. Exploração autorizada não é licença para deixar o mapa desatualizado.
+
+### 12.3 Preparar a V3 sem executá-la
+
+A V2 **prepara** a aplicação para uma futura migração de infraestrutura, mas **não a realiza**. Na prática, isso significa uma diretriz e apenas uma:
+
+> **Isolar o acesso a dados.** Toda leitura/escrita de planilha deve migrar para trás de uma camada de repositório, de modo que trocar Google Sheets por um banco real, na V3, altere **somente essa camada**.
+
+Não antecipar abstrações além disso. Não introduzir dependências, formatos ou padrões cuja única justificativa seja "a V3 vai precisar". A V3 será planejada quando a V2 estiver madura e estabilizada.
+
+### 12.4 Limites inegociáveis (nenhum foi relaxado)
+
+A autorização de evoluir **não** relaxa nenhuma proteção existente:
+
+1. **Compatibilidade com produção é intocável.** Nenhuma refatoração pode alterar comportamento observável: contratos entre `mae/Index.html` e `mae/WebApp.js` (códigos de erro, formato de retorno), nomes de abas, nomes de cabeçalho, valores de validação de célula, URL pública do Web App. Refatorar é mudar a forma do código, nunca o que o sistema faz.
+2. **Zona proibida (seção 7) permanece integralmente em vigor** — `mae/.clasp.json`, `mae/appsscript.json`, `MAP.*.NOME_ABA`, `SETUP.ABAS`, branch `pages-portal`, repos externos.
+3. **`main` é protegido de verdade** (PR obrigatório, sem push direto, sem force-push, `enforce_admins`). Nunca sugerir ou tentar contornar.
+4. **`clasp push` e `clasp deploy` são ações de produção** — só com **aprovação explícita do usuário**, uma a uma. `clasp push` substitui o conteúdo remoto por completo; arquivo novo em `mae/` só sobe se estiver na allowlist `mae/.claspignore`.
+5. **`pages-portal` é produção ao vivo**, sem staging. Mudanças nela afetam `portal.estudioela.com` imediatamente.
+6. **Nunca descartar dado sem informar o usuário antes.** Ao encontrar erro ou risco de perda de dados: parar, reportar, aguardar.
+7. **A suíte de testes é a rede de segurança.** Nenhuma refatoração é aceita com teste vermelho, e **nenhuma refatoração altera as asserções de negócio existentes** — se um teste precisa mudar para a refatoração passar, o comportamento mudou, e isso é uma quebra de compatibilidade (item 1), não um ajuste de teste.
+8. **Commit imediato após teste verde.** Trabalho testado e não-commitado já foi perdido neste repositório por um `clasp pull` externo.
+
+### 12.5 Regime de entrega
+
+Entregas **pequenas, independentes e reversíveis**. Cada uma: um fluxo, um PR, testes verdes, `FLOW.md` atualizado, comportamento idêntico ao anterior.
+
+Proibido o *big bang*: nenhuma refatoração pode tocar vários fluxos de uma vez. Se uma etapa não puder ser validada isoladamente antes da seguinte, ela está grande demais e deve ser quebrada.
+
+Plano incremental vigente: **`docs/V2_ROADMAP.md`**. Ponto de entrada de qualquer sessão nova: **`NEXT_AGENT.md`**.
+
+### 12.6 A saída obrigatória da seção 11 continua valendo
+
+Toda avaliação de PR/diff/código novo continua emitindo o bloco de estabilidade definido no fim da seção 11.

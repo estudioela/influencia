@@ -1,129 +1,165 @@
 # V2 — Roadmap operacional (evolução sobre a stack atual)
 
 > **Decisão fundadora (2026-07-08)**: a V2 **não é migração de infraestrutura**. A stack permanece: GitHub Pages (front) + Google Apps Script (backend) + Google Sheets (banco) + Google Drive (arquivos) + Git/GitHub (versionamento).
-> Objetivo: uma V2 **sólida, organizada, escalável e profissional** dentro dessa arquitetura. Só quando ela estiver madura planejaremos uma **V3** com infraestrutura própria.
-> Pesquisa de V3 (Supabase/ETL/Next.js) preservada e **suspensa**: `docs/V2_ESPECIFICACAO_TECNICA.md` + repo `estudioela/plataforma`, tag `v3-research-parked`.
+> Autorização formal: **`CLAUDE.md` §12 — MODO V2, EVOLUÇÃO AUTORIZADA**.
+> Objetivo: uma V2 sólida, organizada, escalável e profissional dentro dessa arquitetura. A **V3** (infraestrutura própria) só será planejada quando a V2 estiver madura.
+> Pesquisa de V3 suspensa e preservada: `docs/V2_ESPECIFICACAO_TECNICA.md` + repo `estudioela/plataforma`, tag `v3-research-parked`. **Não implementar.**
 
 ---
 
-## 0. Escopo
+## 1. Escopo
 
-**Dentro**: arquitetura de código, modularização, débito técnico, UX/UI, novas funcionalidades, documentação, robustez, manutenibilidade, preparação para migração futura.
+**Dentro**: arquitetura de código, modularização, débito técnico, UX/UI, funcionalidades novas, documentação, robustez, manutenibilidade, preparação para a V3.
 
-**Fora (suspenso)**: Supabase · ETL · migração de banco · Next.js · schema de nova infraestrutura.
+**Fora (suspenso)**: Supabase · PostgreSQL · ETL · migração de banco · Next.js · schema de nova infraestrutura.
 
----
-
-## 1. Bloqueio de governança — resolver ANTES de qualquer código (P0)
-
-O `CLAUDE.md` atual, escrito para a fase de estabilização, **proíbe exatamente o trabalho que a V2 exige**:
-
-| Regra vigente | Conflito com a V2 |
-|---|---|
-| §10 *FRAMEWORK LOCK MODE*: "se o fluxo não está no `FLOW.md`, a tarefa não é executada, ponto final"; proibido explorar o repositório | Refatorar/criar módulos exige tocar código ainda não descrito como fluxo |
-| §11 *MODO MANUTENÇÃO*: "guardião de estabilidade, **não** refatorador"; "não reestruturar arquitetura sem solicitação explícita" | A V2 **é** reestruturação de arquitetura |
-| §11: "não otimizar por conta própria" | Redução de débito técnico é o objetivo |
-
-**Sem resolver isto, o próximo agente é obrigado a recusar a tarefa.** A solicitação explícita do usuário existe (2026-07-08) e precisa estar **escrita no `CLAUDE.md`**, não só no histórico de conversa.
-
-**Ação P0.1 — amendar o `CLAUDE.md`** com uma seção nova (ex.: §12 *MODO V2 — EVOLUÇÃO AUTORIZADA*) que:
-- registre a autorização explícita e permanente de refatorar/modularizar dentro do escopo §0;
-- mantenha intactas a **zona proibida** (§7) e as travas de produção (`clasp push`/`deploy` só com aprovação; `main` protegido; `pages-portal` é produção);
-- substitua o *lock* de exploração por: exploração permitida **dentro de `mae/` e `test/`**, com obrigação de atualizar `FLOW.md` ao final de cada fluxo tocado;
-- preserve a saída obrigatória de avaliação de estabilidade.
-
-**Ação P0.2 — decidir o escopo funcional da V2** (ver §3): quais funcionalidades novas e quais melhorias de UX entram. Hoje isso **não está definido** e é a maior incógnita do roadmap.
+**Preparação para a V3 = uma diretriz só**: isolar o acesso a dados atrás de uma camada de repositório, para que trocar Sheets por um banco real, na V3, altere **somente essa camada**. Nada além disso é antecipado.
 
 ---
 
-## 2. Pilares técnicos (ordem sugerida)
+## 2. Regras que governam toda entrega
 
-### P1 — Camada de acesso a dados (maior retorno, prepara a V3)
-Hoje `SpreadsheetApp` é chamado direto de dentro das regras de negócio, espalhado por `mae/WebApp.js` e `mae/Código.js`. A unificação por `getHeaderMap()` (2026-07-07/08) já provou o padrão: **toda coluna é resolvida por nome**.
+Derivadas de `CLAUDE.md` §12.4 e §12.5. Não são recomendações.
 
-Próximo passo: um módulo de repositório (ex.: `mae/Repo.js`) que concentre leitura/escrita de abas e devolva objetos, não matrizes de células.
-
-- **Por que primeiro**: mata o débito de acoplamento, reduz leituras duplicadas de planilha (risco §11.1) **e** é a preparação real para a V3 — quando a planilha virar banco, só o repositório muda.
-- **Critério de aceite**: nenhuma chamada a `SpreadsheetApp` fora de `Repo.js` nos fluxos migrados; suíte de testes verde sem alterar as asserções de negócio.
-- **Arquivos**: novo `mae/Repo.js`; `mae/WebApp.js`; `mae/Código.js`; `mae/.claspignore` (allowlist — arquivo novo **não sobe** sem ser listado); `test/`.
-
-### P2 — Modularizar o front-end do Portal
-`mae/Index.html` é um arquivo único com todo o HTML+CSS+JS. O HtmlService suporta *includes* (`HtmlService.createTemplateFromFile` + `include()`), então dá para quebrar em parciais **sem trocar nada de infraestrutura**.
-
-- **Critério de aceite**: `Index.html` vira shell + parciais por tela; nenhum comportamento de UI muda; `?mode=qa` continua funcionando.
-- **Arquivos**: `mae/Index.html` → novos `mae/views_*.html` / `mae/styles.html` / `mae/scripts.html`; `mae/WebApp.js` (`doGet`); `mae/.claspignore`.
-- **Atenção**: esses nomes já existiram e foram consolidados; recriá-los é uma **reversão deliberada**, não um resgate de legado. Documentar como tal.
-
-### P3 — Separar responsabilidades no backend
-`mae/WebApp.js` (~900 linhas) mistura roteamento, autenticação, acesso a dados e regra de negócio. `mae/Código.js` acumula menu, `onEdit`, `onFormSubmit`, ciclo mensal, arquivamento e sincronização de looks.
-
-- **Critério de aceite**: auth isolada (`Auth.js`), regras de negócio puras e testáveis sem `SpreadsheetApp`; `doGet` permanece com o fallback incondicional para o Portal (risco conhecido do `?mode=qa`).
-- **Arquivos**: `mae/WebApp.js`, `mae/Código.js`, novos módulos, `mae/.claspignore`, `test/`.
-
-### P4 — Ambiente de staging (maior ganho de robustez disponível)
-Hoje **não existe staging**: `clasp deploy` atinge o deployment de produção e a branch `pages-portal` atinge `portal.estudioela.com` imediatamente.
-
-- **Proposta**: planilha de teste + deployment separado (`clasp deploy` sem `-i`) + `app_settings` via `PropertiesService` para apontar o `scriptId`/planilha por ambiente.
-- **Critério de aceite**: é possível exercitar login, briefing, upload e pagamentos ponta a ponta sem tocar dados reais.
-- **Requer**: ação manual do usuário (criar planilha de teste, autorizar deployment novo).
-
-### P5 — Testes e robustez
-Base já existe: suíte Jest executando o código GAS real via `vm` (~156–163 testes) — é a **especificação executável** das regras de negócio.
-
-- Ampliar cobertura junto de cada refatoração (o teste é a rede de segurança do refactor, não um extra).
-- Endurecer pontos frágeis conhecidos: `onFormSubmit` depende de trigger instalável fora do código; erros que escapam de `try/catch` no flush da planilha (lição do `STATUS_CONTEUDO`).
-
-### P6 — UX/UI
-Referência visual disponível em `docs/design-reference/`. Depende de P2 (modularização) para ser sustentável.
-- **Não mexer** em `.tracker{align-items:flex-start}` (causa raiz de bug já corrigido).
-
-### P7 — Funcionalidades novas
-Única já identificada e ratificada: **módulo de Contratos** (substituiria o AutoCrat). É funcionalidade, não infraestrutura — cabe em GAS. **O resto do escopo funcional depende de P0.2.**
-
-### P8 — Documentação
-`CLAUDE.md`, `FLOW.md`, `SYSTEM_MAP.md`, `SYSTEM_TRUTH.md` são as fontes de verdade; `SYSTEM_SCHEMA.md` é gerado. Toda refatoração **atualiza `FLOW.md` no mesmo PR** — não depois.
+1. **Comportamento observável não muda.** Contratos `Index.html` ↔ `WebApp.js` (códigos de erro, formato de retorno), nomes de abas e cabeçalhos, valores de validação de célula, URL pública. Refatorar muda a forma, nunca o que o sistema faz.
+2. **Teste é a rede de segurança.** Nenhuma entrega com teste vermelho. **Nenhuma entrega altera asserção de negócio existente** — se um teste precisa mudar, o comportamento mudou, e isso é quebra de compatibilidade.
+3. **Uma entrega = um fluxo = um PR.** Pequena, independente, reversível, validável isoladamente. Se não puder ser validada antes da próxima, está grande demais.
+4. **`FLOW.md` atualizado no mesmo PR** do fluxo tocado.
+5. **Commit imediato após teste verde.**
+6. **`clasp push`/`clasp deploy` só com aprovação explícita do usuário**, uma a uma. Arquivo novo em `mae/` só sobe se estiver na allowlist `mae/.claspignore`.
+7. **Zona proibida (§7) intacta.** `main` protegido. `pages-portal` é produção ao vivo.
 
 ---
 
-## 3. Dependências
+## 3. Plano incremental
+
+Cada etapa abaixo é um PR. As etapas de um mesmo bloco são **independentes entre si** depois que a primeira do bloco existir — podem ser feitas em qualquer ordem, por sessões diferentes.
+
+### Bloco 0 — Rede de segurança (pré-requisito de tudo)
+
+| # | Entrega | Aceite |
+|---|---|---|
+| **0.1** | Confirmar `npm test` verde e mapear quais fluxos **não** têm cobertura | Relatório de lacunas de cobertura por fluxo |
+| **0.2** | *Characterization tests* para os fluxos descobertos sem cobertura | Cada fluxo do §4 do `CLAUDE.md` tem ao menos um teste que congela seu comportamento atual |
+
+> Sem 0.2, refatorar um fluxo é apostar. Só refatore o que estiver coberto.
+
+---
+
+### Bloco 1 — Camada de acesso a dados (`mae/Repo.js`)
+
+Maior retorno: mata acoplamento **e** é a única preparação real para a V3.
+
+| # | Entrega | Depende de | Aceite |
+|---|---|---|---|
+| **1.1** | Criar `mae/Repo.js` e migrar **só o fluxo Perfil** (`getPerfil`/`updatePerfil`, aba `BASE DE DADOS`) | 0.2 | Perfil não chama `SpreadsheetApp` direto; testes verdes sem asserção alterada; `Repo.js` na allowlist `.claspignore` |
+| **1.2** | Migrar **Login/sessão** (`login`, `logout`, `validarToken`) | 1.1 | Lockout e códigos de erro (`CREDENCIAIS_INVALIDAS`, `MUITAS_TENTATIVAS`) idênticos |
+| **1.3** | Migrar **Pendências/Períodos** (`getPendencias`, `listarPeriodos`, aba `ATIVAÇÕES`) | 1.1 | Regra D-7 útil preservada |
+| **1.4** | Migrar **Briefing** (`getBriefing`) | 1.1 | Casamento `MES`+`ANO_REFERENCIA` e cadeia de fallback de `RESUMO_MES` preservados |
+| **1.5** | Migrar **Pagamentos** (`getPagamentos`, `normalizarStatusPagamento`) | 1.1 | Vocabulário `PENDENTE`/`APROVADO`/`PAGO` intacto nos dois lados |
+| **1.6** | Migrar **Histórico** (`getHistorico`, `listarAbasHistoricoLegado`) | 1.1 | Detecção de abas legado e contagem sem duplicação |
+| **1.7** | Migrar **Upload** (`iniciarEnvioResumable`, `finalizarEnvioResumable`) | 1.1 | Resolução de linha por ID estável mantida; `STATUS_CONTEUDO` continua gravando valor **dentro** da validação de célula |
+| **1.8** | Migrar **ERP** (`gerarNovoMesCompleto`, `arquivarGenerico`) em `Código.js` | 1.1 | Cópia por nome de cabeçalho preservada; ciclo mensal idêntico |
+
+**Aceite do bloco**: nenhuma chamada a `SpreadsheetApp` fora de `Repo.js` nos fluxos migrados.
+
+---
+
+### Bloco 2 — Modularizar o front-end do Portal
+
+`mae/Index.html` é um arquivo único com todo HTML+CSS+JS. O HtmlService suporta *includes* (`createTemplateFromFile` + `include()`) — dá para quebrar sem trocar infraestrutura.
+
+| # | Entrega | Depende de | Aceite |
+|---|---|---|---|
+| **2.1** | Extrair CSS para `mae/styles.html` + helper `include()` em `doGet` | 0.2 | Portal renderiza idêntico; `?mode=qa` intacto; `.tracker{align-items:flex-start}` preservado |
+| **2.2** | Extrair o núcleo JS (router, `chamar()`, sessão) para `mae/scripts.html` | 2.1 | Nenhuma mudança de comportamento |
+| **2.3** | Extrair as telas em parciais (`mae/views_*.html`), uma por PR | 2.2 | Uma tela por PR, verificada visualmente |
+
+> **Atenção histórica**: esses nomes já existiram e foram deliberadamente consolidados em `Index.html`. Recriá-los é uma **reversão consciente**, não resgate de legado. Registrar como tal no PR e no `CLAUDE.md` §2.
+
+---
+
+### Bloco 3 — Separar responsabilidades no backend
+
+| # | Entrega | Depende de | Aceite |
+|---|---|---|---|
+| **3.1** | Extrair `mae/Auth.js` (login, logout, token, lockout) | 1.2 | `doGet` mantém o fallback **incondicional** para o Portal em qualquer request sem `mode=qa` válido |
+| **3.2** | Extrair regras de negócio puras (D-7, seleção de briefing por formato, normalização de status) para módulo testável sem `SpreadsheetApp` | 1.3–1.5 | Regras testáveis sem planilha; testes rodam mais rápido |
+| **3.3** | Reduzir `WebApp.js` a roteamento + orquestração | 3.1, 3.2 | Nenhuma regra de negócio nem `SpreadsheetApp` em `WebApp.js` |
+
+---
+
+### Bloco 4 — Staging (trilha paralela, maior ganho de robustez)
+
+Hoje **não existe staging**: `clasp deploy` atinge produção e `pages-portal` atinge `portal.estudioela.com` na hora.
+
+| # | Entrega | Depende de | Aceite |
+|---|---|---|---|
+| **4.1** | Planilha de teste (cópia estrutural, sem dados reais) — **ação manual do usuário** | — | Planilha existe e está compartilhada |
+| **4.2** | Deployment de teste separado (`clasp deploy` sem `-i`) + seleção de ambiente via `PropertiesService` | 4.1 | Login, briefing, upload e pagamentos exercitáveis ponta a ponta sem tocar dados reais |
+
+Pode correr em paralelo aos blocos 1–3 e passa a validá-los.
+
+---
+
+### Bloco 5 — UX/UI
+
+Depende do Bloco 2 (sem modularização, cada mudança de UI é cirurgia em arquivo monolítico). Referência visual em `docs/design-reference/`. Escopo específico a definir com o usuário.
+
+---
+
+### Bloco 6 — Funcionalidades novas
+
+| # | Entrega | Depende de | Aceite |
+|---|---|---|---|
+| **6.1** | **Módulo de Contratos** (substitui o AutoCrat) | 1.1, 3.1 | Gera contrato a partir dos dados da influenciadora; estado de assinatura rastreado em aba própria |
+
+Demais funcionalidades: **escopo ainda não definido pelo usuário**. É a maior incógnita restante do roadmap.
+
+---
+
+## 4. Dependências (resumo)
 
 ```
-P0.1 (amendar CLAUDE.md) ──> tudo
-P0.2 (escopo funcional)  ──> P6, P7
-P1 (Repo) ──> P3 ──> P7
-P2 (front modular) ──> P6
-P4 (staging) ──> valida P1/P2/P3 com segurança  [pode correr em paralelo]
-P5 (testes) ──> acompanha P1, P2, P3 (não é fase separada)
+0.1 → 0.2 → ┬─ 1.1 → {1.2 … 1.8}  (independentes entre si)
+            └─ 2.1 → 2.2 → 2.3
+1.2 → 3.1 ┐
+1.3–1.5 → 3.2 ├→ 3.3
+2.x → Bloco 5 (UX)
+1.1 + 3.1 → 6.1 (Contratos)
+Bloco 4 (staging): paralelo; valida todos os demais
 ```
 
-## 4. Riscos conhecidos (herdados, continuam válidos)
+## 5. Riscos conhecidos (herdados, continuam válidos)
 
-- **`clasp push` substitui o conteúdo remoto por completo** — arquivo novo em `mae/` só sobe se estiver na allowlist `mae/.claspignore`; arquivo removido do repo some do script vivo.
-- **`clasp run` não funciona** neste projeto (conta é editora, não dona). Funções de menu exigem execução manual do usuário. Não reinvestigar sem motivo novo.
-- **`main` é protegido de verdade** (PR obrigatório, sem force-push, `enforce_admins`). Nunca contornar.
-- **`pages-portal` é produção sem staging.**
-- **Perda de trabalho não-commitado**: um `clasp pull` externo já reverteu alterações testadas. **Commitar imediatamente após testes verdes.**
+- **`clasp push` substitui o conteúdo remoto por completo.** Arquivo novo em `mae/` só sobe se estiver em `mae/.claspignore` (allowlist). Arquivo removido do repo some do script vivo.
+- **`clasp run` não funciona** neste projeto (a conta é editora, não dona). Funções de menu exigem execução manual do usuário. Não reinvestigar sem motivo novo.
+- **`main` é protegido de verdade.** Nunca contornar.
+- **`pages-portal` é produção sem staging** (até o Bloco 4).
+- **Perda de trabalho não-commitado**: um `clasp pull` externo já reverteu alterações testadas.
+- **Erros de validação de célula escapam de `try/catch`** (flush diferido) — causa raiz do "Failed to fetch" no upload.
 - **Bug de data (troca dia/mês)** já corrigido em `formatarData()` — não reintroduzir com parser genérico.
-- **Zona proibida (§7 do `CLAUDE.md`)** permanece integralmente em vigor.
+- **`onFormSubmit` depende de trigger instalável** configurado fora do código-fonte. Não verificável por código.
 
-## 5. Dívidas técnicas adiáveis
+## 6. Dívidas técnicas adiáveis
 
 - Abas legado de histórico (nome variável, detecção dinâmica) — consolidar depois.
-- `mae/PortalUi.js` e `mae_backup_antes_clasp/` não versionados no working dir — investigar e limpar (não tocados até hoje).
+- `mae/PortalUi.js` e `mae_backup_antes_clasp/` não versionados no working dir — investigar e limpar.
+- `docs/BRIEFING_MANUAL_USUARIO.md` e `docs/PROMPT_CLAUDE_DESIGN.md` não versionados — decidir destino.
 - Observabilidade além do Execution Log.
-- Divergência de data `LÊ PENHA/JULHO/reel` (BRIEFING 04/08/2026 × ATIVAÇÕES 23/07/2026) — pendente de decisão do usuário.
+- Divergência de data `LÊ PENHA/JULHO/reel` (BRIEFING 04/08/2026 × ATIVAÇÕES 23/07/2026) — **pendente de decisão do usuário**.
 
-## 6. Fluxo de trabalho por tarefa
+## 7. Fluxo de trabalho por entrega
 
-1. Identificar **fluxo → arquivo → função** (regra do `CLAUDE.md`).
-2. Escrever/ajustar o **teste primeiro**; ele congela o comportamento atual.
-3. Refatorar até o teste passar **sem alterar as asserções de negócio**.
+1. Identificar **fluxo → arquivo → função**.
+2. Garantir cobertura de teste do comportamento atual (Bloco 0). Se não houver, criar antes.
+3. Refatorar até o teste passar **sem alterar asserções de negócio**.
 4. `npm test` verde → **commit imediato**.
-5. Atualizar `FLOW.md` (e `CLAUDE.md` se a estrutura mudou) **no mesmo PR**.
+5. Atualizar `FLOW.md` (e `CLAUDE.md`, se a estrutura mudou) **no mesmo PR**.
 6. Branch + PR para `main`; CI verde.
-7. `clasp push` / `clasp deploy` **só com aprovação explícita do usuário**.
-8. Emitir a saída obrigatória de estabilidade (§11 do `CLAUDE.md`).
+7. `clasp push` / `clasp deploy` **só com aprovação explícita**.
+8. Emitir a saída obrigatória de estabilidade (`CLAUDE.md` §11).
 
-## 7. Primeiro passo
+## 8. Primeiro passo
 
-**P0.1** — propor ao usuário o texto da nova seção do `CLAUDE.md` que autoriza a evolução da V2. Nenhum código antes disso.
+**Etapa 0.1** — rodar `npm test` e mapear os fluxos sem cobertura. Nenhuma refatoração antes de 0.2.

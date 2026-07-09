@@ -9,16 +9,18 @@ ERP + Portal de Influenciadoras do Estúdio Elã. **Um único projeto Google App
 GitHub Pages (front) · Google Apps Script (backend) · Google Sheets (banco) · Google Drive (arquivos) · Git/GitHub (versionamento). **Essa stack permanece na V2.**
 
 ## Estado atual
-V1 **estabilizada e em produção** (`@37`). A **V2 acaba de ser redefinida (2026-07-08)**: *não* é migração de infraestrutura — é evolução da aplicação **dentro da stack atual** (arquitetura de código, modularização, débito técnico, UX/UI, funcionalidades, documentação, robustez). **Nenhum código da V2 foi escrito ainda.**
+V1 **estabilizada e em produção** (`@37`). A **V2 foi redefinida em 2026-07-08**: *não* é migração de infraestrutura — é evolução da aplicação **dentro da stack atual**. A autorização já está **formalizada no `CLAUDE.md` §12 (MODO V2 — EVOLUÇÃO AUTORIZADA)**, que suspende o *lock* das §10/§11 dentro de `mae/`, `test/` e `docs/`. **Nenhum código da V2 foi escrito ainda.**
 
 ## Tarefas pendentes (em ordem)
-1. **P0.1 — Amendar o `CLAUDE.md`** autorizando a evolução da V2. **Bloqueia tudo** (ver "Armadilhas").
-2. **P0.2 — Definir com o usuário o escopo funcional** da V2 (funcionalidades novas + melhorias de UX). Hoje indefinido.
-3. **P1 — Camada de acesso a dados** (`mae/Repo.js`): isolar `SpreadsheetApp` atrás de um repositório.
-4. **P2 — Modularizar `mae/Index.html`** via includes do HtmlService.
-5. **P3 — Separar responsabilidades** em `WebApp.js` / `Código.js` (auth, regras, dados).
-6. **P4 — Ambiente de staging** (planilha + deployment de teste). Requer ação manual do usuário.
-7. **P5–P8** — testes, UX/UI, módulo de Contratos, documentação.
+1. **Etapa 0.1** — rodar `npm test` e mapear quais fluxos **não** têm cobertura.
+2. **Etapa 0.2** — *characterization tests* para os fluxos descobertos sem cobertura. **Nada é refatorado antes disso.**
+3. **Bloco 1 — `mae/Repo.js`**: isolar `SpreadsheetApp`. Começa por **1.1 (fluxo Perfil)**; depois 1.2–1.8, independentes entre si.
+4. **Bloco 2** — modularizar `mae/Index.html` via includes do HtmlService (2.1 CSS → 2.2 JS → 2.3 telas).
+5. **Bloco 3** — separar responsabilidades (`Auth.js`, regras puras, `WebApp.js` só roteia).
+6. **Bloco 4** — staging (planilha + deployment de teste). **Requer ação manual do usuário.** Trilha paralela.
+7. **Bloco 5/6** — UX/UI e módulo de Contratos.
+
+**Aberto**: o escopo funcional da V2 além de Contratos **ainda não foi definido pelo usuário**.
 
 Detalhamento completo, critérios de aceite e dependências: **`docs/V2_ROADMAP.md`**.
 
@@ -31,7 +33,8 @@ Detalhamento completo, critérios de aceite e dependências: **`docs/V2_ROADMAP.
 - Preparação para a V3 se faz **isolando o acesso a dados** (P1), não migrando agora.
 
 ## Armadilhas conhecidas
-- **🚨 BLOQUEIO ATIVO**: `CLAUDE.md` §10 (*FRAMEWORK LOCK MODE*) e §11 (*MODO MANUTENÇÃO*) **proíbem refatorar e explorar o repositório**. A V2 é justamente refatoração. **O próximo agente deve, antes de tocar em código, propor ao usuário a seção que autoriza a evolução** (P0.1). Não contornar por conta própria.
+- **Refatorar é autorizado, quebrar não é.** `CLAUDE.md` §12.4: comportamento observável não muda (códigos de erro, formato de retorno, nomes de aba/cabeçalho, valores de validação de célula, URL pública). **Se um teste precisa mudar para a refatoração passar, o comportamento mudou** — isso é quebra de compatibilidade, não ajuste de teste.
+- **Não refatore o que não está coberto por teste.** Etapa 0.2 existe por isso.
 - **`clasp push` substitui o remoto por completo.** Arquivo novo em `mae/` só sobe se estiver na allowlist `mae/.claspignore`.
 - **`clasp run` não funciona** (a conta é editora, não dona do script). Funções de menu exigem execução manual pelo usuário. Não reinvestigar sem motivo novo.
 - **Trabalho não-commitado já foi perdido** por um `clasp pull` externo. **Commitar imediatamente após testes verdes.**
@@ -49,9 +52,9 @@ cd mae && clasp pull     # cuidado: sobrescreve o working dir
 
 ## Documentação — ordem de leitura
 1. **Este arquivo.**
-2. `docs/V2_ROADMAP.md` — plano de execução da V2 (fases, aceite, dependências).
-3. `FLOW.md` — mapa de fluxos; fonte de execução segundo o `CLAUDE.md`.
-4. `CLAUDE.md` — regras estruturais, zona proibida, mapa de risco.
+2. `docs/V2_ROADMAP.md` — plano incremental da V2 (blocos, aceite, dependências).
+3. `CLAUDE.md` **§12** — autorização e limites da V2. Depois o resto do arquivo (zona proibida §7, mapa de risco §6).
+4. `FLOW.md` — mapa de fluxos; atualizar **no mesmo PR** de todo fluxo tocado.
 5. `SYSTEM_TRUTH.md` / `SYSTEM_MAP.md` — verdade do sistema. `SYSTEM_SCHEMA.md` é **gerado**, não editar.
 6. `docs/V2_ESPECIFICACAO_TECNICA.md` — **suspenso**, pesquisa de V3. Não implementar.
 
@@ -64,4 +67,4 @@ cd mae && clasp pull     # cuidado: sobrescreve o working dir
 - `test/` — a especificação executável.
 
 ## Primeiro passo recomendado
-Ler `docs/V2_ROADMAP.md` §1 e **propor ao usuário o texto da nova seção do `CLAUDE.md`** que autoriza a evolução da V2 (P0.1), junto com a definição do escopo funcional (P0.2). **Nenhum código antes disso** — o próprio `CLAUDE.md` proíbe.
+**Etapa 0.1**: rodar `npm test`, confirmar a suíte verde e mapear quais fluxos do §4 do `CLAUDE.md` **não** têm cobertura. Entregar esse relatório de lacunas antes de escrever qualquer *characterization test* (0.2) — e nenhuma refatoração antes de 0.2 estar pronta.
