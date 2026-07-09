@@ -962,23 +962,20 @@ function onFormSubmit(e) {
     if(hBase['NUMERO']) nova[hBase['NUMERO']-1] = vNum ? "'" + vNum : "";
     if(hBase['COMPLEMENTO']) nova[hBase['COMPLEMENTO']-1] = vComp;
     
-    if (rawCep && rawCep.length === 8) {
-      try {
-        let resCep = JSON.parse(UrlFetchApp.fetch("https://brasilapi.com.br/api/cep/v1/" + rawCep, {muteHttpExceptions: true}).getContentText());
-        if (resCep.city) {
-          if(hBase['RUA']) nova[hBase['RUA']-1] = (resCep.street || "").toUpperCase();
-          if(hBase['BAIRRO']) nova[hBase['BAIRRO']-1] = (resCep.neighborhood || "").toUpperCase();
-          if(hBase['CIDADE']) nova[hBase['CIDADE']-1] = (resCep.city || "").toUpperCase();
-          if(hBase['UF']) nova[hBase['UF']-1] = (resCep.state || "").toUpperCase();
-          
-          if(hBase['INFLUENCIADORA_ENDERECO']) {
-            let cepF = rawCep.substring(0,5) + "-" + rawCep.substring(5);
-            let compT = vComp ? ", " + vComp : "";
-            nova[hBase['INFLUENCIADORA_ENDERECO']-1] = `${resCep.street || ""}, ${vNum || "S/N"}${compT}, ${resCep.neighborhood || ""} - ${resCep.city || ""}/${resCep.state || ""}, ${cepF}`.toUpperCase();
-          }
-        }
-      } catch(err){
-        Logger.log('onFormSubmit: erro ao buscar CEP %s (influ=%s): %s', rawCep, vN, (err && err.message) || err);
+    // onFormSubmit roda por trigger INSTALÁVEL, que tem autorização para
+    // UrlFetchApp — ao contrário do onEdit simples (ver V-03).
+    const endereco = resolverEnderecoPorCep(normalizarCep(rawCep), 'onFormSubmit influ=' + vN);
+    if (endereco) {
+      if(hBase['RUA']) nova[hBase['RUA']-1] = endereco.rua;
+      if(hBase['BAIRRO']) nova[hBase['BAIRRO']-1] = endereco.bairro;
+      if(hBase['CIDADE']) nova[hBase['CIDADE']-1] = endereco.cidade;
+      if(hBase['UF']) nova[hBase['UF']-1] = endereco.uf;
+
+      if(hBase['INFLUENCIADORA_ENDERECO']) {
+        nova[hBase['INFLUENCIADORA_ENDERECO']-1] = montarEnderecoCompleto({
+          rua: endereco.rua, numero: vNum, complemento: vComp,
+          bairro: endereco.bairro, cidade: endereco.cidade, uf: endereco.uf, cep: rawCep
+        });
       }
     }
     nova[0] = "OFF";
@@ -1008,33 +1005,86 @@ function atualizarEnderecoLinhaSelecionada() {
   ui.alert('Endereço atualizado com sucesso via BrasilAPI!');
 }
 
+// ======================================================
+// ENDERECO SERVICE — única porta para a brasilapi (V-03)
+// ======================================================
+//
+// A montagem do endereço estava DUPLICADA, com a mesma string de formatação
+// escrita duas vezes, em onFormSubmit() e preencherEnderecoPorCEP(). Unificada
+// aqui. updatePerfil() (WebApp.js) passa a usar as mesmas funções — no Apps
+// Script todos os arquivos compartilham o namespace global, como getHeaderMap()
+// já demonstra.
+
+const CEP_API_URL = "https://brasilapi.com.br/api/cep/v1/";
+
+function normalizarCep(cep) {
+  const limpo = (cep === null || cep === undefined) ? "" : cep.toString().replace(/\D/g, "");
+  return limpo.length === 8 ? limpo : "";
+}
+
+// Devolve {rua, bairro, cidade, uf} ou null. NUNCA lança e NUNCA escreve.
+//
+// Atenção: chamada a partir de onEdit() (trigger simples), UrlFetchApp lança
+// erro de autorização — triggers simples não têm esse escopo. É a causa raiz de
+// V-03. O erro cai no catch abaixo e agora aparece no Logger, em vez de sumir
+// num catch vazio: a primeira evidência real do problema no Execution Log.
+function resolverEnderecoPorCep(cepNormalizado, contexto) {
+  if (!cepNormalizado) return null;
+  try {
+    const resp = UrlFetchApp.fetch(CEP_API_URL + cepNormalizado, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) {
+      Logger.log('resolverEnderecoPorCep: HTTP %s para cep=%s (%s)', resp.getResponseCode(), cepNormalizado, contexto || '-');
+      return null;
+    }
+    const res = JSON.parse(resp.getContentText());
+    if (!res.city) return null;
+    return {
+      rua: (res.street || "").toUpperCase(),
+      bairro: (res.neighborhood || "").toUpperCase(),
+      cidade: (res.city || "").toUpperCase(),
+      uf: (res.state || "").toUpperCase()
+    };
+  } catch (e) {
+    Logger.log('resolverEnderecoPorCep: falha para cep=%s (%s): %s', cepNormalizado, contexto || '-', (e && e.message) || e);
+    return null;
+  }
+}
+
+// PURA. Formato preservado byte a byte do que as duas funções montavam antes.
+function montarEnderecoCompleto(partes) {
+  const cep = normalizarCep(partes.cep);
+  const cepFormatado = cep ? (cep.substring(0, 5) + "-" + cep.substring(5)) : "";
+  const numero = partes.numero ? partes.numero.toString() : "S/N";
+  const complemento = partes.complemento ? ", " + partes.complemento : "";
+  return `${partes.rua || ""}, ${numero}${complemento}, ${partes.bairro || ""} - ${partes.cidade || ""}/${partes.uf || ""}, ${cepFormatado}`.toUpperCase();
+}
+
 function preencherEnderecoPorCEP(sh, row, cep, h) {
-  if (!cep) return;
-  let cleanCep = cep.toString().replace(/\D/g, "");
-  if (cleanCep.length !== 8) return;
+  const cepNormalizado = normalizarCep(cep);
+  if (!cepNormalizado) return;
+
+  const endereco = resolverEnderecoPorCep(cepNormalizado, 'preencherEnderecoPorCEP row=' + row);
+  if (!endereco) return;
 
   try {
-    let resp = UrlFetchApp.fetch("https://brasilapi.com.br/api/cep/v1/" + cleanCep, {muteHttpExceptions: true});
-    if (resp.getResponseCode() === 200) {
-      let res = JSON.parse(resp.getContentText());
-      if (res.city) {
-        let num = h['NUMERO'] ? sh.getRange(row, h['NUMERO']).getValue() : "S/N";
-        if (!num) num = "S/N";
-        let comp = h['COMPLEMENTO'] ? sh.getRange(row, h['COMPLEMENTO']).getValue() : "";
+    const numero = h['NUMERO'] ? sh.getRange(row, h['NUMERO']).getValue() : "";
+    const complemento = h['COMPLEMENTO'] ? sh.getRange(row, h['COMPLEMENTO']).getValue() : "";
 
-        if(h['RUA']) sh.getRange(row, h['RUA']).setValue((res.street || "").toUpperCase());
-        if(h['BAIRRO']) sh.getRange(row, h['BAIRRO']).setValue((res.neighborhood || "").toUpperCase());
-        if(h['CIDADE']) sh.getRange(row, h['CIDADE']).setValue((res.city || "").toUpperCase());
-        if(h['UF']) sh.getRange(row, h['UF']).setValue((res.state || "").toUpperCase());
-
-        let cepFormatado = cleanCep.substring(0,5) + "-" + cleanCep.substring(5);
-        let compText = comp ? ", " + comp : "";
-        let full = `${res.street || ""}, ${num}${compText}, ${res.neighborhood || ""} - ${res.city || ""}/${res.state || ""}, ${cepFormatado}`;
-
-        if(h['INFLUENCIADORA_ENDERECO']) sh.getRange(row, h['INFLUENCIADORA_ENDERECO']).setValue(full.toUpperCase());
-      }
+    if (h['RUA']) sh.getRange(row, h['RUA']).setValue(endereco.rua);
+    if (h['BAIRRO']) sh.getRange(row, h['BAIRRO']).setValue(endereco.bairro);
+    if (h['CIDADE']) sh.getRange(row, h['CIDADE']).setValue(endereco.cidade);
+    if (h['UF']) sh.getRange(row, h['UF']).setValue(endereco.uf);
+    if (h['INFLUENCIADORA_ENDERECO']) {
+      sh.getRange(row, h['INFLUENCIADORA_ENDERECO']).setValue(montarEnderecoCompleto({
+        rua: endereco.rua, numero: numero, complemento: complemento,
+        bairro: endereco.bairro, cidade: endereco.cidade, uf: endereco.uf, cep: cepNormalizado
+      }));
     }
-  } catch(e) {}
+  } catch (e) {
+    // L-06: era `catch(e){}` vazio — um dos dois últimos de Código.js que
+    // ficaram de fora do endurecimento de 2026-07-07.
+    Logger.log('preencherEnderecoPorCEP: falha ao gravar endereço na linha %s: %s', row, (e && e.message) || e);
+  }
 }
 
 function organizarEPintarBase() {
