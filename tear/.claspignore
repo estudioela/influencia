@@ -1,0 +1,10 @@
+**/**
+!appsscript.json
+!Ativacao.js
+!AtivacaoRepository.js
+!AtivacaoService.js
+!Config.js
+!EventDispatcher.js
+!Setup_V2.js
+!TestRunner_V2.js
+!WebAppController.js

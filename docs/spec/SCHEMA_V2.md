@@ -2,7 +2,7 @@
 
 > Escrito à mão em 2026-07-09. **As abas descritas aqui ainda não existem na planilha viva** — por isso o `mae/SchemaExporter.js` não as enxerga e não gera este arquivo. Quando as abas forem criadas (ação manual, exige autorização do usuário — ver `CLAUDE.md` seção 12), `SYSTEM_SCHEMA.md` passa a ser a fonte gerada e este documento vira a especificação de referência.
 >
-> Nomes de aba são os valores literais de `PLANILHAS` em `mae/Config.js`. **Não confundir com as abas da V1**: `Ativacoes` (V2) ≠ `ATIVAÇÕES` (V1). São abas distintas, coexistindo na mesma planilha.
+> Nomes de aba são os valores literais de `PLANILHAS` em `tear/Config.js`. **Não confundir com as abas da V1**: `Ativacoes` (V2) ≠ `ATIVAÇÕES` (V1). São abas distintas, coexistindo na mesma planilha.
 >
 > Linha 1 é sempre cabeçalho. Acesso a dados é feito **por nome de cabeçalho**, nunca por índice fixo — inserir ou reordenar colunas não pode quebrar código.
 
@@ -18,7 +18,7 @@ Entidade central do domínio. Uma linha = uma peça de conteúdo a ser produzida
 | `ID_Ciclo` | Chave estrangeira → `Ciclos.ID_Ciclo` | Ciclo ao qual a ativação pertence. Campo de filtro de `AtivacaoRepository.findByCiclo()`. |
 | `ID_Influenciadora` | Chave estrangeira → `Parceiros_Influenciadoras` | Influenciadora responsável pela entrega. |
 | `Tipo_Conteudo` | Dado | Formato da peça (ex.: REEL, CARROSSEL, STORIES). |
-| `Estado_Principal` | Dado (máquina de estados) | Etapa atual. Domínio fechado: os 13 valores de `ESTADOS_ATIVACAO` (`mae/Config.js`). Transições válidas em `mae/Ativacao.js`. |
+| `Estado_Principal` | Dado (máquina de estados) | Etapa atual. Domínio fechado: os 13 valores de `ESTADOS_ATIVACAO` (`tear/Config.js`). Transições válidas em `tear/Ativacao.js`. |
 | `Look_Referencia` | Dado | Look/peça de vestuário associado à ativação. |
 | `Data_Prevista_Entrega` | Dado (data) | Prazo acordado de entrega do conteúdo. |
 | `Link_Briefing` | Dado (URL) | Link para o briefing da peça. |
@@ -28,7 +28,7 @@ Entidade central do domínio. Uma linha = uma peça de conteúdo a ser produzida
 
 ### Máquina de estados de `Estado_Principal`
 
-Valores vêm de `ESTADOS_ATIVACAO` (`mae/Config.js`). Transições permitidas estão em `Ativacao.TRANSICOES_PERMITIDAS` (`mae/Ativacao.js`) e são validadas por `Ativacao.validateStateTransition()` antes de qualquer persistência.
+Valores vêm de `ESTADOS_ATIVACAO` (`tear/Config.js`). Transições permitidas estão em `Ativacao.TRANSICOES_PERMITIDAS` (`tear/Ativacao.js`) e são validadas por `Ativacao.validateStateTransition()` antes de qualquer persistência.
 
 ```
 Planejamento → Pronta para Envio → Aguardando Recebimento → Em Produção
