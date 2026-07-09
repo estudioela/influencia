@@ -144,28 +144,66 @@ describe('SidebarBackend — salvarPagamentoExtra (Operação Financeira)', () =
   });
 
   /**
-   * FIN-01 (🔴 crítico) — caracterização do DEFEITO, não do comportamento desejado.
+   * FIN-01 (🔴 crítico) — CORRIGIDO neste PR.
    *
-   * salvarPagamentoExtra() não grava ANO_REFERENCIA. A célula fica vazia, e o
-   * dado corrompido se propaga até a tela da parceira:
+   * Antes, a célula ANO_REFERENCIA ficava vazia e o dado corrompido se
+   * propagava até a tela da parceira:
    *
    *   listarPeriodos()  → chave "AGOSTO|"  → {mes:'AGOSTO', ano:null}
    *                       (distinta de "AGOSTO|2026")
-   *   seletor do Portal → exibe "agosto" E "agosto/2026", dois períodos
+   *   seletor do Portal → exibia "agosto" E "agosto/2026", dois períodos
    *   getPagamentos()   → com ano=null, `!anoFiltro` desliga o filtro de ano:
-   *                       soma TODOS os agostos de TODOS os anos
-   *   e o pagamento extra não aparece no período "agosto/2026" correto.
-   *
-   * Esta asserção EXISTE PARA MUDAR no PR de correção (H2). Quando ela quebrar,
-   * é porque o defeito foi corrigido — não porque a refatoração regrediu.
+   *                       somava TODOS os agostos de TODOS os anos
+   *   e o pagamento extra sumia do período correto.
    */
-  test('FIN-01: ANO_REFERENCIA fica VAZIO (defeito atual, produzindo dado errado hoje)', () => {
+  test('FIN-01: mês sem ano no texto → ano corrente (RN-09, via parseMesAno)', () => {
     const pagamentos = criarAbaFake([CAB_PAGAMENTOS]);
     const { salvarPagamentoExtra } = carregar({ PAGAMENTOS: pagamentos });
 
     salvarPagamentoExtra({ influ: 'FULANA', mes: 'AGOSTO', valor: 500, pix: 'fulana@pix' });
 
-    expect(pagamentos._linhas[1][iAno]).toBe('');
+    expect(pagamentos._linhas[1][iAno]).toBe(new Date().getFullYear());
+    expect(pagamentos._linhas[1][iMes]).toBe('AGOSTO');
+  });
+
+  test('FIN-01: "AGOSTO 2026" separa mês e ano — MES_REFERENCIA não guarda o ano junto', () => {
+    const pagamentos = criarAbaFake([CAB_PAGAMENTOS]);
+    const { salvarPagamentoExtra } = carregar({ PAGAMENTOS: pagamentos });
+
+    salvarPagamentoExtra({ influ: 'FULANA', mes: 'AGOSTO 2026', valor: 500, pix: 'p' });
+
+    // Sem isto, MES_REFERENCIA viraria o literal "AGOSTO 2026", que não casa
+    // com o "AGOSTO" gravado por gerarNovoMesCompleto/lancarPagamentosDoMes.
+    expect(pagamentos._linhas[1][iMes]).toBe('AGOSTO');
+    expect(pagamentos._linhas[1][iAno]).toBe(2026);
+  });
+
+  test('FIN-01: texto minúsculo/espaçado é normalizado', () => {
+    const pagamentos = criarAbaFake([CAB_PAGAMENTOS]);
+    const { salvarPagamentoExtra } = carregar({ PAGAMENTOS: pagamentos });
+
+    salvarPagamentoExtra({ influ: 'FULANA', mes: '  dezembro 2025 ', valor: 1, pix: 'p' });
+
+    expect(pagamentos._linhas[1][iMes]).toBe('DEZEMBRO');
+    expect(pagamentos._linhas[1][iAno]).toBe(2025);
+  });
+
+  test('FIN-01: obj.ano explícito vence a derivação (se a sidebar passar a enviá-lo)', () => {
+    const pagamentos = criarAbaFake([CAB_PAGAMENTOS]);
+    const { salvarPagamentoExtra } = carregar({ PAGAMENTOS: pagamentos });
+
+    salvarPagamentoExtra({ influ: 'FULANA', mes: 'AGOSTO', ano: 2024, valor: 1, pix: 'p' });
+
+    expect(pagamentos._linhas[1][iAno]).toBe(2024);
+  });
+
+  test('FIN-01: aba sem a coluna ANO_REFERENCIA não quebra (grava o resto)', () => {
+    const semAno = ['INFLU_KEY', 'MES_REFERENCIA', 'VALOR_TOTAL', 'CHAVE_PIX', 'STATUS_PAGAMENTO'];
+    const pagamentos = criarAbaFake([semAno]);
+    const { salvarPagamentoExtra } = carregar({ PAGAMENTOS: pagamentos });
+
+    expect(() => salvarPagamentoExtra({ influ: 'FULANA', mes: 'AGOSTO', valor: 1, pix: 'p' })).not.toThrow();
+    expect(pagamentos._linhas[1][0]).toBe('FULANA');
   });
 
   test('L-33: não valida obj.valor nem obj.influ — appendRow aceita vazio', () => {

@@ -53,7 +53,8 @@ function onOpen() {
       .addItem(" 7. ⚠️ Limpar Histórico Oficial (IRREVERSÍVEL)", "limparHistoricoOficial")
       .addItem(" 8. Remover Triggers Órfãos", "limparTriggersOrfaos")
       .addItem(" 9. Adicionar Coluna ANO_REFERENCIA em Briefing", "garantirColunaAnoReferenciaBriefing")
-      .addItem(" 10. Adicionar Colunas ID/ANO em Ativações", "garantirColunasIdAnoAtivacoes"))
+      .addItem(" 10. Adicionar Colunas ID/ANO em Ativações", "garantirColunasIdAnoAtivacoes")
+      .addItem(" 11. Preencher ANO_REFERENCIA em Pagamentos", "backfillAnoReferenciaPagamentos"))
 
     .addSeparator()
 
@@ -747,6 +748,114 @@ function derivarAnoDaLinha_(linha, h) {
     }
   }
   return h['DATA_ARQUIVAMENTO'] ? null : new Date().getFullYear();
+}
+
+// ======================================================
+// BACKFILL DE ANO_REFERENCIA EM PAGAMENTOS (FIN-01)
+// ======================================================
+
+// Ação manual, idempotente e não-destrutiva. Corrige as linhas já gravadas por
+// salvarPagamentoExtra() antes da correção de FIN-01, que ficaram com
+// ANO_REFERENCIA vazio e produzem um período fantasma no seletor do Portal.
+//
+// Preenche APENAS células vazias. Nunca sobrescreve um ano já gravado.
+function backfillAnoReferenciaPagamentos() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const shPag = ss.getSheetByName(SETUP.ABAS.PAGAMENTOS);
+  if (!shPag) {
+    ui.alert('Aba "' + SETUP.ABAS.PAGAMENTOS + '" não encontrada — nada foi alterado.');
+    return;
+  }
+  const shHist = ss.getSheetByName(SETUP.ABAS.HISTORICO_PAG);
+
+  const resposta = ui.alert(
+    'Preencher ANO_REFERENCIA em Pagamentos',
+    'Isso vai:\n' +
+    '1) criar a coluna ANO_REFERENCIA (se faltar) em "' + SETUP.ABAS.PAGAMENTOS + '"' +
+    (shHist ? ' e "' + SETUP.ABAS.HISTORICO_PAG + '"' : '') + ';\n' +
+    '2) preencher APENAS células vazias dessa coluna.\n\n' +
+    'Em "' + SETUP.ABAS.PAGAMENTOS + '" (aba viva): usa o ano de DATA_PAGAMENTO; sem data, o ano corrente.\n' +
+    (shHist ? 'Em "' + SETUP.ABAS.HISTORICO_PAG + '" (histórico): usa o ano de DATA_PAGAMENTO; sem data, DEIXA VAZIO — não se chuta ano em registro financeiro passado.\n' : '') +
+    '\nNenhum dado existente é apagado ou sobrescrito. Confirma?',
+    ui.ButtonSet.YES_NO
+  );
+  if (resposta !== ui.Button.YES) {
+    ui.alert('Cancelado. Nada foi alterado.');
+    return;
+  }
+
+  let criadas = garantirColunasNaAba_(shPag, ['ANO_REFERENCIA']);
+  if (shHist) criadas = criadas.concat(garantirColunasNaAba_(shHist, ['ANO_REFERENCIA']));
+
+  const resPag = backfillAnoPagamentosAba_(shPag);
+  const resHist = shHist ? backfillAnoPagamentosAba_(shHist) : { preenchidas: 0, semSinal: 0 };
+
+  Logger.log('backfillAnoReferenciaPagamentos: colunas criadas=[%s], pagamentos=%s preenchidas/%s sem sinal, historico=%s preenchidas/%s sem sinal',
+    criadas.join(', ') || 'nenhuma', resPag.preenchidas, resPag.semSinal, resHist.preenchidas, resHist.semSinal);
+
+  ui.alert(
+    'Backfill concluído.\n\n' +
+    'Colunas criadas: ' + (criadas.length ? criadas.join(', ') : 'nenhuma (já existiam)') + '.\n' +
+    'Linhas preenchidas em "' + SETUP.ABAS.PAGAMENTOS + '": ' + resPag.preenchidas + '.\n' +
+    (shHist
+      ? 'Linhas preenchidas em "' + SETUP.ABAS.HISTORICO_PAG + '": ' + resHist.preenchidas + '.\n' +
+        'Linhas deixadas VAZIAS no histórico (sem data aproveitável): ' + resHist.semSinal + '.\n' +
+        (resHist.semSinal > 0
+          ? '\nEssas linhas continuam casando com qualquer ano (comportamento legado) e ainda podem gerar um período sem ano no Portal. Preencher à mão, se souber o ano da campanha.'
+          : '')
+      : '')
+  );
+}
+
+function backfillAnoPagamentosAba_(sh) {
+  const h = getHeaderMap(sh);
+  if (!h['ANO_REFERENCIA'] || sh.getLastRow() < 2) return { preenchidas: 0, semSinal: 0 };
+
+  const dados = sh.getDataRange().getValues();
+  let preenchidas = 0;
+  let semSinal = 0;
+
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][h['ANO_REFERENCIA'] - 1]) continue;        // nunca sobrescreve
+    if (!temConteudoDeLinha_(dados[i])) continue;           // linha em branco no fim da aba
+
+    const ano = derivarAnoPagamento_(dados[i], h);
+    if (ano) {
+      sh.getRange(i + 1, h['ANO_REFERENCIA']).setValue(ano);
+      preenchidas++;
+    } else {
+      semSinal++;
+    }
+  }
+  return { preenchidas: preenchidas, semSinal: semSinal };
+}
+
+// Deliberadamente NÃO reusa derivarAnoDaLinha_(): aquele prioriza
+// DATA_ARQUIVAMENTO, que para pagamentos é a data em que a linha foi movida
+// para o histórico — não o ano da campanha. Um pagamento de DEZEMBRO/2025 pago
+// e arquivado em JANEIRO/2026 derivaria 2026, corrompendo o período.
+//
+// Aqui o único sinal aceito é DATA_PAGAMENTO. Se não houver:
+//   - aba viva (sem DATA_ARQUIVAMENTO no cabeçalho) → ano corrente: a linha é
+//     do ciclo em aberto, mesmo contrato de RN-09/parseMesAno;
+//   - aba histórica → null. Não se chuta ano em registro financeiro passado
+//     (CLAUDE.md §12.4.6). Vazio mantém o comportamento legado "casa com
+//     qualquer ano", que é o de hoje — sem regressão.
+function derivarAnoPagamento_(linha, h) {
+  if (h['DATA_PAGAMENTO']) {
+    const v = linha[h['DATA_PAGAMENTO'] - 1];
+    if (v instanceof Date && !isNaN(v.getTime())) return v.getFullYear();
+    if (typeof v === 'string') {
+      const m = /(\d{4})/.exec(v);
+      if (m) return parseInt(m[1], 10);
+    }
+  }
+  return h['DATA_ARQUIVAMENTO'] ? null : new Date().getFullYear();
+}
+
+function temConteudoDeLinha_(linha) {
+  return linha.some(function (c) { return c !== '' && c !== null && c !== undefined; });
 }
 
 function menuArquivarTudo() {
