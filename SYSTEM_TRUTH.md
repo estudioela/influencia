@@ -11,15 +11,15 @@ ERP + Portal de Influenciadoras Jescri: um único projeto Google Apps Script (`s
 ## 2. Fluxo de login (o mais crítico do sistema)
 
 ```
-mae/Index.html:fazerLogin() (~L1068)
+mae/Index.html:fazerLogin() (~L1077)
   → chamar('login', cupom, senha) (~L921, google.script.run)
-  → mae/WebApp.js:login() (~L153)
+  → mae/WebApp.js:login() (~L155)
       lê aba BASE DE DADOS (resolvida por getHeaderMap() desde 2026-07-07, ver seção 4)
       senha = prefixo do CNPJ (baixa entropia por design, não é bug)
       bloqueio: LOGIN_MAX_TENTATIVAS=5 / LOGIN_BLOQUEIO_SEGUNDOS=900 (CacheService)
   → token (UUID) em CacheService, 21600s (6h), renovação deslizante em validarToken()
 ```
-Logout: `sairDoApp()` (Index.html) → `google.script.run.logout(token)` → `mae/WebApp.js:logout()` (~L223), fire-and-forget.
+Logout: `sairDoApp()` (Index.html) → `google.script.run.logout(token)` → `mae/WebApp.js:logout()` (~L227), fire-and-forget.
 
 ## 3. Dependências entre abas (quem lê/escreve o quê)
 
@@ -53,7 +53,7 @@ INFLUENCIADORA_CNPJ, CEP, RUA, NUMERO, COMPLEMENTO, CIDADE, UF, VALOR_TOTAL
 2. `onFormSubmit()`/triggers instaláveis: dependem de configuração fora do código-fonte, não verificável por aqui.
 3. `doGet(?mode=qa)`: ramo condicional no Web App público/anônimo, protegido por token em `PropertiesService` — sem token certo, comportamento padrão inalterado.
 4. `clasp run` não funciona neste projeto — causa raiz documentada (devMode exige dono do script, `--nondev` bate em 404 sem causa oficial). Não repetir a investigação sem motivo novo — ver `CLAUDE.md` seção 6.
-5. Deployment do Web App é **pinada por versão** (`@34` atualmente, atualizada em 2026-07-07 via `clasp deploy -i` — ver seção 6) — `clasp push` só atualiza HEAD; mudanças em `WebApp.js`/`Index.html` só chegam às influenciadoras com um `clasp deploy` explícito.
+5. Deployment do Web App é **pinada por versão** (`@37` atualmente, atualizada em 2026-07-08 via `clasp deploy -i` — ver seção 6) — `clasp push` só atualiza HEAD; mudanças em `WebApp.js`/`Index.html` só chegam às influenciadoras com um `clasp deploy` explícito.
 6. Não existe ambiente de staging técnico real (a planilha e o script são únicos) — as branches `staging`/`dev` (seção 6) organizam o **código**, mas o deploy continua sendo sempre contra a mesma planilha/produção.
 7. **(Resolvido — histórico, não é mais um risco ativo) Drive API estava desabilitada no projeto GCP vinculado (`jescri-migracao`, nº `607782229022`)**: `appsscript.json` declara o escopo OAuth `https://www.googleapis.com/auth/drive`, mas a API (`drive.googleapis.com`) nunca tinha sido habilitada. Habilitada via `gcloud services enable drive.googleapis.com --project=jescri-migracao` em 2026-07-06 — confirmada habilitada e assim permanece.
    - **Hipótese levantada e depois REFUTADA por teste real (2026-07-06)**: inicialmente suspeitou-se que a autorização OAuth do deploy tivesse ficado presa num estado anterior à API habilitada (baseado em ausência de logs após o achado acima). **Essa hipótese foi testada e descartada**: um teste end-to-end real (login com credencial de teste dedicada + `iniciarEnvioResumable()` + upload de arquivo de fato no Drive, todos via chamada HTTP direta ao deployment ativo) mostrou `doGet`, `doPost`, `login()`, CORS, roteamento, e o próprio upload pro Drive funcionando perfeitamente. **Não havia problema de autorização.** A causa real do "Failed to fetch" era outra — ver item 8 abaixo. Lição pra próximos agentes: ausência de log recente não é prova de causa — só descarta hipóteses depois de reproduzir com teste real.
@@ -65,7 +65,7 @@ INFLUENCIADORA_CNPJ, CEP, RUA, NUMERO, COMPLEMENTO, CIDADE, UF, VALOR_TOTAL
 
 - **Tag baseline**: `v1.0-stable` (2026-07-05), consolidando: SchemaExporter, QA Shadow, limpeza do clasp duplicado, purga de legado do script ao vivo, correção do sub-fluxo `STATUS_CONTEUDO`/`STATUS_PAGAMENTO`.
 - **Branches**: `main` (produção — ver ressalva abaixo sobre "imutável"), `staging`, `dev` — todas apontando pro mesmo commit na criação (2026-07-05); divergem a partir de agora conforme o uso de cada uma.
-- **Deploy Apps Script**: HEAD e deployment pública sincronizados com `main` em 2026-07-07 (`@34`, "ERP 1.5"), após `clasp push` (verificado byte-a-byte via `clasp pull` em diretório temporário) + `clasp deploy -i` dos commits `111dea8`+`683f984` (suíte de testes Jest, fix de dupla formatação de data em `formatarData()`, migração de `MAP.BASE` para `getHeaderMap()`, remoção de `doPost`/`API_ACOES`, casamento de `BRIEFING` por `MES`+`ANO_REFERENCIA`, catches de `onEdit()`/`onFormSubmit()` agora logando, checklist do SchemaExporter por presença de nome). Mesma URL pública de sempre (deployment ID `AKfycbyBqxe6...` mantida, versão atualizada in-place). Nota: existia uma versão intermediária `@33` ("ERP 1.4") criada manualmente pelo usuário via UI em 2026-07-07, antes destas correções — superada pela `@34`. A coluna `ANO_REFERENCIA` em `BRIEFING` foi criada na planilha viva pelo usuário (menu, 2026-07-07) logo após o deploy.
+- **Deploy Apps Script**: HEAD e deployment pública sincronizados com `main` em 2026-07-08 (`@37`, "ERP 1.8"), após `clasp push` (verificado byte-a-byte via `clasp pull` em diretório temporário) + `clasp deploy -i` dos commits `111dea8`+`683f984` (suíte de testes Jest, fix de dupla formatação de data em `formatarData()`, migração de `MAP.BASE` para `getHeaderMap()`, remoção de `doPost`/`API_ACOES`, casamento de `BRIEFING` por `MES`+`ANO_REFERENCIA`, catches de `onEdit()`/`onFormSubmit()` agora logando, checklist do SchemaExporter por presença de nome). Mesma URL pública de sempre (deployment ID `AKfycbyBqxe6...` mantida, versão atualizada in-place). Nota: existia uma versão intermediária `@33` ("ERP 1.4") criada manualmente pelo usuário via UI em 2026-07-07, antes destas correções — superada pela `@34`. A coluna `ANO_REFERENCIA` em `BRIEFING` foi criada na planilha viva pelo usuário (menu, 2026-07-07) logo após o deploy.
 - **Validação pós-deploy `@29`**: QA Shadow rodado manualmente na planilha real logo após o deploy `@29` (2026-07-05) — **aprovado, 0 falhas, 2896ms**. Confirma que os fixes de performance (cache de influKey/nome por cupom, remoção de lock em funções só-leitura, cache de abas legado, `onEdit()` saindo mais cedo) não quebraram o contrato validado pelo QA Shadow.
 - **Validação E2E real pós-deploy `@32` (2026-07-06)**: fluxo completo testado via chamada HTTP direta ao deployment ativo, com credencial de teste dedicada (`JUCHIKA10`, autorizada pelo usuário exclusivamente para isso) — **aprovado em todas as etapas**:
   `login()` → `getPendencias()` → `iniciarEnvioResumable()` → upload real gravado no Drive (2 arquivos de teste criados) → `finalizarEnvioResumable()` (**sucesso, com o fix de `STATUS_CONTEUDO`**) → `getPendencias()` confirma status atualizado (`AGUARDANDO_MATERIAL` → `EM_APROVACAO`) → `getHistorico()` confirma que o item recém-enviado não aparece no histórico (correto — só migra pra lá com "postado" manual da equipe) → `logout()` → novo `login()` → status `EM_APROVACAO` persiste corretamente na nova sessão.

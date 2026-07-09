@@ -10,7 +10,7 @@ Projeto único: ERP + Portal de Influenciadoras, um só projeto Google Apps Scri
 
 **Backend (Apps Script):**
 - `mae/Código.js` — ERP: menu, `onEdit`/`onFormSubmit`, ciclo mensal, arquivamento.
-- `mae/WebApp.js` — Portal: `doGet`/`doPost`, todas as funções chamadas via `google.script.run`.
+- `mae/WebApp.js` — Portal: `doGet` (só ele; `doPost`/`API_ACOES` foram **removidos em 2026-07-07** — shim JSON que o `Index.html` nunca usou), todas as funções chamadas via `google.script.run`.
 - `mae/PortalUi.gs` — abre `Index.html` em modal dentro da planilha.
 - `mae/SidebarBackend.js` — backend das sidebars do ERP.
 - `mae/SchemaExporter.js` — gera schema vivo da planilha + checklist de integridade (ver seção 4).

@@ -1,8 +1,24 @@
 # Briefing técnico — Redesenho visual do ERP + Portal Jescri (para IA de design / Stitch)
 
-> Documento de análise. Nenhum código foi alterado para produzi-lo. Toda a lógica de negócio
-> descrita abaixo é a que já existe hoje em `mae/`. Nenhuma tela, campo ou regra aqui é inventada —
-> tudo foi extraído lendo o código-fonte diretamente.
+> ⚠️ **SNAPSHOT HISTÓRICO (2026-07-04) — NÃO É O ESTADO ATUAL DO SISTEMA.** Revalidado em 2026-07-08.
+>
+> Este documento foi escrito **antes** das limpezas de 2026-07-05 e 2026-07-07. Vários componentes que
+> ele descreve como existentes **foram removidos** e não devem ser recriados:
+>
+> | Descrito aqui | Estado real (2026-07-08) |
+> |---|---|
+> | `doPost` + `API_ACOES` (shim JSON) | **Removidos** em 2026-07-07. `WebApp.js` só tem `doGet`. |
+> | `Sincronizador.js`, aba `BASE DE APOIO` | **Removidos.** `BASE DE DADOS` é fonte única; não há espelho nem sincronização. |
+> | `Portal.js`, `SincronizarPortal.js` | **Removidos** do repo e do Apps Script. |
+> | `Código.js: puxarAtualizacoesDoPortal` | **Não existe.** O Portal escreve direto em `BASE DE DADOS` via `updatePerfil()`. |
+> | `PortalApp.html`, `views_*.html`, `components_*.html`, `portal_*.html` | **Removidos.** Todo o front-end do Portal vive em `mae/Index.html`. |
+>
+> Para o estado atual, ler `CLAUDE.md`, `FLOW.md` e `SYSTEM_TRUTH.md`. Este arquivo é preservado apenas
+> como **referência de intenção de design/UX**; suas descrições de arquitetura estão obsoletas.
+>
+> Documento de análise. Nenhum código foi alterado para produzi-lo. A lógica de **negócio** descrita
+> abaixo (telas, campos, regras de status) continua majoritariamente válida — foi extraída lendo o
+> código-fonte da época, não inventada.
 
 ---
 
@@ -39,13 +55,13 @@ container-bound a uma planilha Google Sheets ("[JESCRI] INFLUÊNCIA 360º" — a
 1. **ERP** — roda dentro do Google Sheets, operado pela equipe Estúdio Elã via menu customizado, edição de
    células (automações `onEdit`) e sidebars/modais em `HtmlService`. Não tem login próprio: o controle de
    acesso é o compartilhamento nativo da planilha.
-2. **Portal de Influenciadoras** — um Web App publicado (`doGet`/`doPost` em `WebApp.js`), acessado por
+2. **Portal de Influenciadoras** — um Web App publicado (`doGet` em `WebApp.js`; o `doPost` citado aqui foi removido em 2026-07-07), acessado por
    navegador/celular pelas influenciadoras, com login próprio via cupom + senha (5 primeiros dígitos do
    CNPJ). Não usa nenhuma conta Google — a sessão é um token opaco guardado em `CacheService` (6h,
    renovação deslizante).
 
 As duas metades compartilham a mesma planilha como fonte de dados. Não há banco de dados externo, API
-REST própria (fora do shim doPost) nem serviços de terceiros além de: BrasilAPI (busca de CEP),
+REST própria (o shim `doPost` foi removido) nem serviços de terceiros além de: BrasilAPI (busca de CEP),
 BRComerce (rastreio de encomendas) e Google Drive (armazenamento de mídia enviada pelas influenciadoras).
 
 ### 1.2 Módulos existentes
@@ -53,11 +69,11 @@ BRComerce (rastreio de encomendas) e Google Drive (armazenamento de mídia envia
 | Módulo | Arquivo(s) | Papel |
 |---|---|---|
 | Motor do ERP | `Código.js` | Menu (`onOpen`), automações de planilha (`onEdit`, `onFormSubmit`), geração de campanha mensal, arquivamento/histórico, mensagens de cobrança/WhatsApp, enriquecimento de endereço por CEP |
-| API do Portal | `WebApp.js` | `doGet` (serve `Index.html`), `doPost` + `API_ACOES` (shim JSON para chamadas HTTP diretas), `login`, `getPendencias`, `getBriefing`, `getPagamentos`, `getHistorico`, `getPerfil`, `updatePerfil`, upload resumable (`iniciarEnvioResumable`/`finalizarEnvioResumable`) |
+| API do Portal | `WebApp.js` | `doGet` (serve `Index.html`; ~~`doPost` + `API_ACOES`~~ **removidos em 2026-07-07**), `login`, `getPendencias`, `getBriefing`, `getPagamentos`, `getHistorico`, `getPerfil`, `updatePerfil`, upload resumable (`iniciarEnvioResumable`/`finalizarEnvioResumable`) |
 | Frontend Portal (produção) | `Index.html` | SPA mobile, single-file, CSS próprio (bordô/champagne) — **é o que está no ar hoje** |
-| Frontend Portal (design-system, não publicado) | `PortalApp.html`, `portal_router.html`/`raw_portal_router.html`, `portal_api.html`/`raw_portal_api.html`, `portal_styles.html`/`raw_portal_styles.html`, `components_*.html`, `views_*.html` | Mesma superfície funcional que `Index.html`, mas construída sobre o Design System da Elã. Aberta hoje só via modal (`abrirPortalModal`) |
-| Sincronização Mãe → Portal | `Sincronizador.js` | Espelha `BASE DE DADOS` (Mãe) para a aba `BASE DE APOIO` (hoje também na própria Mãe, ver histórico de incidente abaixo), e os históricos de conteúdo/pagamento |
-| Sincronização reversa Portal → Mãe | `Código.js: puxarAtualizacoesDoPortal` | Traz de volta cadastros/atualizações feitas no Portal (endereço, PIX, e-mail) para a Mãe |
+| ~~Frontend Portal (design-system, não publicado)~~ **REMOVIDO** | ~~`PortalApp.html`, `portal_router.html`/`raw_portal_router.html`, `portal_api.html`/`raw_portal_api.html`, `portal_styles.html`/`raw_portal_styles.html`, `components_*.html`, `views_*.html` | Mesma superfície funcional que `Index.html`, mas construída sobre o Design System da Elã. Aberta hoje só via modal (`abrirPortalModal`) |
+| ~~Sincronização Mãe → Portal~~ **REMOVIDO** | ~~`Sincronizador.js`~~ | ~~Espelha `BASE DE DADOS` (Mãe) para a aba `BASE DE APOIO` (hoje também na própria Mãe, ver histórico de incidente abaixo), e os históricos de conteúdo/pagamento |
+| ~~Sincronização reversa Portal → Mãe~~ **NUNCA EXISTIU / REMOVIDO** | ~~`Código.js: puxarAtualizacoesDoPortal`~~ | ~~Traz de volta cadastros/atualizações feitas no Portal (endereço, PIX, e-mail) para a Mãe |
 | Sincronização legada (obsoleta) | `Portal.js`, `SincronizarPortal.js` | Apontam para uma planilha externa ("Planilha de Apoio", ID `1289Eu3hk...`) que **não existe mais** (foi excluída — foi a causa-raiz de uma queda de login recente). Ficaram como código morto, não desconectado do menu ainda em `Portal.js` (`lancarParaPortal`), mas apontando para um destino inacessível |
 | Sidebars administrativas | `SidebarBackend.js` + `Sidebar.html` + `SidebarPagamento.html` | Formulários simples dentro do Sheets: editar cadastro de uma influenciadora; lançar pagamento avulso/UGC |
 | Fragmento de UI "admin/command center" | `mae/legacy/portal-stitch-ui/.../views/admin.html` | Protótipo Stitch de um dashboard administrativo (dados fictícios, nunca ligado ao backend real) — não existe hoje nenhum equivalente funcional no ERP |
@@ -122,13 +138,14 @@ Só existem dois perfis reais, sem granularidade adicional (sem "gerente" vs "op
 
 ### 1.6 Relação ERP ↔ Portal
 
-O Portal **lê e escreve na mesma planilha Mãe** (não é um sistema separado com seu próprio banco). O
-"Sincronizador" existe porque, historicamente, o Portal era publicado a partir de uma segunda planilha
-("Planilha de Apoio") e precisava de um mecanismo de cópia de dados nos dois sentidos. Essa segunda
-planilha foi excluída em algum momento; a correção recente reapontou o sincronizador para tratar
-`BASE DE APOIO` como uma aba-espelho dentro da própria Mãe. Isso significa que, arquiteturalmente, **a
-divisão ERP/Portal hoje é uma divisão de telas, não de dados** — é uma oportunidade de simplificação, mas
-fora do escopo desta tarefa (só documentação/UX).
+O Portal **lê e escreve na mesma planilha Mãe** (não é um sistema separado com seu próprio banco).
+Historicamente existiu um "Sincronizador" porque o Portal era publicado a partir de uma segunda planilha
+("Planilha de Apoio"), com cópia de dados nos dois sentidos.
+
+**Atualização (2026-07-08):** aquela oportunidade de simplificação **já foi executada**. A Planilha de
+Apoio, o `Sincronizador.js` e a aba `BASE DE APOIO` não existem mais; `BASE DE DADOS` é fonte única desde
+2026-07-05. Arquiteturalmente, **a divisão ERP/Portal é uma divisão de telas, não de dados** — e não há
+mais nenhum mecanismo de sincronização a manter.
 
 ---
 

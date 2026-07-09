@@ -1,5 +1,7 @@
 # AUDITORIA TÉCNICA COMPLETA — Jescri ERP + Portal de Influenciadoras
 
+>  ⚠️ **Relatório datado. Duas coisas mudaram DEPOIS dele:** (1) `doPost` + `API_ACOES` foram **removidos** ainda em 2026-07-07 — onde este documento os descreve como presentes (seção 8.2, tabela de funções, checklist), leia "removidos"; (2) o deploy de produção avançou de `@34` para `@37`. Os `~L` citados aqui são de 2026-07-07 e driftaram: `grep -n "^function NOME"` resolve.
+
 > Data: 2026-07-07. Escopo: leitura integral de todo o código-fonte do projeto (`mae/*.js`, `mae/*.gs`, `mae/*.html`, `mae/appsscript.json`, `mae/.clasp.json`) mais toda a documentação de apoio existente (`CLAUDE.md`, `FLOW.md`, `SYSTEM_TRUTH.md`, `SYSTEM_MAP.md`, `PROJECT_GOVERNANCE.md`, `docs/spec/system_spec_v1.md`), e verificação do estado real do Git/GitHub (branches, tags, proteção de branch, GitHub Pages). Nenhuma alteração de código foi feita. Este documento é um relatório de leitura — onde há dúvida ou achado, isso é sinalizado explicitamente, não silenciado.
 >
 > **Relação com a documentação existente**: `CLAUDE.md`/`FLOW.md`/`SYSTEM_TRUTH.md`/`SYSTEM_MAP.md` continuam sendo as fontes primárias para execução de tarefas (`CLAUDE.md` seções 9-10). Este documento é um retrato consolidado e mais amplo (front-end, dívidas técnicas, checklist, recomendações) que aponta para eles em vez de duplicá-los onde já são autoritativos — divergências entre este documento e aqueles devem ser resolvidas a favor da leitura mais recente do código.

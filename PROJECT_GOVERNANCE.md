@@ -2,7 +2,7 @@
 
 ## Estrutura oficial do projeto
 - /mae → sistema principal (ERP + Portal, projeto Apps Script único)
-- /sites → projetos auxiliares (sites estáticos)
+- /sites → placeholder para sites estáticos auxiliares. **Hoje vazio** — os mirrors locais foram removidos em 2026-07-05. Não recriar sem necessidade real.
 - /docs → documentação
 
 ## Regras obrigatórias
