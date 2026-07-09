@@ -1,4 +1,12 @@
-# V2 — Especificação Técnica: Plataforma Jescri / Estúdio Elã
+> # ⛔ DOCUMENTO RECLASSIFICADO — PESQUISA PARA UMA FUTURA V3, NÃO EXECUTAR
+>
+> **Decisão do usuário em 2026-07-08**: a **V2 não é migração de infraestrutura**. A stack atual (GitHub Pages + Google Apps Script + Google Sheets + Google Drive) **permanece**. Supabase, Postgres, ETL, Next.js e a migração *strangler* descritos abaixo estão **suspensos** e preservados apenas como pesquisa para uma futura **V3**, a ser planejada só depois que a V2 estiver madura e estabilizada.
+>
+> **O que vale para a V2 é `docs/V2_ROADMAP.md` deste repositório.** Comece por `NEXT_AGENT.md` na raiz. Nada deste documento deve ser implementado.
+>
+> Preservação do trabalho já feito: repo `estudioela/plataforma`, tag `v3-research-parked`.
+
+# V2 (histórico) — Especificação Técnica: Plataforma Jescri / Estúdio Elã
 
 > Versão 0.1 (2026-07-08). Documento de arquitetura — nenhum código da V1 é alterado por este documento. A V1 (Apps Script + Google Sheets, deployment `@37`, commit `aa55252`) está **estabilizada e congelada**: só correções críticas até a V2 assumir.
 >
