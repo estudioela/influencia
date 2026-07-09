@@ -10,6 +10,64 @@ class AtivacaoService {
     this.repository = repository || new AtivacaoRepository();
   }
 
+  /**
+   * Leitura de todas as ativações de um ciclo, já em DTO.
+   *
+   * O Service nunca devolve a linha crua do Repository: a UI não pode depender
+   * do nome das colunas da planilha, senão trocar Sheets por um banco na V3
+   * quebraria o front-end — que é exatamente o que a camada existe para evitar.
+   */
+  listarPorCiclo(idCiclo) {
+    if (!idCiclo) {
+      throw new Error('É obrigatório informar o ciclo.');
+    }
+
+    return this.repository.findByCiclo(idCiclo).map(linha => this._paraDto(linha));
+  }
+
+  obter(idAtivacao) {
+    const dados = this.repository.getById(idAtivacao);
+
+    if (!dados) {
+      throw new Error(`Ativação "${idAtivacao}" não encontrada.`);
+    }
+
+    return this._paraDto(dados);
+  }
+
+  /**
+   * A planilha devolve `Date` para colunas de data e `''` para célula vazia.
+   * Serializar aqui evita que cada tela invente seu próprio tratamento — e
+   * `google.script.run` não preserva `Date` de forma confiável.
+   */
+  _paraDto(linha) {
+    const C = CAMPOS_ATIVACAO;
+
+    return {
+      idAtivacao: this._texto(linha[C.ID]),
+      idCiclo: this._texto(linha[C.CICLO]),
+      idInfluenciadora: this._texto(linha[C.INFLUENCIADORA]),
+      tipoConteudo: this._texto(linha[C.TIPO_CONTEUDO]),
+      estado: this._texto(linha[C.ESTADO]),
+      lookReferencia: this._texto(linha[C.LOOK]),
+      entregaPrevista: this._data(linha[C.ENTREGA_PREVISTA]),
+      linkBriefing: this._texto(linha[C.LINK_BRIEFING]),
+      linkUploadHd: this._texto(linha[C.LINK_UPLOAD_HD])
+    };
+  }
+
+  _texto(valor) {
+    return valor === null || valor === undefined ? '' : String(valor);
+  }
+
+  _data(valor) {
+    if (valor instanceof Date) {
+      return valor.toISOString();
+    }
+
+    return this._texto(valor);
+  }
+
   alterarEstado(idAtivacao, novoEstado) {
     const dados = this.repository.getById(idAtivacao);
 

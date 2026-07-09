@@ -1,7 +1,20 @@
+/**
+ * Colunas da aba `Ativacoes` (docs/spec/SCHEMA_V2.md).
+ *
+ * `Estado_Derivado` está deliberadamente ausente: é coluna de apresentação,
+ * calculada por fórmula na planilha. Nenhum Repository, Entity ou Service da
+ * V2 pode lê-la ou escrevê-la — não é fonte de verdade.
+ */
 const CAMPOS_ATIVACAO = Object.freeze({
   ID: 'ID_Ativacao',
   CICLO: 'ID_Ciclo',
-  ESTADO: 'Estado_Principal'
+  INFLUENCIADORA: 'ID_Influenciadora',
+  TIPO_CONTEUDO: 'Tipo_Conteudo',
+  ESTADO: 'Estado_Principal',
+  LOOK: 'Look_Referencia',
+  ENTREGA_PREVISTA: 'Data_Prevista_Entrega',
+  LINK_BRIEFING: 'Link_Briefing',
+  LINK_UPLOAD_HD: 'Link_Upload_HD'
 });
 
 class AtivacaoRepository {
