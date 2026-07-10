@@ -1,34 +1,42 @@
-class AtivacaoRepositoryFake {
-  constructor(linhas) {
-    this.linhas = linhas.map(linha => Object.assign({}, linha));
-  }
-
-  getById(id) {
-    const linha = this.linhas.find(l => String(l[CAMPOS_ATIVACAO.ID]) === String(id));
-    return linha ? Object.assign({}, linha) : null;
-  }
-
-  findByCiclo(cicloId) {
-    return this.linhas
-      .filter(l => String(l[CAMPOS_ATIVACAO.CICLO]) === String(cicloId))
-      .map(l => Object.assign({}, l));
-  }
-
-  save(ativacaoData) {
-    const id = ativacaoData[CAMPOS_ATIVACAO.ID];
-    const posicao = this.linhas.findIndex(l => String(l[CAMPOS_ATIVACAO.ID]) === String(id));
-
-    if (posicao === -1) {
-      this.linhas.push(Object.assign({}, ativacaoData));
-      return Object.assign({}, ativacaoData);
+/**
+ * Diagnóstico manual, rodado no editor do Apps Script — não é coberto pelo
+ * Jest (a suíte exercita o mesmo domínio via `vm`). Fica deployável para poder
+ * ser executado, mas NÃO exporta nenhum símbolo de teste para o escopo global
+ * de produção: o dublê `AtivacaoRepositoryFake` é local a esta função. No
+ * Apps Script todo arquivo compartilha um único escopo global — uma classe de
+ * teste no topo do arquivo passaria a existir junto do código real.
+ */
+function runV2SanityCheck() {
+  class AtivacaoRepositoryFake {
+    constructor(linhas) {
+      this.linhas = linhas.map(linha => Object.assign({}, linha));
     }
 
-    this.linhas[posicao] = Object.assign({}, this.linhas[posicao], ativacaoData);
-    return Object.assign({}, this.linhas[posicao]);
-  }
-}
+    getById(id) {
+      const linha = this.linhas.find(l => String(l[CAMPOS_ATIVACAO.ID]) === String(id));
+      return linha ? Object.assign({}, linha) : null;
+    }
 
-function runV2SanityCheck() {
+    findByCiclo(cicloId) {
+      return this.linhas
+        .filter(l => String(l[CAMPOS_ATIVACAO.CICLO]) === String(cicloId))
+        .map(l => Object.assign({}, l));
+    }
+
+    save(ativacaoData) {
+      const id = ativacaoData[CAMPOS_ATIVACAO.ID];
+      const posicao = this.linhas.findIndex(l => String(l[CAMPOS_ATIVACAO.ID]) === String(id));
+
+      if (posicao === -1) {
+        this.linhas.push(Object.assign({}, ativacaoData));
+        return Object.assign({}, ativacaoData);
+      }
+
+      this.linhas[posicao] = Object.assign({}, this.linhas[posicao], ativacaoData);
+      return Object.assign({}, this.linhas[posicao]);
+    }
+  }
+
   const dispatcher = new EventDispatcher();
   const eventosCapturados = [];
 
@@ -61,32 +69,37 @@ function runV2SanityCheck() {
   const cenarios = [
     {
       nome: 'transição válida (Planejamento → Pronta para Envio)',
-      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-001', newState: ESTADOS_ATIVACAO.PRONTA_PARA_ENVIO },
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-001', newState: ESTADOS_ATIVACAO.PRONTA_PARA_ENVIO, idInfluenciadora: 'influ-01' },
       sucessoEsperado: true
     },
     {
       nome: 'transição proibida (Planejamento → Concluída)',
-      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-002', newState: ESTADOS_ATIVACAO.CONCLUIDA },
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-002', newState: ESTADOS_ATIVACAO.CONCLUIDA, idInfluenciadora: 'influ-02' },
       sucessoEsperado: false
     },
     {
       nome: 'bypass permitido (Planejamento → Arquivada)',
-      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-002', newState: ESTADOS_ATIVACAO.ARQUIVADA },
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-002', newState: ESTADOS_ATIVACAO.ARQUIVADA, idInfluenciadora: 'influ-02' },
       sucessoEsperado: true
     },
     {
+      nome: 'ativação de outra influenciadora não é alterada',
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-001', newState: ESTADOS_ATIVACAO.ARQUIVADA, idInfluenciadora: 'influ-02' },
+      sucessoEsperado: false
+    },
+    {
       nome: 'ativação inexistente',
-      payload: { action: 'CHANGE_STATE', idAtivacao: 'nao-existe', newState: ESTADOS_ATIVACAO.ARQUIVADA },
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'nao-existe', newState: ESTADOS_ATIVACAO.ARQUIVADA, idInfluenciadora: 'influ-01' },
       sucessoEsperado: false
     },
     {
       nome: 'payload sem newState',
-      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-001' },
+      payload: { action: 'CHANGE_STATE', idAtivacao: 'ativacao-001', idInfluenciadora: 'influ-01' },
       sucessoEsperado: false
     },
     {
       nome: 'ação não suportada',
-      payload: { action: 'DELETE', idAtivacao: 'ativacao-001', newState: ESTADOS_ATIVACAO.ARQUIVADA },
+      payload: { action: 'DELETE', idAtivacao: 'ativacao-001', newState: ESTADOS_ATIVACAO.ARQUIVADA, idInfluenciadora: 'influ-01' },
       sucessoEsperado: false
     }
   ];

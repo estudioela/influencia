@@ -67,7 +67,7 @@ describe('tear/Api.js — nenhuma exceção escapa como página de erro', () => 
   // A montagem das dependências acontece fora do try do Controller.
   function comPlanilhaQueFalha(erro) {
     const arquivos = [
-      'Config.js', 'Planilha.js', 'Senha.js', 'Ativacao.js', 'AtivacaoRepository.js',
+      'Config.js', 'Planilha.js', 'Senha.js', 'Dto.js', 'Ativacao.js', 'AtivacaoRepository.js',
       'EventDispatcher.js', 'AtivacaoService.js', 'WebAppController.js',
       'CicloRepository.js', 'CicloService.js', 'CicloController.js',
       'PlanoRepository.js', 'PagamentoService.js', 'PagamentoController.js',

@@ -41,11 +41,11 @@ class PagamentoService {
       const ativacoes = ativacoesPorInfluenciadora[plano[CAMPOS_PLANO.INFLUENCIADORA]] || [];
 
       return {
-        idPlano: this._texto(plano[CAMPOS_PLANO.ID]),
-        idInfluenciadora: this._texto(plano[CAMPOS_PLANO.INFLUENCIADORA]),
-        idCiclo: this._texto(plano[CAMPOS_PLANO.CICLO]),
-        valorCache: this._texto(plano[CAMPOS_PLANO.VALOR_CACHE]),
-        entregaveisAcordados: this._texto(plano[CAMPOS_PLANO.QTD_ENTREGAVEIS]),
+        idPlano: textoDeCelula(plano[CAMPOS_PLANO.ID]),
+        idInfluenciadora: textoDeCelula(plano[CAMPOS_PLANO.INFLUENCIADORA]),
+        idCiclo: textoDeCelula(plano[CAMPOS_PLANO.CICLO]),
+        valorCache: textoDeCelula(plano[CAMPOS_PLANO.VALOR_CACHE]),
+        entregaveisAcordados: textoDeCelula(plano[CAMPOS_PLANO.QTD_ENTREGAVEIS]),
         entregaveisConcluidos: this._contarConcluidas(ativacoes),
         estado: this._estadoDoPagamento(ativacoes)
       };
@@ -87,9 +87,5 @@ class PagamentoService {
     const todasLiberadas = ativacoes.every(a => liberadas.indexOf(a[CAMPOS_ATIVACAO.ESTADO]) !== -1);
 
     return todasLiberadas ? 'Elegível para Pagamento' : 'Pendente';
-  }
-
-  _texto(valor) {
-    return valor === null || valor === undefined ? '' : String(valor);
   }
 }

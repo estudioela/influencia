@@ -28,10 +28,10 @@ class AtivacaoRepository {
     }
 
     const { cabecalho, linhas } = this._lerDados();
-    const idIdx = this._indiceDe(cabecalho, CAMPOS_ATIVACAO.ID);
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_ATIVACAO.ID, PLANILHAS.ATIVACOES);
     const linha = linhas.find(l => this._mesmoId(l[idIdx], id));
 
-    return linha ? this._paraObjeto(cabecalho, linha) : null;
+    return linha ? linhaParaObjeto(cabecalho, linha) : null;
   }
 
   findByCiclo(cicloId) {
@@ -40,11 +40,11 @@ class AtivacaoRepository {
     }
 
     const { cabecalho, linhas } = this._lerDados();
-    const cicloIdx = this._indiceDe(cabecalho, CAMPOS_ATIVACAO.CICLO);
+    const cicloIdx = indiceDaColuna(cabecalho, CAMPOS_ATIVACAO.CICLO, PLANILHAS.ATIVACOES);
 
     return linhas
       .filter(l => this._mesmoId(l[cicloIdx], cicloId))
-      .map(l => this._paraObjeto(cabecalho, l));
+      .map(l => linhaParaObjeto(cabecalho, l));
   }
 
   save(ativacaoData) {
@@ -53,7 +53,7 @@ class AtivacaoRepository {
     }
 
     const { aba, cabecalho, linhas } = this._lerDados();
-    const idIdx = this._indiceDe(cabecalho, CAMPOS_ATIVACAO.ID);
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_ATIVACAO.ID, PLANILHAS.ATIVACOES);
     const id = ativacaoData[CAMPOS_ATIVACAO.ID];
     const posicao = id ? linhas.findIndex(l => this._mesmoId(l[idIdx], id)) : -1;
 
@@ -77,45 +77,14 @@ class AtivacaoRepository {
     const paraGravar = atualizada.map((valor, i) => (formulas[i] ? formulas[i] : valor));
 
     intervalo.setValues([paraGravar]);
-    return this._paraObjeto(cabecalho, atualizada);
+    return linhaParaObjeto(cabecalho, atualizada);
   }
 
-  _getAba() {
-    const nome = PLANILHAS.ATIVACOES;
-    const aba = this.spreadsheet.getSheetByName(nome);
-
-    if (!aba) {
-      throw new Error(`Aba "${nome}" não encontrada na planilha.`);
-    }
-
-    return aba;
-  }
-
+  // Leitura, resolução de coluna e serialização de linha vêm de Planilha.js —
+  // os mesmos helpers dos outros Repositories. Só `_mesmoId` (comparação com
+  // trim) e o `save()` (preservação de fórmula) são específicos desta entidade.
   _lerDados() {
-    const aba = this._getAba();
-    const valores = aba.getDataRange().getValues();
-    const cabecalho = valores.shift() || [];
-
-    return { aba, cabecalho, linhas: valores };
-  }
-
-  _indiceDe(cabecalho, campo) {
-    const indice = cabecalho.indexOf(campo);
-
-    if (indice === -1) {
-      throw new Error(`Coluna "${campo}" ausente em "${PLANILHAS.ATIVACOES}".`);
-    }
-
-    return indice;
-  }
-
-  _paraObjeto(cabecalho, linha) {
-    return cabecalho.reduce((obj, coluna, i) => {
-      if (coluna) {
-        obj[coluna] = linha[i];
-      }
-      return obj;
-    }, {});
+    return lerAbaComCabecalho(this.spreadsheet, PLANILHAS.ATIVACOES);
   }
 
   _mesmoId(valorCelula, valorBusca) {

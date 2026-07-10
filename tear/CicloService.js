@@ -19,22 +19,10 @@ class CicloService {
     const C = CAMPOS_CICLO;
 
     return {
-      idCiclo: this._texto(linha[C.ID]),
-      nome: this._texto(linha[C.NOME]) || this._texto(linha[C.ID]),
-      inicioLogistica: this._data(linha[C.INICIO_LOGISTICA]),
-      fimOperacao: this._data(linha[C.FIM_OPERACAO])
+      idCiclo: textoDeCelula(linha[C.ID]),
+      nome: textoDeCelula(linha[C.NOME]) || textoDeCelula(linha[C.ID]),
+      inicioLogistica: dataIsoDeCelula(linha[C.INICIO_LOGISTICA]),
+      fimOperacao: dataIsoDeCelula(linha[C.FIM_OPERACAO])
     };
-  }
-
-  _texto(valor) {
-    return valor === null || valor === undefined ? '' : String(valor);
-  }
-
-  _data(valor) {
-    if (valor instanceof Date) {
-      return valor.toISOString();
-    }
-
-    return this._texto(valor);
   }
 }

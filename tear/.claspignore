@@ -4,6 +4,7 @@
 !AtivacaoRepository.js
 !AtivacaoService.js
 !Config.js
+!Dto.js
 !EventDispatcher.js
 !Setup_V2.js
 !MigracaoParceiros.js

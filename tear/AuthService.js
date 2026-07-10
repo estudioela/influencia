@@ -80,14 +80,10 @@ class AuthService {
   /** `Senha_Hash` e `Cupom` não saem daqui. */
   _paraDto(parceiro) {
     return {
-      idInfluenciadora: this._texto(parceiro[CAMPOS_PARCEIRO.ID]),
-      nome: this._texto(parceiro[CAMPOS_PARCEIRO.NOME]),
-      statusContrato: this._texto(parceiro[CAMPOS_PARCEIRO.STATUS_CONTRATO]),
-      categoria: this._texto(parceiro[CAMPOS_PARCEIRO.CATEGORIA])
+      idInfluenciadora: textoDeCelula(parceiro[CAMPOS_PARCEIRO.ID]),
+      nome: textoDeCelula(parceiro[CAMPOS_PARCEIRO.NOME]),
+      statusContrato: textoDeCelula(parceiro[CAMPOS_PARCEIRO.STATUS_CONTRATO]),
+      categoria: textoDeCelula(parceiro[CAMPOS_PARCEIRO.CATEGORIA])
     };
-  }
-
-  _texto(valor) {
-    return valor === null || valor === undefined ? '' : String(valor);
   }
 }
