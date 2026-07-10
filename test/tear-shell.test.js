@@ -1,7 +1,7 @@
 /**
  * Casca navegável da V2 (Etapa 1): roteamento, escape e renderizadores.
  *
- * Carrega o <script> real de tear/app.html via loadGasModule — nenhuma lógica
+ * Carrega o <script> real de tear/Templates.html via loadGasModule — nenhuma lógica
  * é reescrita aqui. Como o script guarda a ligação com o DOM atrás de
  * `typeof document !== 'undefined'`, ele carrega no sandbox sem shim algum.
  *
@@ -13,7 +13,7 @@ const path = require('path');
 const { loadGasModule } = require('./helpers/loadGasModule');
 
 const RAIZ = path.join(__dirname, '..');
-const app = loadGasModule(path.join(RAIZ, 'tear', 'app.html'));
+const app = loadGasModule(path.join(RAIZ, 'tear', 'Templates.html'));
 
 describe('roteamento', () => {
   test('resolve uma rota conhecida', () => {
@@ -43,7 +43,7 @@ describe('roteamento', () => {
   });
 
   test('todo template declarado em ROTAS existe em views.html', () => {
-    const views = fs.readFileSync(path.join(RAIZ, 'tear', 'views.html'), 'utf8');
+    const views = fs.readFileSync(path.join(RAIZ, 'tear', 'Templates.html'), 'utf8');
 
     Object.keys(app.ROTAS).forEach((rota) => {
       expect(views).toContain(`id="${app.ROTAS[rota].template}"`);
@@ -117,7 +117,7 @@ describe('fiação com o backend (Etapa 4)', () => {
       apiListarAtivacoesDoCiclo() { aoSerChamado(this); }
     };
 
-    const ctx = loadGasModule(path.join(RAIZ, 'tear', 'app.html'), { google: { script: { run } } });
+    const ctx = loadGasModule(path.join(RAIZ, 'tear', 'Templates.html'), { google: { script: { run } } });
     // Desde a Etapa 7 todo carregador exige sessão: o token vai em cada chamada.
     ctx.SESSAO = { token: 'tok-teste', perfil: {} };
     return ctx;
@@ -215,13 +215,13 @@ describe('sessão no cliente', () => {
       removeItem: (k) => dados.delete(k)
     };
 
-    return { dados, app: loadGasModule(path.join(RAIZ, 'tear', 'app.html'), { sessionStorage }) };
+    return { dados, app: loadGasModule(path.join(RAIZ, 'tear', 'Templates.html'), { sessionStorage }) };
   }
 
   // O token do Apps Script é um bearer puro: o servidor só faz cache.get(token),
   // sem binding de IP ou User-Agent. Em localStorage ele sobreviveria ao reboot.
   test('a sessão usa sessionStorage, e localStorage não aparece no código', () => {
-    const fonte = fs.readFileSync(path.join(RAIZ, 'tear', 'app.html'), 'utf8');
+    const fonte = fs.readFileSync(path.join(RAIZ, 'tear', 'Templates.html'), 'utf8');
     // Os comentários citam localStorage para explicar por que NÃO é usado.
     const codigo = fonte.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
@@ -296,8 +296,8 @@ describe('tear/Roteador.js — fronteira HTTP', () => {
   test('include() devolve o conteúdo do arquivo pedido', () => {
     const { sandbox, HtmlService } = carregarRoteador();
 
-    expect(sandbox.include('styles_core')).toBe('<style></style>');
-    expect(HtmlService.createHtmlOutputFromFile).toHaveBeenCalledWith('styles_core');
+    expect(sandbox.include('Styles')).toBe('<style></style>');
+    expect(HtmlService.createHtmlOutputFromFile).toHaveBeenCalledWith('Styles');
   });
 
   // O Controller é a fronteira de dados; o roteamento HTTP serve HTML. Se um

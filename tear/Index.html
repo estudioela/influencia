@@ -8,9 +8,7 @@
          variáveis precisam existir antes de qualquer regra que as consuma.
          Invertida, as divergências do produto somem em silêncio.
          Ver design-system/adapters/apps-script.md. -->
-    <?!= include('styles_core'); ?>
-    <?!= include('styles_theme'); ?>
-    <?!= include('components_ui'); ?>
+    <?!= include('Styles'); ?>
   </head>
 
   <body class="ela-bg ela-text ela-font-body ela-case-brand">
@@ -27,11 +25,10 @@
       <p id="tear-origem" class="tear-mock ela-m-0">dados simulados</p>
 
       <main id="tear-view" class="tear-view ela-p-sm" aria-live="polite"></main>
-
-      <?!= include('components_nav'); ?>
     </div>
 
-    <?!= include('views'); ?>
-    <?!= include('app'); ?>
+    <!-- Estilos de componente, bottom nav (fixed — posição no DOM é irrelevante),
+         templates das views e o <script> de apresentação, nesta ordem. -->
+    <?!= include('Templates'); ?>
   </body>
 </html>

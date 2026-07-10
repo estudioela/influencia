@@ -8,9 +8,5 @@
 !Roteador.js
 !DevTools.js
 !Index.html
-!styles_core.html
-!styles_theme.html
-!components_ui.html
-!components_nav.html
-!views.html
-!app.html
+!Styles.html
+!Templates.html
