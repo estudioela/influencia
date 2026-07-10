@@ -281,7 +281,7 @@ describe('tear/Roteador.js — fronteira HTTP', () => {
       createHtmlOutputFromFile: jest.fn().mockReturnValue({ getContent: () => '<style></style>' })
     };
 
-    return { sandbox: loadGasModule(path.join(RAIZ, 'tear', 'Roteador.js'), { HtmlService }), HtmlService, saida };
+    return { sandbox: loadGasModule(path.join(RAIZ, 'tear', 'entrypoints/Roteador.js'), { HtmlService }), HtmlService, saida };
   }
 
   test('doGet serve o Index e declara o viewport mobile', () => {
@@ -303,7 +303,7 @@ describe('tear/Roteador.js — fronteira HTTP', () => {
   // O Controller é a fronteira de dados; o Roteador serve HTML. Se um começar a
   // fazer o trabalho do outro, a separação da §13 do CLAUDE.md deixa de existir.
   test('o Roteador não toca planilha, Drive nem propriedades do script', () => {
-    const fonte = fs.readFileSync(path.join(RAIZ, 'tear', 'Roteador.js'), 'utf8');
+    const fonte = fs.readFileSync(path.join(RAIZ, 'tear', 'entrypoints/Roteador.js'), 'utf8');
     // Os comentários do próprio arquivo citam essas APIs para explicar por que
     // não as usa — a asserção é sobre o código, não sobre a prosa.
     const codigo = fonte.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');

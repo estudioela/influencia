@@ -13,7 +13,7 @@ const RAIZ = path.join(__dirname, '..');
 const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
 const { parceirosDaBaseV1, linhasDeParceirosParaGravar, garantirCabecalhoDeParceiros, CAMPOS_PARCEIRO } = loadGasFiles(
-  ['Config.js', 'ParceiroRepository.js', 'MigracaoParceiros.js'].map(arquivo),
+  ['infra/Config.js', 'repositories/ParceiroRepository.js', 'operacoes/MigracaoParceiros.js'].map(arquivo),
   {},
   ['parceirosDaBaseV1', 'linhasDeParceirosParaGravar', 'garantirCabecalhoDeParceiros', 'CAMPOS_PARCEIRO']
 );

@@ -67,11 +67,11 @@ describe('tear/Api.js — nenhuma exceção escapa como página de erro', () => 
   // A montagem das dependências acontece fora do try do Controller.
   function comPlanilhaQueFalha(erro) {
     const arquivos = [
-      'Config.js', 'PlanilhaHelpers.js', 'Senha.js', 'Dto.js', 'Ativacao.js', 'AtivacaoRepository.js',
-      'EventDispatcher.js', 'AtivacaoService.js', 'AtivacaoController.js',
-      'CicloRepository.js', 'CicloService.js', 'CicloController.js',
-      'PlanoRepository.js', 'PagamentoService.js', 'PagamentoController.js',
-      'ParceiroRepository.js', 'SessaoRepository.js', 'AuthService.js', 'AuthController.js', 'Entrypoints.js'
+      'infra/Config.js', 'infra/PlanilhaHelpers.js', 'dominio/Senha.js', 'dominio/Dto.js', 'dominio/Ativacao.js', 'repositories/AtivacaoRepository.js',
+      'infra/EventDispatcher.js', 'services/AtivacaoService.js', 'controllers/AtivacaoController.js',
+      'repositories/CicloRepository.js', 'services/CicloService.js', 'controllers/CicloController.js',
+      'repositories/PlanoRepository.js', 'services/PagamentoService.js', 'controllers/PagamentoController.js',
+      'repositories/ParceiroRepository.js', 'repositories/SessaoRepository.js', 'services/AuthService.js', 'controllers/AuthController.js', 'entrypoints/Entrypoints.js'
     ].map((n) => path.join(RAIZ, 'tear', n));
 
     return loadGasFiles(

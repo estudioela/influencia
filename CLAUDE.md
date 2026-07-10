@@ -22,11 +22,11 @@ Projeto único: ERP + Portal de Influenciadoras Jescri, um só projeto Google Ap
 - `mae/Sidebar.html`, `mae/SidebarPagamento.html` — UI das sidebars do ERP (dentro da planilha, não do Portal).
 
 **V2 — Projeto Tear (`tear/`, projeto Apps Script separado):**
-- `tear/Roteador.js` — fronteira HTTP: `doGet()` serve `Index.html`, `include()` monta os parciais. Não toca `SpreadsheetApp`/`DriveApp`/`PropertiesService`.
-- `tear/Entrypoints.js` — pontos de entrada de `google.script.run` (`apiListarAtivacoesDoCiclo`, `apiObterAtivacao`, `apiAlterarEstadoDaAtivacao`). Só monta dependências e delega ao Controller.
+- `tear/entrypoints/Roteador.js` — fronteira HTTP: `doGet()` serve `Index.html`, `include()` monta os parciais. Não toca `SpreadsheetApp`/`DriveApp`/`PropertiesService`.
+- `tear/entrypoints/Entrypoints.js` — pontos de entrada de `google.script.run` (`apiListarAtivacoesDoCiclo`, `apiObterAtivacao`, `apiAlterarEstadoDaAtivacao`). Só monta dependências e delega ao Controller.
 - `tear/Index.html` + `components_ui.html` / `components_nav.html` / `views.html` / `app.html` — camada de apresentação (shell, componentes, telas, roteador client-side). `styles_core.html` / `styles_theme.html` são **espelhos gerados** de `design-system/` (ver `test/styles-sync.test.js`).
-- `tear/AtivacaoController.js` — fronteira de dados: `handleAtivacaoUpdate()` (escrita) e `handleAtivacaoQuery()` (leitura: `LIST_BY_CYCLE`, `GET_BY_ID`).
-- `tear/AtivacaoService.js` — `alterarEstado()`, `listarPorCiclo()`, `obter()`. Devolve DTO, nunca a linha crua.
+- `tear/controllers/AtivacaoController.js` — fronteira de dados: `handleAtivacaoUpdate()` (escrita) e `handleAtivacaoQuery()` (leitura: `LIST_BY_CYCLE`, `GET_BY_ID`).
+- `tear/services/AtivacaoService.js` — `alterarEstado()`, `listarPorCiclo()`, `obter()`. Devolve DTO, nunca a linha crua.
 - Detalhes de camada, contrato e armadilhas: seção 13.
 
 **Sincronização / deploy:**
@@ -313,6 +313,8 @@ Toda avaliação de PR/diff/código novo continua emitindo o bloco de estabilida
 **Dois projetos clasp, dois Script IDs, duas planilhas (segregado em 2026-07-09).** `mae/` aponta para o Apps Script da planilha de produção; `tear/` aponta para o de `[ELÃ] PROJETO TEAR 1.0`. Cada um tem `.clasp.json` e `.claspignore` próprios, e **as allowlists não se sobrepõem**: um `clasp push` de dentro de `mae/` não pode levar arquivo da V2, e um de dentro de `tear/` não pode levar arquivo da V1. `test/claspignore-allowlist.test.js` trava as duas raízes e **exige que os `scriptId` sejam distintos** — em 2026-07-05 um segundo projeto clasp apontando para o mesmo `scriptId` de produção quase apagou o Portal (seção 6). Sempre rodar `clasp` de dentro da raiz correta, nunca da raiz do repositório.
 
 **Ferramentas de migração** (`tools/`): JS puro, somente leitura, fora de qualquer allowlist. `tools/ExportadorDeDados.js` lê `BASE DE DADOS` e `PAGAMENTOS` da planilha de produção e emite JSON para a V2. Para executá-lo é preciso adicioná-lo temporariamente a `mae/.claspignore` — e removê-lo depois. Critérios fixados pelo usuário em 2026-07-09: influenciadora ativa é coluna A em `ON`/`TRUE` **e** `CUPOM` preenchido (o cadastro **não** tem `ANO_REFERENCIA` e não pode ser filtrado por ano); pagamento só é exportável com `ANO_REFERENCIA` preenchido, o que pressupõe `backfillAnoReferenciaPagamentos()` (menu, item 11) já executado.
+
+**Organização física** (desde a reorganização de 2026-07-10): os `.js` de back-end vivem em subpastas por camada — `entrypoints/` (Entrypoints, Roteador), `controllers/`, `services/`, `repositories/`, `dominio/` (Ativacao, Senha, Dto), `infra/` (PlanilhaHelpers, EventDispatcher, Config), `operacoes/` (SetupDatabase, MigracaoParceiros, SanityCheck). No Apps Script a subpasta é só prefixo de nome (`services/AtivacaoService`), não módulo: o escopo global segue único. Os HTML seguem na raiz de `tear/` (mover exigiria reescrever `include()`/`createTemplateFromFile`, sem cobertura de teste — fica para a etapa de front-end). A allowlist de `tear/.claspignore` e as listas de carga dos testes usam os caminhos com subpasta.
 
 **Camadas** — `AtivacaoController` (fronteira com a UI; **proibido tocar `SpreadsheetApp`/`DriveApp`/`PropertiesService`**) → `AtivacaoService` (orquestra) → `Ativacao` (invariantes, sem I/O) + `AtivacaoRepository` (única camada autorizada a tocar `SpreadsheetApp` para a entidade). Entity, Service e Repository sempre propagam exceção; só o Controller captura, convertendo em `{success:false, error}`.
 

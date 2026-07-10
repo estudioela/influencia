@@ -13,7 +13,7 @@ const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
 function carregarDominio() {
   return loadGasFiles(
-    ['Config.js', 'Dto.js', 'Ativacao.js', 'AtivacaoRepository.js', 'AtivacaoService.js', 'AtivacaoController.js'].map(arquivo),
+    ['infra/Config.js', 'dominio/Dto.js', 'dominio/Ativacao.js', 'repositories/AtivacaoRepository.js', 'services/AtivacaoService.js', 'controllers/AtivacaoController.js'].map(arquivo),
     {},
     ['AtivacaoService', 'AtivacaoController', 'CAMPOS_ATIVACAO', 'ESTADOS_ATIVACAO']
   );

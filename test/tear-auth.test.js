@@ -14,8 +14,8 @@ const RAIZ = path.join(__dirname, '..');
 const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
 const ARQUIVOS = [
-  'Config.js', 'PlanilhaHelpers.js', 'Senha.js', 'Dto.js', 'ParceiroRepository.js',
-  'SessaoRepository.js', 'AuthService.js', 'AuthController.js'
+  'infra/Config.js', 'infra/PlanilhaHelpers.js', 'dominio/Senha.js', 'dominio/Dto.js', 'repositories/ParceiroRepository.js',
+  'repositories/SessaoRepository.js', 'services/AuthService.js', 'controllers/AuthController.js'
 ];
 
 const EXPORTS = [
@@ -321,7 +321,7 @@ describe('sem porta dos fundos', () => {
     texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
   test('AuthService.js não contém credencial embutida', () => {
-    const fonte = semComentarios(require('fs').readFileSync(arquivo('AuthService.js'), 'utf8'));
+    const fonte = semComentarios(require('fs').readFileSync(arquivo('services/AuthService.js'), 'utf8'));
 
     expect(fonte).not.toMatch(/DEV123/);
     expect(fonte).not.toMatch(/TEMP DEV LOGIN/);
@@ -330,7 +330,7 @@ describe('sem porta dos fundos', () => {
   });
 
   test('o único caminho de sucesso do login devolve token do SessaoRepository', () => {
-    const fonte = semComentarios(require('fs').readFileSync(arquivo('AuthService.js'), 'utf8'));
+    const fonte = semComentarios(require('fs').readFileSync(arquivo('services/AuthService.js'), 'utf8'));
     const retornosComToken = fonte.match(/token:/g) || [];
 
     expect(retornosComToken).toHaveLength(1);
