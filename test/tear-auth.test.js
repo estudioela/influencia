@@ -306,3 +306,34 @@ describe('ParceiroRepository — provisionamento de senha', () => {
     expect(aba.escrito).toHaveLength(0);
   });
 });
+
+/**
+ * Um bypass de desenvolvimento (`if (cupom === 'DEV' && senha === 'DEV123')`)
+ * existiu em `AuthService.login()` durante a depuração de 2026-07-09. Ele
+ * devolvia sessão sem consultar o cadastro e sem gravar token no cache.
+ *
+ * Se voltar e for publicado, qualquer pessoa com acesso ao Web App entra como
+ * "ADMIN". A trava é de código-fonte porque um bypass pode ser escrito de
+ * infinitas formas e nenhum teste de comportamento cobre todas.
+ */
+describe('sem porta dos fundos', () => {
+  const semComentarios = (texto) =>
+    texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+  test('AuthService.js não contém credencial embutida', () => {
+    const fonte = semComentarios(require('fs').readFileSync(arquivo('AuthService.js'), 'utf8'));
+
+    expect(fonte).not.toMatch(/DEV123/);
+    expect(fonte).not.toMatch(/TEMP DEV LOGIN/);
+    // Toda decisão de login passa por senhaConfere(); nenhuma compara a senha crua.
+    expect(fonte).not.toMatch(/senha\s*===\s*['"]/);
+  });
+
+  test('o único caminho de sucesso do login devolve token do SessaoRepository', () => {
+    const fonte = semComentarios(require('fs').readFileSync(arquivo('AuthService.js'), 'utf8'));
+    const retornosComToken = fonte.match(/token:/g) || [];
+
+    expect(retornosComToken).toHaveLength(1);
+    expect(fonte).toMatch(/token:\s*this\.sessaoRepository\.criar\(/);
+  });
+});
