@@ -17,7 +17,8 @@ var ROTAS = {
   pagamentos: { titulo: 'pagamentos',  template: 'view-pagamentos' },
   historico:  { titulo: 'histórico',   template: 'view-historico'  },
   perfil:     { titulo: 'perfil',      template: 'view-perfil'     },
-  cadastro:   { titulo: 'cadastro',    template: 'view-cadastro'   }
+  cadastro:   { titulo: 'cadastro',    template: 'view-cadastro'   },
+  logistica:  { titulo: 'logística',   template: 'view-logistica'  }
 };
 
 var ROTA_PADRAO = 'dashboard';
@@ -471,14 +472,17 @@ function navegar(rotaPedida) {
   alvo.innerHTML = '';
   alvo.appendChild(modelo.content.cloneNode(true));
 
-  // Login e cadastro não usam a bottom nav nem exibem dados de ciclo: cadastro é
-  // ferramenta admin; login é a porta de entrada.
-  var semNav = rota === 'login' || rota === 'cadastro';
+  // Login, cadastro e logística não usam a bottom nav nem exibem dados de ciclo
+  // da parceira: cadastro/logística são ferramentas admin; login é a porta de entrada.
+  var semNav = rota === 'login' || rota === 'cadastro' || rota === 'logistica';
   document.querySelector('.tear-nav').hidden = semNav;
 
   if (rota === 'cadastro') {
     marcarOrigemDosDados(true); // o wizard não exibe dado simulado
     iniciarWizardParceira();
+  } else if (rota === 'logistica') {
+    marcarOrigemDosDados(true); // painel admin: token-gated, sem dado simulado
+    iniciarPainelLogistica();
   } else if (rota === 'login') {
     marcarOrigemDosDados(true); // nada a declarar: a tela não exibe dado nenhum
   } else {
@@ -719,6 +723,130 @@ function salvarParceira() {
     });
 }
 
+/* ── Painel Admin — Logística (Etapa 6) ────────────────────────────────────
+   Ferramenta interna: os entrypoints exigem o token administrativo, digitado na
+   própria tela e validado no servidor (`_exigirAdmin`), como no wizard de
+   cadastro. Sem sessão de parceira; a autoridade é só o ADMIN_TOKEN. */
+
+// Domínio fechado de ESTADOS_LOGISTICA (tear/Infra.js). O servidor valida a
+// transição — a UI só oferece os destinos e reporta o erro por toast.
+var ESTADOS_LOGISTICA_UI = ['Pendente', 'Aguardando Envio', 'Enviado', 'Entregue', 'Cancelado'];
+var LOGISTICA_CICLO = '';
+
+function tokenAdminDaLogistica() {
+  var campo = document.getElementById('tear-admin-token-log');
+  return campo ? campo.value : '';
+}
+
+/** Toast efêmero. `textContent` no chamador — nunca innerHTML com dado do servidor. */
+function mostrarToast(mensagem, tipo) {
+  var no = document.getElementById('tear-toast');
+  if (!no) return;
+
+  no.textContent = mensagem;
+  no.className = 'tear-toast tear-toast--' + (tipo === 'erro' ? 'erro' : 'ok') + ' is-visivel';
+
+  clearTimeout(mostrarToast._t);
+  mostrarToast._t = setTimeout(function () { no.className = 'tear-toast'; }, 4000);
+}
+
+function renderizarEnvioLogistica(dto) {
+  var opcoes = ESTADOS_LOGISTICA_UI.map(function (estado) {
+    var sel = estado === dto.status ? ' selected' : '';
+    return '<option value="' + escaparHtml(estado) + '"' + sel + '>' + escaparHtml(estado) + '</option>';
+  }).join('');
+
+  return '<article class="tear-card" data-logistica-id="' + escaparHtml(dto.idLogistica) + '">' +
+           '<div class="tear-card__titulo">' + escaparHtml(dto.idInfluenciadora || '—') + '</div>' +
+           '<div class="tear-card__meta">' + escaparHtml(dto.enderecoEntrega || 'sem endereço') + '</div>' +
+           (dto.codigoRastreio ? '<div class="tear-card__meta">rastreio: ' + escaparHtml(dto.codigoRastreio) + '</div>' : '') +
+           '<div class="tear-card__meta">status: <span class="tear-badge tear-badge--ativo">' + escaparHtml(dto.status) + '</span></div>' +
+           '<div class="tear-logistica__acoes">' +
+             '<select class="tear-campo__input" data-logistica-status aria-label="novo status">' + opcoes + '</select>' +
+             '<button type="button" class="tear-botao" data-acao="logistica-atualizar">atualizar</button>' +
+           '</div>' +
+         '</article>';
+}
+
+function renderizarListaLogistica(itens) {
+  if (!itens || !itens.length) return renderizarVazio('nenhum envio neste ciclo.');
+  return itens.map(renderizarEnvioLogistica).join('');
+}
+
+function iniciarPainelLogistica() {
+  LOGISTICA_CICLO = '';
+  var lista = document.getElementById('tear-logistica-lista');
+  if (lista) lista.innerHTML = renderizarVazio('informe o token e carregue os ciclos.');
+}
+
+/** Valida o token carregando os ciclos; sucesso revela e lista o primeiro ciclo. */
+function carregarCiclosLogistica() {
+  if (!temBackend()) return mostrarToast('Sem backend nesta visualização.', 'erro');
+
+  var token = tokenAdminDaLogistica();
+  if (!token) return mostrarToast('Informe o token administrativo.', 'erro');
+
+  return chamar('apiListarCiclosAdmin', token)
+    .then(function (r) {
+      if (!r || !r.success) return mostrarToast(r && r.error ? r.error : 'Não foi possível carregar os ciclos.', 'erro');
+
+      var seletor = document.getElementById('tear-logistica-ciclo');
+      if (!r.data.length) { seletor.innerHTML = ''; LOGISTICA_CICLO = ''; return mostrarToast('Nenhum ciclo cadastrado.', 'erro'); }
+
+      seletor.innerHTML = renderizarOpcoesCiclo(r.data);
+      LOGISTICA_CICLO = r.data[0].idCiclo;
+      return carregarEnviosLogistica();
+    })
+    .catch(function (e) {
+      mostrarToast('Falha de comunicação: ' + (e && e.message ? e.message : e), 'erro');
+    });
+}
+
+function carregarEnviosLogistica() {
+  var lista = document.getElementById('tear-logistica-lista');
+  if (!lista) return;
+
+  if (!temBackend() || !LOGISTICA_CICLO) { lista.innerHTML = renderizarVazio('selecione um ciclo.'); return; }
+
+  // Captura o ciclo agora: troca de ciclo em voo não pode pintar a tela com a resposta antiga.
+  var cicloPedido = LOGISTICA_CICLO;
+
+  return chamar('apiListarLogisticaDoCiclo', tokenAdminDaLogistica(), cicloPedido)
+    .then(function (r) {
+      if (LOGISTICA_CICLO !== cicloPedido) return;
+      if (!r || !r.success) { lista.innerHTML = renderizarErro(r && r.error ? r.error : 'Erro ao carregar envios.'); return; }
+
+      lista.innerHTML = renderizarListaLogistica(r.data);
+    })
+    .catch(function (e) {
+      lista.innerHTML = renderizarErro('Falha de comunicação: ' + (e && e.message ? e.message : e));
+    });
+}
+
+function atualizarStatusLogistica(cartao) {
+  if (!cartao) return;
+  if (!temBackend()) return mostrarToast('Sem backend nesta visualização.', 'erro');
+
+  var id = cartao.getAttribute('data-logistica-id');
+  var seletor = cartao.querySelector('[data-logistica-status]');
+  var novoStatus = seletor ? seletor.value : '';
+  var botao = cartao.querySelector('[data-acao="logistica-atualizar"]');
+  if (botao) botao.disabled = true;
+
+  chamar('apiAlterarStatusLogistica', tokenAdminDaLogistica(), id, novoStatus)
+    .then(function (r) {
+      if (botao) botao.disabled = false;
+      if (!r || !r.success) return mostrarToast(r && r.error ? r.error : 'Não foi possível atualizar.', 'erro');
+
+      mostrarToast('Status atualizado para "' + novoStatus + '".', 'ok');
+      carregarEnviosLogistica();
+    })
+    .catch(function (e) {
+      if (botao) botao.disabled = false;
+      mostrarToast('Falha de comunicação: ' + (e && e.message ? e.message : e), 'erro');
+    });
+}
+
 function iniciarApp() {
   // Listener delegado: nenhum onclick inline, e funciona para os botões que
   // só existem depois que um template é clonado.
@@ -727,11 +855,31 @@ function iniciarApp() {
     var voltar = evento.target.closest('[data-wizard="voltar"]');
     if (voltar) { evento.preventDefault(); return voltarPassoParceira(); }
 
+    if (evento.target.closest('[data-acao="logistica-carregar"]')) {
+      evento.preventDefault();
+      return carregarCiclosLogistica();
+    }
+
+    var atualizarLog = evento.target.closest('[data-acao="logistica-atualizar"]');
+    if (atualizarLog) {
+      evento.preventDefault();
+      return atualizarStatusLogistica(atualizarLog.closest('[data-logistica-id]'));
+    }
+
     var rota = evento.target.closest('[data-rota]');
     if (rota) return navegar(rota.getAttribute('data-rota'));
 
     if (evento.target.closest('[data-acao="sair"]')) {
       sairDoApp().then(function () { navegar('login'); });
+    }
+  });
+
+  // Troca de ciclo no painel admin de logística (delegado: o <select> só existe
+  // depois que a view é clonada).
+  document.addEventListener('change', function (evento) {
+    if (evento.target.id === 'tear-logistica-ciclo') {
+      LOGISTICA_CICLO = evento.target.value;
+      carregarEnviosLogistica();
     }
   });
 
@@ -1099,6 +1247,61 @@ if (typeof document !== 'undefined') {
   color: var(--ela-color-content-muted);
 }
 
+/* ── Painel admin de logística ──────────────────────────────────────── */
+.tear-logistica__acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--ela-space-sm);
+  margin-top: var(--ela-space-xs);
+}
+
+.tear-logistica__acoes .tear-campo__input {
+  flex: 1;
+}
+
+.tear-logistica__acoes .tear-botao {
+  width: auto;
+  padding: var(--ela-space-2xs) var(--ela-space-sm);
+}
+
+/* ── Toast (feedback de sucesso/erro) ───────────────────────────────────
+   Escondido por opacidade (não display) para poder transicionar. `role=status`
+   + aria-live no markup: leitores de tela anunciam a mensagem. */
+.tear-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--ela-space-xl) + var(--ela-space-lg));
+  transform: translateX(-50%) translateY(var(--ela-space-md));
+  width: calc(100% - var(--ela-space-lg));
+  max-width: var(--portal-shell-mobile);
+  padding: var(--ela-space-sm);
+  font-family: var(--ela-font-label);
+  font-size: var(--ela-font-size-sm);
+  text-align: center;
+  border: 1px solid var(--ela-color-border-subtle);
+  background: var(--ela-color-surface-container-high);
+  color: var(--ela-color-content);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ela-duration-fast) var(--ela-easing-base),
+    transform var(--ela-duration-fast) var(--ela-easing-base);
+  z-index: 30;
+}
+
+.tear-toast.is-visivel {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tear-toast--ok {
+  border-color: var(--ela-color-accent);
+}
+
+.tear-toast--erro {
+  border-color: var(--ela-color-danger);
+  color: var(--ela-color-danger);
+}
+
 /* ── Wizard de cadastro ─────────────────────────────────────────────── */
 #tear-wizard-slot {
   border: 0;
@@ -1135,6 +1338,7 @@ if (typeof document !== 'undefined') {
       <p id="tear-erro-login" class="tear-campo__erro" role="alert"></p>
       <button type="submit" class="tear-botao">entrar</button>
     </form>
+    <button type="button" class="tear-nav__item ela-mt-md" data-rota="logistica">painel administrativo</button>
   </section>
 </template>
 
@@ -1178,6 +1382,29 @@ if (typeof document !== 'undefined') {
   <section>
     <div data-campo="perfil"></div>
     <button type="button" class="tear-botao ela-mt-md" data-acao="sair">sair</button>
+  </section>
+</template>
+
+<!-- Painel Admin — Logística (Etapa 6). Ferramenta interna: token administrativo
+     digitado na tela, validado no servidor (_exigirAdmin). Lista os envios do
+     ciclo, mostra o status e permite atualizá-lo. -->
+<template id="view-logistica">
+  <section>
+    <button type="button" class="tear-nav__item ela-mb-sm" data-rota="login">← sair</button>
+
+    <div class="tear-campo">
+      <label class="tear-campo__label" for="tear-admin-token-log">token administrativo</label>
+      <input class="tear-campo__input" id="tear-admin-token-log" type="password" autocomplete="off">
+    </div>
+
+    <div class="tear-campo">
+      <label class="tear-campo__label" for="tear-logistica-ciclo">ciclo</label>
+      <select class="tear-campo__input" id="tear-logistica-ciclo" aria-label="ciclo"></select>
+    </div>
+
+    <button type="button" class="tear-botao ela-mb-sm" data-acao="logistica-carregar">carregar envios</button>
+
+    <div id="tear-logistica-lista" aria-live="polite"></div>
   </section>
 </template>
 

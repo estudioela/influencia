@@ -82,7 +82,10 @@ describe('entrypoints do google.script.run', () => {
         'apiListarPagamentosDoCiclo',
         'apiListarHistoricoDoCiclo',
         'apiBuscarParceira',
-        'apiSalvarParceira'
+        'apiSalvarParceira',
+        'apiListarCiclosAdmin',
+        'apiListarLogisticaDoCiclo',
+        'apiAlterarStatusLogistica'
       ])
     );
   });

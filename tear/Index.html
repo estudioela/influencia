@@ -27,6 +27,10 @@
       <main id="tear-view" class="tear-view ela-p-sm" aria-live="polite"></main>
     </div>
 
+    <!-- Feedback efêmero (sucesso/erro). Vive fora do #tear-view: não é limpo a
+         cada troca de rota. `role=status` + aria-live: anunciado por leitor de tela. -->
+    <div id="tear-toast" class="tear-toast" role="status" aria-live="polite"></div>
+
     <!-- Estilos de componente, bottom nav (fixed — posição no DOM é irrelevante),
          templates das views e o <script> de apresentação, nesta ordem. -->
     <?!= include('Templates'); ?>
