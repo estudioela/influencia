@@ -13,8 +13,12 @@ const { loadGasFiles } = require('./helpers/loadGasModule');
 const RAIZ = path.join(__dirname, '..');
 const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
+// `Planilha.js` precisa entrar aqui pelo mesmo motivo que precisa entrar no
+// .claspignore: no Apps Script todos os arquivos compartilham um escopo global,
+// e um arquivo que não carregou não é "import quebrado" — é uma função que
+// simplesmente não existe, no meio de um fluxo já em execução.
 const ARQUIVOS = [
-  'Config.js', 'Ativacao.js', 'AtivacaoRepository.js', 'EventDispatcher.js',
+  'Config.js', 'Planilha.js', 'Ativacao.js', 'AtivacaoRepository.js', 'EventDispatcher.js',
   'AtivacaoService.js', 'WebAppController.js',
   'CicloRepository.js', 'CicloService.js', 'CicloController.js', 'Api.js'
 ];

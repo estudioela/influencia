@@ -25,6 +25,14 @@ class AtivacaoService {
     return this.repository.findByCiclo(idCiclo).map(linha => this._paraDto(linha));
   }
 
+  /**
+   * O histórico da V2 não é uma aba: é o próprio ciclo de vida da ativação.
+   * `Arquivada` é o estado terminal (docs/spec/SCHEMA_V2.md) — nada sai de lá.
+   */
+  listarArquivadasDoCiclo(idCiclo) {
+    return this.listarPorCiclo(idCiclo).filter(dto => dto.estado === ESTADOS_ATIVACAO.ARQUIVADA);
+  }
+
   obter(idAtivacao) {
     const dados = this.repository.getById(idAtivacao);
 

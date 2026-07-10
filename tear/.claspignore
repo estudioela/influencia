@@ -8,9 +8,13 @@
 !Setup_V2.js
 !TestRunner_V2.js
 !WebAppController.js
+!Planilha.js
 !CicloRepository.js
 !CicloService.js
 !CicloController.js
+!PlanoRepository.js
+!PagamentoService.js
+!PagamentoController.js
 !Api.js
 !Roteador.js
 !Index.html

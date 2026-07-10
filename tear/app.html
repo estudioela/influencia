@@ -162,6 +162,15 @@ function pendenciaDeDto(dto) {
   };
 }
 
+/** `valorCache` vem cru da planilha; sem valor, não se inventa "R$ 0,00". */
+function pagamentoDeDto(dto) {
+  return {
+    ciclo: dto.idCiclo,
+    valor: dto.valorCache ? 'R$ ' + dto.valorCache : '—',
+    estado: dto.estado
+  };
+}
+
 function renderizarErro(mensagem) {
   return '<p class="tear-vazio tear-campo__erro">' + escaparHtml(mensagem) + '</p>';
 }
@@ -179,52 +188,76 @@ function envelopeValido(resposta) {
   return !resposta.success || Array.isArray(resposta.data);
 }
 
-function carregarPendencias(no) {
-  if (!temBackend() || !CICLO_ATIVO) {
-    no.innerHTML = renderizarPendencias(DADOS_MOCK.pendencias);
-    return Promise.resolve(false);
-  }
+/**
+ * Fábrica dos carregadores de lista por ciclo. Resolve com `true` quando os
+ * dados vieram do backend (mesmo que como erro de domínio) e `false` quando a
+ * tela caiu no mock — é isso que o banner de origem consome.
+ */
+function carregadorDeCiclo(nomeApi, renderizarLista, mapearDto, mock) {
+  return function (no) {
+    if (!temBackend() || !CICLO_ATIVO) {
+      // O mock já está no formato da view: não passa pelo mapeador de DTO.
+      no.innerHTML = renderizarLista(mock());
+      return Promise.resolve(false);
+    }
 
-  // O ciclo é capturado agora: se o usuário trocar de ciclo enquanto a resposta
-  // está em voo, a resposta antiga não pode pintar a tela do ciclo novo.
-  var cicloPedido = CICLO_ATIVO;
+    // O ciclo é capturado agora: se o usuário trocar de ciclo enquanto a
+    // resposta está em voo, a resposta antiga não pode pintar a tela do novo.
+    var cicloPedido = CICLO_ATIVO;
 
-  return chamar('apiListarAtivacoesDoCiclo', cicloPedido)
-    .then(function (resposta) {
-      if (CICLO_ATIVO !== cicloPedido) return true;
+    return chamar(nomeApi, cicloPedido)
+      .then(function (resposta) {
+        if (CICLO_ATIVO !== cicloPedido) return true;
 
-      if (!envelopeValido(resposta)) {
-        no.innerHTML = renderizarErro('Resposta inesperada do servidor.');
+        if (!envelopeValido(resposta)) {
+          no.innerHTML = renderizarErro('Resposta inesperada do servidor.');
+          return true;
+        }
+
+        if (!resposta.success) {
+          no.innerHTML = renderizarErro(resposta.error);
+          return true;
+        }
+
+        no.innerHTML = renderizarLista(resposta.data.map(mapearDto));
         return true;
-      }
-
-      if (!resposta.success) {
-        no.innerHTML = renderizarErro(resposta.error);
+      })
+      .catch(function (erro) {
+        // Só chega aqui falha de transporte: o erro de domínio vem dentro do
+        // envelope. Rotular um bug de contrato como "falha de comunicação"
+        // mandaria quem for depurar para o lado errado.
+        no.innerHTML = renderizarErro('Falha de comunicação: ' + (erro && erro.message ? erro.message : erro));
         return true;
-      }
-
-      no.innerHTML = renderizarPendencias(resposta.data.map(pendenciaDeDto));
-      return true;
-    })
-    .catch(function (erro) {
-      // Só chega aqui falha de transporte: o erro de domínio vem dentro do
-      // envelope. Rotular um bug de contrato como "falha de comunicação"
-      // mandaria quem for depurar para o lado errado.
-      no.innerHTML = renderizarErro('Falha de comunicação: ' + (erro && erro.message ? erro.message : erro));
-      return true;
-    });
+      });
+  };
 }
 
+var carregarPendencias = carregadorDeCiclo(
+  'apiListarAtivacoesDoCiclo', renderizarPendencias, pendenciaDeDto,
+  function () { return DADOS_MOCK.pendencias; }
+);
+
+var carregarPagamentos = carregadorDeCiclo(
+  'apiListarPagamentosDoCiclo', renderizarPagamentos, pagamentoDeDto,
+  function () { return DADOS_MOCK.pagamentos; }
+);
+
+var carregarHistorico = carregadorDeCiclo(
+  'apiListarHistoricoDoCiclo', renderizarHistorico, pendenciaDeDto,
+  function () { return DADOS_MOCK.historico; }
+);
+
+/** Ainda sem fonte na V2: briefing é um link na ativação, perfil espera o login. */
 var RENDERIZADORES = {
-  'lista:pagamentos': function () { return renderizarPagamentos(DADOS_MOCK.pagamentos); },
-  'lista:historico':  function () { return renderizarHistorico(DADOS_MOCK.historico); },
-  'campo:briefing':   function () { return renderizarBriefing(DADOS_MOCK.briefing); },
-  'campo:perfil':     function () { return renderizarPerfil(DADOS_MOCK.perfil); }
+  'campo:briefing': function () { return renderizarBriefing(DADOS_MOCK.briefing); },
+  'campo:perfil':   function () { return renderizarPerfil(DADOS_MOCK.perfil); }
 };
 
-/** Slots que buscam dados de verdade. O restante ainda é mock (Etapas 5 e 6). */
+/** Slots que buscam dados de verdade. */
 var CARREGADORES = {
-  'lista:pendencias': carregarPendencias
+  'lista:pendencias': carregarPendencias,
+  'lista:pagamentos': carregarPagamentos,
+  'lista:historico':  carregarHistorico
 };
 
 /* ── Seleção de ciclo ─────────────────────────────────────────────────── */

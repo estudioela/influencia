@@ -63,8 +63,27 @@ function apiAlterarEstadoDaAtivacao(idAtivacao, novoEstado) {
   });
 }
 
+function apiListarHistoricoDoCiclo(idCiclo) {
+  return _comEnvelope(function () {
+    return _montarControllerDeAtivacao().handleAtivacaoQuery({
+      action: ACOES_ATIVACAO.LIST_ARCHIVED_BY_CYCLE,
+      idCiclo: idCiclo
+    });
+  });
+}
+
 function apiListarCiclos() {
   return _comEnvelope(function () {
     return _montarControllerDeCiclo().handleCicloQuery({ action: ACOES_CICLO.LIST_ALL });
+  });
+}
+
+function apiListarPagamentosDoCiclo(idCiclo) {
+  return _comEnvelope(function () {
+    const controller = new PagamentoController(
+      new PagamentoService(new PlanoRepository(), new AtivacaoRepository())
+    );
+
+    return controller.handlePagamentoQuery({ action: ACOES_PAGAMENTO.LIST_BY_CYCLE, idCiclo: idCiclo });
   });
 }

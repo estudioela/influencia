@@ -1,6 +1,7 @@
 const ACOES_ATIVACAO = Object.freeze({
   CHANGE_STATE: 'CHANGE_STATE',
   LIST_BY_CYCLE: 'LIST_BY_CYCLE',
+  LIST_ARCHIVED_BY_CYCLE: 'LIST_ARCHIVED_BY_CYCLE',
   GET_BY_ID: 'GET_BY_ID'
 });
 
@@ -45,6 +46,12 @@ class WebAppController {
         this._exigirCampo(payload, 'idCiclo');
 
         return { success: true, data: this.ativacaoService.listarPorCiclo(payload.idCiclo) };
+      }
+
+      if (payload.action === ACOES_ATIVACAO.LIST_ARCHIVED_BY_CYCLE) {
+        this._exigirCampo(payload, 'idCiclo');
+
+        return { success: true, data: this.ativacaoService.listarArquivadasDoCiclo(payload.idCiclo) };
       }
 
       if (payload.action === ACOES_ATIVACAO.GET_BY_ID) {
