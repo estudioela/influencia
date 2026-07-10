@@ -173,3 +173,76 @@ class Ativacao {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   dominio/Logistica.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Entidade de envio logístico. Só invariantes de transição de status — nenhum
+ * I/O, como `Ativacao`. O grafo de transições é `static get` (não `const` de
+ * topo): `const`/`class` não sofrem hoisting entre arquivos e a ordem de carga
+ * do Apps Script não é garantida (CLAUDE.md §13); referenciar `ESTADOS_LOGISTICA`
+ * só dentro do getter evita depender dessa ordem.
+ */
+class Logistica {
+  constructor(dados) {
+    if (!dados || typeof dados !== 'object') {
+      throw new TypeError('Logistica exige um objeto de dados do envio.');
+    }
+
+    this.dados = dados;
+  }
+
+  get id() {
+    return this.dados[CAMPOS_LOGISTICA.ID];
+  }
+
+  get statusAtual() {
+    return this.dados[CAMPOS_LOGISTICA.STATUS];
+  }
+
+  static get TRANSICOES_PERMITIDAS() {
+    const E = ESTADOS_LOGISTICA;
+
+    return Object.freeze({
+      [E.PENDENTE]: [E.AGUARDANDO_ENVIO, E.CANCELADO],
+      [E.AGUARDANDO_ENVIO]: [E.ENVIADO, E.CANCELADO],
+      [E.ENVIADO]: [E.ENTREGUE, E.CANCELADO],
+      [E.ENTREGUE]: [],
+      [E.CANCELADO]: []
+    });
+  }
+
+  validateStateTransition(nextState) {
+    const conhecidos = Object.values(ESTADOS_LOGISTICA);
+    const atual = this.statusAtual;
+
+    if (!conhecidos.includes(nextState)) {
+      throw new Error(`Status de destino inválido: "${nextState}" não pertence a ESTADOS_LOGISTICA.`);
+    }
+
+    if (!conhecidos.includes(atual)) {
+      throw new Error(`Logística ${this.id} está em um status desconhecido: "${atual}".`);
+    }
+
+    if (atual === nextState) {
+      throw new Error(`Logística ${this.id} já está no status "${atual}".`);
+    }
+
+    const permitidas = Logistica.TRANSICOES_PERMITIDAS[atual];
+
+    if (!permitidas.includes(nextState)) {
+      const alternativas = permitidas.length
+        ? permitidas.join('", "')
+        : 'nenhum, é um status terminal';
+
+      throw new Error(
+        `Transição proibida na logística ${this.id}: "${atual}" → "${nextState}". ` +
+        `A partir de "${atual}" só é permitido ir para: "${alternativas}".`
+      );
+    }
+
+    return true;
+  }
+}
+

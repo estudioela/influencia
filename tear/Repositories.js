@@ -414,3 +414,93 @@ class SessaoRepository {
     return 'tentativas:' + String(cupom).trim().toUpperCase();
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   repositories/LogisticaRepository.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Colunas da aba `Logistica` (docs/spec/SCHEMA_V2.md). Acesso por NOME de
+ * cabeçalho, nunca por índice — inserir coluna não pode quebrar a leitura.
+ */
+const CAMPOS_LOGISTICA = Object.freeze({
+  ID: 'ID_Logistica',
+  CICLO: 'ID_Ciclo',
+  INFLUENCIADORA: 'ID_Influenciadora',
+  ENDERECO: 'Endereco_Entrega',
+  RASTREIO: 'Codigo_Rastreio',
+  DATA_ENVIO: 'Data_Envio',
+  STATUS: 'Status_Logistica'
+});
+
+class LogisticaRepository {
+  constructor(spreadsheet) {
+    this.spreadsheet = spreadsheet || SpreadsheetApp.getActive();
+  }
+
+  getById(id) {
+    if (!id) {
+      return null;
+    }
+
+    const { cabecalho, linhas } = this._lerDados();
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_LOGISTICA.ID, PLANILHAS.LOGISTICA);
+    const linha = linhas.find(l => this._mesmoId(l[idIdx], id));
+
+    return linha ? linhaParaObjeto(cabecalho, linha) : null;
+  }
+
+  findByCiclo(cicloId) {
+    if (!cicloId) {
+      return [];
+    }
+
+    const { cabecalho, linhas } = this._lerDados();
+    const cicloIdx = indiceDaColuna(cabecalho, CAMPOS_LOGISTICA.CICLO, PLANILHAS.LOGISTICA);
+
+    return linhas
+      .filter(l => this._mesmoId(l[cicloIdx], cicloId))
+      .map(l => linhaParaObjeto(cabecalho, l));
+  }
+
+  save(logisticaData) {
+    if (!logisticaData || typeof logisticaData !== 'object') {
+      throw new TypeError('save() espera um objeto de logística.');
+    }
+
+    const { aba, cabecalho, linhas } = this._lerDados();
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_LOGISTICA.ID, PLANILHAS.LOGISTICA);
+    const id = logisticaData[CAMPOS_LOGISTICA.ID];
+    const posicao = id ? linhas.findIndex(l => this._mesmoId(l[idIdx], id)) : -1;
+
+    if (posicao === -1) {
+      const novo = Object.assign({}, logisticaData);
+      novo[CAMPOS_LOGISTICA.ID] = id || Utilities.getUuid();
+      aba.appendRow(cabecalho.map(coluna => (coluna in novo ? novo[coluna] : '')));
+      return novo;
+    }
+
+    const linhaAtual = linhas[posicao];
+    const intervalo = aba.getRange(posicao + 2, 1, 1, cabecalho.length);
+    const formulas = intervalo.getFormulas()[0];
+
+    const atualizada = cabecalho.map((coluna, i) =>
+      coluna && Object.prototype.hasOwnProperty.call(logisticaData, coluna)
+        ? logisticaData[coluna]
+        : linhaAtual[i]
+    );
+
+    const paraGravar = atualizada.map((valor, i) => (formulas[i] ? formulas[i] : valor));
+
+    intervalo.setValues([paraGravar]);
+    return linhaParaObjeto(cabecalho, atualizada);
+  }
+
+  _lerDados() {
+    return lerAbaComCabecalho(this.spreadsheet, PLANILHAS.LOGISTICA);
+  }
+
+  _mesmoId(valorCelula, valorBusca) {
+    return String(valorCelula).trim() === String(valorBusca).trim();
+  }
+}

@@ -210,6 +210,114 @@ class PagamentoController {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   controllers/LogisticaController.js
+   ═══════════════════════════════════════════════════════════════ */
+
+const ACOES_LOGISTICA = Object.freeze({
+  LIST_BY_CYCLE: 'LIST_BY_CYCLE',
+  GET_BY_ID: 'GET_BY_ID',
+  REGISTER_SHIPMENT: 'REGISTER_SHIPMENT',
+  CHANGE_STATUS: 'CHANGE_STATUS'
+});
+
+/**
+ * Fronteira da logística. Mesmo envelope das demais: `{ success, data?, error? }`.
+ * Só aqui a exceção de domínio vira `{success:false}`. Proibido tocar
+ * `SpreadsheetApp` (CLAUDE.md §13).
+ */
+class LogisticaController {
+  constructor(logisticaService) {
+    if (!logisticaService) {
+      throw new TypeError('LogisticaController exige uma instância de LogisticaService.');
+    }
+
+    this.logisticaService = logisticaService;
+  }
+
+  handleLogisticaQuery(payload) {
+    try {
+      this._exigirPayload(payload);
+
+      if (payload.action === ACOES_LOGISTICA.LIST_BY_CYCLE) {
+        this._exigirCampo(payload, 'idCiclo');
+        this._exigirCampo(payload, 'idInfluenciadora');
+
+        return {
+          success: true,
+          data: this.logisticaService.listarDaInfluenciadoraNoCiclo(payload.idCiclo, payload.idInfluenciadora)
+        };
+      }
+
+      if (payload.action === ACOES_LOGISTICA.GET_BY_ID) {
+        this._exigirCampo(payload, 'idLogistica');
+        this._exigirCampo(payload, 'idInfluenciadora');
+
+        return {
+          success: true,
+          data: this.logisticaService.obter(payload.idLogistica, payload.idInfluenciadora)
+        };
+      }
+
+      throw new Error(`Requisição inválida: ação "${payload.action}" não é suportada.`);
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  handleLogisticaUpdate(payload) {
+    try {
+      this._exigirPayload(payload);
+
+      if (payload.action === ACOES_LOGISTICA.REGISTER_SHIPMENT) {
+        this._exigirCampo(payload, 'idLogistica');
+        this._exigirCampo(payload, 'codigoRastreio');
+        this._exigirCampo(payload, 'idInfluenciadora');
+
+        return {
+          success: true,
+          data: this.logisticaService.registrarEnvio(payload.idLogistica, payload.codigoRastreio, payload.idInfluenciadora),
+          message: 'Envio registrado com sucesso'
+        };
+      }
+
+      if (payload.action === ACOES_LOGISTICA.CHANGE_STATUS) {
+        this._exigirCampo(payload, 'idLogistica');
+        this._exigirCampo(payload, 'newStatus');
+        this._exigirCampo(payload, 'idInfluenciadora');
+
+        return {
+          success: true,
+          data: this.logisticaService.alterarStatus(payload.idLogistica, payload.newStatus, payload.idInfluenciadora),
+          message: 'Status atualizado com sucesso'
+        };
+      }
+
+      throw new Error(`Requisição inválida: ação "${payload.action}" não é suportada.`);
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  _exigirPayload(payload) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Requisição inválida: payload ausente.');
+    }
+  }
+
+  _exigirCampo(payload, campo) {
+    if (!payload[campo]) {
+      throw new Error(`Requisição inválida: "${campo}" é obrigatório.`);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    controllers/AuthController.js
    ═══════════════════════════════════════════════════════════════ */
 

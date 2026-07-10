@@ -309,6 +309,24 @@ Confirmado via `ls`: `mae/Index.html`, `mae/WebApp.js`, `mae/Código.js` existem
 
 **Pendências antes do cut-over**: (a) criar as abas V2 via `setupV2Database()` — ação manual, autorização explícita; (b) o listener delegado de `renderPendencias()` (`mae/Index.html`) tem um `else` catch-all que abriria a tela de upload para qualquer `data-acao` desconhecida — trocar por `switch` com `default` antes de adicionar uma terceira ação; (c) os vocabulários não se correspondem: `STATUS_CONTEUDO` da V1 tem 5 valores (restringidos por validação de célula), `ESTADOS_ATIVACAO` da V2 tem 13.
 
+### FLOW: Logística de envios (V2) — sprint 2026-07-10
+
+> Camada de back-end apenas. Entidade **persistida** real (aba `Logistica`), ao contrário de Pagamento (derivado) e Briefing (coluna `Ativacoes.Link_Briefing`). Arquivos consolidados de `tear/` (não há mais subpastas): `Infra.js`, `Modelos.js`, `Repositories.js`, `Services.js`, `Controllers.js`.
+
+- **ENTRADA (leitura)**: `{ action: 'LIST_BY_CYCLE'|'GET_BY_ID', idCiclo|idLogistica, idInfluenciadora }`.
+  arquivo: `tear/Controllers.js` · função: `LogisticaController.handleLogisticaQuery()`. Escopo por parceira: `GET_BY_ID` de outra influenciadora responde igual a "não encontrada".
+- **ENTRADA (escrita/automação)**: `{ action: 'REGISTER_SHIPMENT', idLogistica, codigoRastreio, idInfluenciadora }` ou `{ action: 'CHANGE_STATUS', idLogistica, newStatus, idInfluenciadora }`.
+  arquivo: `tear/Controllers.js` · função: `LogisticaController.handleLogisticaUpdate()`.
+- **PROCESSAMENTO**: Controller → `LogisticaService` (`registrarEnvio()`/`alterarStatus()`/leitura) → `Logistica.validateStateTransition()` (`tear/Modelos.js`) + `LogisticaRepository` (`getById`/`findByCiclo`/`save` com preservação de fórmula) → `EventDispatcher.dispatch()`.
+  origem dos dados: aba V2 `Logistica` (`PLANILHAS.LOGISTICA`, `tear/Infra.js`); colunas por nome de cabeçalho (`CAMPOS_LOGISTICA`, `tear/Repositories.js`). Schema: `docs/spec/SCHEMA_V2.md`.
+- **AUTOMAÇÃO**: `registrarEnvio()` grava rastreio + data e transiciona `Aguardando Envio → Enviado`, publicando `EVENTO_LOGISTICA_ENVIADA`. **Nenhum listener de e-mail é registrado** — o disparo real (`MailApp`) da automação da V1 fica desligado até autorização explícita (`CLAUDE.md` §12.4).
+- **SAÍDA**: envelope `{ success, data?, message?, error? }`.
+  destino: UI (Painel Admin) — **ainda não existe consumidor**: a UI de Logística e o entrypoint `google.script.run` em `Roteador.js` ficam para o próximo incremento (levanta a questão de auth de admin, hoje inexistente na V2).
+
+**Máquina de estados** (`ESTADOS_LOGISTICA`, `tear/Infra.js`): `Pendente → Aguardando Envio → Enviado → Entregue` (terminal); `Cancelado` alcançável de qualquer estado ativo (terminal).
+
+**Estado da implementação (2026-07-10)**: coberto por `test/tear-logistica.test.js` (entidade, repositório contra planilha fake, service, controller). O `LogisticaRepository` real nunca tocou planilha — a aba `Logistica` ainda não existe (criação via `setupV2Database()`, ação manual/autorizada).
+
 ---
 
 ## FLOW: Casca navegável da V2 (camada de apresentação, Etapa 1)

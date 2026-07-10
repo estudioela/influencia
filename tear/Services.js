@@ -397,3 +397,150 @@ class ParceiroService {
     return this.repository.upsert(dados, CHAVE_PARCEIRO);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   services/LogisticaService.js
+   ═══════════════════════════════════════════════════════════════ */
+
+const EVENTO_LOGISTICA_ENVIADA = 'LogisticaEnviada';
+const EVENTO_LOGISTICA_STATUS_ALTERADO = 'LogisticaStatusAlterado';
+
+/**
+ * Orquestra a logística de envios. Devolve DTO, nunca a linha crua — a UI não
+ * pode depender do nome das colunas da planilha (mesma razão de `AtivacaoService`).
+ *
+ * A "automação" da V1 (avisar a influenciadora quando o envio sai) é modelada
+ * como EVENTO (`EVENTO_LOGISTICA_ENVIADA`), não como chamada direta a `MailApp`
+ * dentro do Service: quem quiser notificar assina o evento. Nenhum listener de
+ * e-mail é registrado aqui — disparo real de e-mail é efeito externo e exige
+ * autorização explícita (CLAUDE.md §12.4).
+ */
+class LogisticaService {
+  constructor(eventDispatcher, repository) {
+    if (!eventDispatcher) {
+      throw new TypeError('LogisticaService exige um EventDispatcher.');
+    }
+
+    this.eventDispatcher = eventDispatcher;
+    this.repository = repository || new LogisticaRepository();
+  }
+
+  listarPorCiclo(idCiclo) {
+    if (!idCiclo) {
+      throw new Error('É obrigatório informar o ciclo.');
+    }
+
+    return this.repository.findByCiclo(idCiclo).map(linha => this._paraDto(linha));
+  }
+
+  /**
+   * Escopo por parceira: uma influenciadora só vê os próprios envios (endereço,
+   * rastreio), nunca os das outras do mesmo ciclo.
+   */
+  listarDaInfluenciadoraNoCiclo(idCiclo, idInfluenciadora) {
+    if (!idInfluenciadora) {
+      throw new Error('É obrigatório informar a influenciadora.');
+    }
+
+    return this.listarPorCiclo(idCiclo)
+      .filter(dto => dto.idInfluenciadora === String(idInfluenciadora));
+  }
+
+  obter(idLogistica, idInfluenciadora) {
+    return this._paraDto(this._exigirPropria(idLogistica, idInfluenciadora));
+  }
+
+  /**
+   * Automação de envio: grava o rastreio e transiciona para "Enviado" numa
+   * operação só, disparando `EVENTO_LOGISTICA_ENVIADA`.
+   */
+  registrarEnvio(idLogistica, codigoRastreio, idInfluenciadora) {
+    if (!codigoRastreio || String(codigoRastreio).trim() === '') {
+      throw new Error('É obrigatório informar o código de rastreio.');
+    }
+
+    const dados = this._exigirPropria(idLogistica, idInfluenciadora);
+
+    const logistica = new Logistica(dados);
+    logistica.validateStateTransition(ESTADOS_LOGISTICA.ENVIADO);
+
+    const atualizado = Object.assign({}, dados);
+    atualizado[CAMPOS_LOGISTICA.STATUS] = ESTADOS_LOGISTICA.ENVIADO;
+    atualizado[CAMPOS_LOGISTICA.RASTREIO] = String(codigoRastreio).trim();
+    atualizado[CAMPOS_LOGISTICA.DATA_ENVIO] = new Date().toISOString();
+
+    const salvo = this.repository.save(atualizado);
+
+    const dto = {
+      idLogistica: salvo[CAMPOS_LOGISTICA.ID],
+      idInfluenciadora: String(idInfluenciadora),
+      codigoRastreio: atualizado[CAMPOS_LOGISTICA.RASTREIO],
+      status: ESTADOS_LOGISTICA.ENVIADO,
+      enviadoEm: atualizado[CAMPOS_LOGISTICA.DATA_ENVIO]
+    };
+
+    this.eventDispatcher.dispatch(EVENTO_LOGISTICA_ENVIADA, dto);
+
+    return dto;
+  }
+
+  alterarStatus(idLogistica, novoStatus, idInfluenciadora) {
+    const dados = this._exigirPropria(idLogistica, idInfluenciadora);
+
+    const logistica = new Logistica(dados);
+    logistica.validateStateTransition(novoStatus);
+
+    const statusAnterior = logistica.statusAtual;
+
+    const atualizado = Object.assign({}, dados);
+    atualizado[CAMPOS_LOGISTICA.STATUS] = novoStatus;
+
+    const salvo = this.repository.save(atualizado);
+
+    const dto = {
+      idLogistica: salvo[CAMPOS_LOGISTICA.ID],
+      statusAnterior: statusAnterior,
+      novoStatus: novoStatus,
+      atualizadoEm: new Date().toISOString()
+    };
+
+    this.eventDispatcher.dispatch(EVENTO_LOGISTICA_STATUS_ALTERADO, dto);
+
+    return dto;
+  }
+
+  /**
+   * Posse antes de qualquer leitura/escrita de UM envio. "Não é sua" e "não
+   * existe" devolvem a MESMA mensagem — distinguir revelaria ids existentes
+   * (mesma decisão de `AtivacaoService._exigirPropria`).
+   */
+  _exigirPropria(idLogistica, idInfluenciadora) {
+    if (!idInfluenciadora) {
+      throw new Error('É obrigatório informar a influenciadora.');
+    }
+
+    const dados = this.repository.getById(idLogistica);
+    const propria = dados &&
+      String(dados[CAMPOS_LOGISTICA.INFLUENCIADORA]) === String(idInfluenciadora);
+
+    if (!propria) {
+      throw new Error(`Logística "${idLogistica}" não encontrada.`);
+    }
+
+    return dados;
+  }
+
+  _paraDto(linha) {
+    const C = CAMPOS_LOGISTICA;
+
+    return {
+      idLogistica: textoDeCelula(linha[C.ID]),
+      idCiclo: textoDeCelula(linha[C.CICLO]),
+      idInfluenciadora: textoDeCelula(linha[C.INFLUENCIADORA]),
+      enderecoEntrega: textoDeCelula(linha[C.ENDERECO]),
+      codigoRastreio: textoDeCelula(linha[C.RASTREIO]),
+      dataEnvio: dataIsoDeCelula(linha[C.DATA_ENVIO]),
+      status: textoDeCelula(linha[C.STATUS])
+    };
+  }
+}

@@ -24,10 +24,11 @@ function cabecalhosV2_() {
       'APROVACAO CARROSSEL', 'APROVACAO STORIES 1', 'APROVACAO STORIES 2'
     ],
 
-    // 3. ABA DE LOGÍSTICA (Automação de Envios)
-    'Logistica': [
-      'INFLU KEY', 'ENDERECO', 'STATUS REVISÃO', 'MES REFERENCIA', 
-      'RASTREIO', 'DATA DE ENVIO', 'STATUS LOGISTICA'
+    // 3. ABA DE LOGÍSTICA (entidade persistida V2 — docs/spec/SCHEMA_V2.md;
+    //    cabeçalhos = CAMPOS_LOGISTICA em Repositories.js)
+    [PLANILHAS.LOGISTICA]: [
+      'ID_Logistica', 'ID_Ciclo', 'ID_Influenciadora', 'Endereco_Entrega',
+      'Codigo_Rastreio', 'Data_Envio', 'Status_Logistica'
     ],
 
     // 4. ABAS DE CONTROLE INTERNO (O motor da V2)

@@ -18,11 +18,25 @@ const ESTADOS_ATIVACAO = Object.freeze({
   ARQUIVADA: 'Arquivada'
 });
 
+/**
+ * Máquina de estados da aba `Logistica` (docs/spec/SCHEMA_V2.md). Domínio
+ * fechado, como `ESTADOS_ATIVACAO`. Transições em `Logistica.TRANSICOES_PERMITIDAS`
+ * (tear/Modelos.js). `Cancelado` é terminal e alcançável de qualquer estado ativo.
+ */
+const ESTADOS_LOGISTICA = Object.freeze({
+  PENDENTE: 'Pendente',
+  AGUARDANDO_ENVIO: 'Aguardando Envio',
+  ENVIADO: 'Enviado',
+  ENTREGUE: 'Entregue',
+  CANCELADO: 'Cancelado'
+});
+
 const PLANILHAS = Object.freeze({
   PARCEIROS_INFLUENCIADORAS: 'Parceiros_Influenciadoras',
   PLANOS_COLABORACAO: 'Planos_Colaboracao',
   CICLOS: 'Ciclos',
-  ATIVACOES: 'Ativacoes'
+  ATIVACOES: 'Ativacoes',
+  LOGISTICA: 'Logistica'
 });
 
 /* ═══════════════════════════════════════════════════════════════

@@ -87,6 +87,34 @@ Associa uma influenciadora a um ciclo, com o volume e o valor acordados. Tabela 
 
 ---
 
+## Aba `Logistica`
+
+Envio físico de peças/looks a uma influenciadora dentro de um ciclo. Uma linha = um envio. Entidade persistida real (implementada em 2026-07-10): `LogisticaRepository`/`LogisticaService`/`LogisticaController` (arquivos consolidados de `tear/`), máquina de estados em `Logistica` (`tear/Modelos.js`).
+
+| Coluna | Papel | Descrição |
+|---|---|---|
+| `ID_Logistica` | **Chave primária** | UUID gerado por `Utilities.getUuid()` em `LogisticaRepository.save()` quando ausente. |
+| `ID_Ciclo` | Chave estrangeira → `Ciclos.ID_Ciclo` | Ciclo do envio. Campo de filtro de `LogisticaRepository.findByCiclo()`. |
+| `ID_Influenciadora` | Chave estrangeira → `Parceiros_Influenciadoras` | Destinatária do envio. Base do escopo por parceira no Service. |
+| `Endereco_Entrega` | Dado | Endereço de entrega (snapshot no momento do envio). |
+| `Codigo_Rastreio` | Dado | Código de rastreio da transportadora. Preenchido por `registrarEnvio()`. |
+| `Data_Envio` | Dado (data) | Carimbo ISO 8601 de quando o envio foi registrado. |
+| `Status_Logistica` | Dado (máquina de estados) | Etapa atual. Domínio fechado: os 5 valores de `ESTADOS_LOGISTICA` (`tear/Infra.js`). |
+
+### Máquina de estados de `Status_Logistica`
+
+Valores em `ESTADOS_LOGISTICA` (`tear/Infra.js`); transições em `Logistica.TRANSICOES_PERMITIDAS` (`tear/Modelos.js`), validadas por `Logistica.validateStateTransition()` antes de persistir.
+
+```
+Pendente → Aguardando Envio → Enviado → Entregue (terminal)
+```
+
+`Cancelado` é terminal e alcançável a partir de qualquer estado não-terminal.
+
+> **Atenção**: este grafo foi derivado do fluxo logístico natural da V1 (`FLUXO LOGÍSTICO`), não de uma especificação de negócio fechada. Confirmar com o usuário antes de tratar como definitivo — mesma ressalva do grafo de `Ativacoes`.
+
+---
+
 ## Colunas somente-leitura e fórmulas
 
 `Ativacoes.Estado_Derivado` é a única coluna de apresentação conhecida hoje. Se ela for implementada como **fórmula** na planilha, qualquer escrita de valor literal na célula destruiria a fórmula.
