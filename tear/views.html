@@ -4,6 +4,23 @@
      Design System: o Tailwind via CDN do protótipo não sobe para o
      Apps Script (compila no cliente e é frágil sob o sandbox do iframe). -->
 
+<template id="view-login">
+  <section>
+    <form id="tear-form-login" class="tear-form">
+      <div class="tear-campo">
+        <label class="tear-campo__label" for="tear-cupom">cupom</label>
+        <input class="tear-campo__input" id="tear-cupom" name="cupom" autocomplete="username" required>
+      </div>
+      <div class="tear-campo">
+        <label class="tear-campo__label" for="tear-senha">senha</label>
+        <input class="tear-campo__input" id="tear-senha" name="senha" type="password" autocomplete="current-password" required>
+      </div>
+      <p id="tear-erro-login" class="tear-campo__erro" role="alert"></p>
+      <button type="submit" class="tear-botao">entrar</button>
+    </form>
+  </section>
+</template>
+
 <template id="view-dashboard">
   <section>
     <p class="tear-card__meta ela-mb-sm">suas entregas do ciclo atual.</p>
@@ -43,5 +60,6 @@
 <template id="view-perfil">
   <section>
     <div data-campo="perfil"></div>
+    <button type="button" class="tear-botao ela-mt-md" data-acao="sair">sair</button>
   </section>
 </template>

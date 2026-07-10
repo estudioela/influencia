@@ -15,6 +15,11 @@
 !PlanoRepository.js
 !PagamentoService.js
 !PagamentoController.js
+!Senha.js
+!ParceiroRepository.js
+!SessaoRepository.js
+!AuthService.js
+!AuthController.js
 !Api.js
 !Roteador.js
 !Index.html

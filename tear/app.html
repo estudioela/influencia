@@ -9,6 +9,7 @@
  */
 
 var ROTAS = {
+  login:      { titulo: 'entrar',      template: 'view-login'      },
   dashboard:  { titulo: 'painel',      template: 'view-dashboard'  },
   briefing:   { titulo: 'briefing',    template: 'view-briefing'   },
   envio:      { titulo: 'envio',       template: 'view-envio'      },
@@ -93,13 +94,21 @@ function renderizarBriefing(briefing) {
          '<p class="tear-card__meta">' + escaparHtml(briefing.resumo) + '</p>';
 }
 
+/* A V2 não guarda e-mail, PIX nem endereço: o perfil é somente leitura do que
+   `Parceiros_Influenciadoras` de fato tem. */
+var CAMPOS_DO_PERFIL = [
+  { chave: 'nome', rotulo: 'nome' },
+  { chave: 'statusContrato', rotulo: 'contrato' },
+  { chave: 'categoria', rotulo: 'categoria' }
+];
+
 function renderizarPerfil(perfil) {
   if (!perfil) return renderizarVazio('perfil indisponível.');
 
-  return ['nome', 'cupom', 'cidade'].map(function (campo) {
+  return CAMPOS_DO_PERFIL.map(function (campo) {
     return '<div class="tear-card">' +
-             '<div class="tear-card__meta">' + escaparHtml(campo) + '</div>' +
-             '<div class="tear-card__titulo">' + escaparHtml(perfil[campo]) + '</div>' +
+             '<div class="tear-card__meta">' + escaparHtml(campo.rotulo) + '</div>' +
+             '<div class="tear-card__titulo">' + escaparHtml(perfil[campo.chave]) + '</div>' +
            '</div>';
   }).join('');
 }
@@ -107,6 +116,82 @@ function renderizarPerfil(perfil) {
 /* ── Dados simulados (Etapa 1) ────────────────────────────────────────────
    Nomes fictícios de propósito: este repositório é público. Nenhum dado real
    de influenciadora entra aqui. */
+/* ── Sessão ───────────────────────────────────────────────────────────────
+   `sessionStorage`, NUNCA `localStorage`: o token é um bearer puro (o servidor
+   só faz `cache.get(token)`, sem binding de IP ou User-Agent). Persistir além
+   da aba transforma token esquecido em sequestro de sessão. */
+var CHAVE_SESSAO = 'tear.token';
+var SESSAO = null;
+
+function lerTokenPersistido() {
+  return typeof sessionStorage === 'undefined' ? null : sessionStorage.getItem(CHAVE_SESSAO);
+}
+
+function persistirToken(token) {
+  if (typeof sessionStorage === 'undefined') return;
+
+  if (token) sessionStorage.setItem(CHAVE_SESSAO, token);
+  else sessionStorage.removeItem(CHAVE_SESSAO);
+}
+
+function estaAutenticado() {
+  return !!SESSAO;
+}
+
+function fazerLogin(cupom, senha) {
+  return chamar('apiLogin', cupom, senha).then(function (resposta) {
+    if (!resposta || !resposta.success) {
+      throw new Error(resposta && resposta.error ? resposta.error : 'Não foi possível entrar.');
+    }
+
+    SESSAO = resposta.data;
+    persistirToken(SESSAO.token);
+
+    return SESSAO;
+  });
+}
+
+function restaurarSessao() {
+  var token = lerTokenPersistido();
+
+  if (!temBackend() || !token) return Promise.resolve(false);
+
+  return chamar('apiSessaoAtual', token)
+    .then(function (resposta) {
+      if (!resposta || !resposta.success) {
+        persistirToken(null);
+        return false;
+      }
+
+      SESSAO = { token: token, perfil: resposta.data };
+      return true;
+    })
+    .catch(function () {
+      return false;
+    });
+}
+
+/**
+ * Aguarda o servidor antes de limpar o token. Fire-and-forget deixaria o token
+ * válido por 6h no servidor enquanto o cliente já o esqueceu — ninguém mais
+ * poderia revogá-lo. A sessão local é encerrada mesmo se o servidor falhar.
+ */
+function sairDoApp() {
+  var token = SESSAO ? SESSAO.token : lerTokenPersistido();
+
+  var encerrarLocalmente = function () {
+    SESSAO = null;
+    persistirToken(null);
+  };
+
+  if (!temBackend() || !token) {
+    encerrarLocalmente();
+    return Promise.resolve();
+  }
+
+  return chamar('apiLogout', token).catch(function () {}).then(encerrarLocalmente);
+}
+
 var DADOS_MOCK = {
   pendencias: [
     { formato: 'reel',       ciclo: 'ciclo de julho', estado: 'aguardando material' },
@@ -119,8 +204,8 @@ var DADOS_MOCK = {
   historico: [
     { formato: 'stories', ciclo: 'ciclo de maio' }
   ],
-  briefing: { titulo: 'ciclo de julho', resumo: 'conteúdo simulado — a Etapa 4 liga esta tela ao Controller.' },
-  perfil: { nome: 'influenciadora exemplo', cupom: 'EXEMPLO10', cidade: 'são paulo' }
+  briefing: { titulo: 'ciclo de julho', resumo: 'conteúdo simulado — sem backend, a tela cai no mock.' },
+  perfil: { nome: 'influenciadora exemplo', statusContrato: 'ativo', categoria: 'moda' }
 };
 
 /* ── Ponte com o backend ──────────────────────────────────────────────────
@@ -247,10 +332,10 @@ var carregarHistorico = carregadorDeCiclo(
   function () { return DADOS_MOCK.historico; }
 );
 
-/** Ainda sem fonte na V2: briefing é um link na ativação, perfil espera o login. */
+/** Briefing ainda não tem fonte na V2 (é um link na ativação, não um texto). */
 var RENDERIZADORES = {
   'campo:briefing': function () { return renderizarBriefing(DADOS_MOCK.briefing); },
-  'campo:perfil':   function () { return renderizarPerfil(DADOS_MOCK.perfil); }
+  'campo:perfil':   function () { return renderizarPerfil(SESSAO ? SESSAO.perfil : DADOS_MOCK.perfil); }
 };
 
 /** Slots que buscam dados de verdade. */
@@ -345,15 +430,24 @@ function navegar(rotaPedida) {
   alvo.innerHTML = '';
   alvo.appendChild(modelo.content.cloneNode(true));
 
-  // Se o usuário navegar de novo antes de a resposta chegar, a view já é outra:
-  // descartamos o resultado tardio em vez de escrever num nó fora da tela.
-  preencherSlots(alvo)
-    .then(function (veioDoBackend) {
-      if (ROTA_ATUAL === rota) marcarOrigemDosDados(veioDoBackend);
-    })
-    .catch(function () {
-      if (ROTA_ATUAL === rota) marcarOrigemDosDados(false);
-    });
+  // Na tela de login não há navegação nem dados: esconder a nav evita que a
+  // parceira alcance uma tela autenticada antes de entrar.
+  var ehLogin = rota === 'login';
+  document.querySelector('.tear-nav').hidden = ehLogin;
+
+  if (ehLogin) {
+    marcarOrigemDosDados(true); // nada a declarar: a tela não exibe dado nenhum
+  } else {
+    // Se o usuário navegar de novo antes de a resposta chegar, a view já é
+    // outra: descartamos o resultado tardio em vez de escrever num nó fora da tela.
+    preencherSlots(alvo)
+      .then(function (veioDoBackend) {
+        if (ROTA_ATUAL === rota) marcarOrigemDosDados(veioDoBackend);
+      })
+      .catch(function () {
+        if (ROTA_ATUAL === rota) marcarOrigemDosDados(false);
+      });
+  }
 
   document.getElementById('tear-titulo').textContent = tituloDaRota(rota);
 
@@ -364,24 +458,59 @@ function navegar(rotaPedida) {
   });
 }
 
+/** Depois de autenticar (ou sem backend): descobre os ciclos e abre o painel. */
+function entrarNoApp() {
+  return carregarCiclos().then(function () {
+    navegar(ROTA_PADRAO);
+  });
+}
+
+function tratarSubmitDeLogin(evento) {
+  evento.preventDefault();
+
+  var erro = document.getElementById('tear-erro-login');
+  var botao = evento.target.querySelector('button[type="submit"]');
+
+  erro.textContent = '';
+  botao.disabled = true;
+
+  fazerLogin(document.getElementById('tear-cupom').value, document.getElementById('tear-senha').value)
+    .then(entrarNoApp)
+    .catch(function (falha) {
+      // `textContent`, não `innerHTML`: a mensagem vem do servidor.
+      erro.textContent = falha && falha.message ? falha.message : 'Não foi possível entrar.';
+      botao.disabled = false;
+    });
+}
+
 function iniciarApp() {
   // Listener delegado: nenhum onclick inline, e funciona para os botões que
   // só existem depois que um template é clonado.
   document.addEventListener('click', function (evento) {
-    var gatilho = evento.target.closest('[data-rota]');
-    if (gatilho) navegar(gatilho.getAttribute('data-rota'));
+    var rota = evento.target.closest('[data-rota]');
+    if (rota) return navegar(rota.getAttribute('data-rota'));
+
+    if (evento.target.closest('[data-acao="sair"]')) {
+      sairDoApp().then(function () { navegar('login'); });
+    }
   });
 
-  var seletor = document.getElementById('tear-ciclo');
-  seletor.addEventListener('change', function (evento) {
+  document.addEventListener('submit', function (evento) {
+    if (evento.target.id === 'tear-form-login') tratarSubmitDeLogin(evento);
+  });
+
+  document.getElementById('tear-ciclo').addEventListener('change', function (evento) {
     CICLO_ATIVO = evento.target.value;
     navegar(ROTA_ATUAL);
   });
 
-  // Descobrir os ciclos antes da primeira pintura evita o painel buscar
-  // ativações de um ciclo vazio e mostrar erro por um instante.
-  carregarCiclos().then(function () {
-    navegar(ROTA_PADRAO);
+  // Sem backend (preview local) não há o que autenticar: a UI roda no mock.
+  if (!temBackend()) return entrarNoApp();
+
+  restaurarSessao().then(function (temSessao) {
+    if (temSessao) return entrarNoApp();
+
+    navegar('login');
   });
 }
 

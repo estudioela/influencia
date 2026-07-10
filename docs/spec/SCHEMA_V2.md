@@ -66,6 +66,10 @@ Cadastro de influenciadoras parceiras. Uma linha = uma parceira.
 | `Nome` | Dado | Nome da influenciadora. |
 | `Status_Contrato` | Dado | Situação contratual vigente. Domínio de valores ainda não fechado. |
 | `Categoria` | Dado | Segmento/classificação da parceira. |
+| `Cupom` | Dado | Identificador de login da parceira. Único. Equivalente ao `CUPOM` da V1. |
+| `Senha_Hash` | Dado (credencial) | Senha com hash, formato `salt$hash`: `salt` é um UUID, `hash` é SHA-256 hex de (`salt` + senha). **Nunca a senha em texto puro.** Implementado em `tear/Senha.js`. Nenhum Service da V2 devolve esta coluna em DTO. |
+
+> A V2 não armazena CNPJ da parceira. A V1 usa prefixo do CNPJ como senha (baixa entropia por design, ver `CLAUDE.md` seção 3 "Login") — decisão abandonada na V2 em favor de `Senha_Hash`.
 
 ---
 

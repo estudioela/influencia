@@ -23,7 +23,9 @@ function cabecalhosV2_() {
       'ID_Influenciadora',
       'Nome',
       'Status_Contrato',
-      'Categoria'
+      'Categoria',
+      'Cupom',
+      'Senha_Hash'
     ],
     [PLANILHAS.PLANOS_COLABORACAO]: [
       'ID_Plano',

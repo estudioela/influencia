@@ -78,6 +78,59 @@ function apiListarCiclos() {
   });
 }
 
+/* ── Autenticação ─────────────────────────────────────────────────────────── */
+
+function _montarControllerDeAuth() {
+  return new AuthController(new AuthService(new ParceiroRepository(), new SessaoRepository()));
+}
+
+function apiLogin(cupom, senha) {
+  return _comEnvelope(function () {
+    return _montarControllerDeAuth().handleAuth({ action: ACOES_AUTH.LOGIN, cupom: cupom, senha: senha });
+  });
+}
+
+function apiSessaoAtual(token) {
+  return _comEnvelope(function () {
+    return _montarControllerDeAuth().handleAuth({ action: ACOES_AUTH.ME, token: token });
+  });
+}
+
+function apiLogout(token) {
+  return _comEnvelope(function () {
+    return _montarControllerDeAuth().handleAuth({ action: ACOES_AUTH.LOGOUT, token: token });
+  });
+}
+
+/**
+ * Provisionamento de senha. NÃO é uma tela: é operação administrativa.
+ *
+ * ⚠️ Toda função global de um projeto Apps Script é invocável pelo cliente via
+ * `google.script.run` — não existe "função privada" aqui. Por isso esta exige
+ * um segredo guardado em `PropertiesService` (propriedade `ADMIN_TOKEN`, criada
+ * manualmente, nunca versionada). Sem ela, a função é inerte.
+ *
+ * A aba nasce com `Senha_Hash` vazia: ninguém loga até que uma senha seja
+ * definida por aqui.
+ */
+function adminDefinirSenha(cupom, senha, tokenAdmin) {
+  return _comEnvelope(function () {
+    const esperado = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
+
+    if (!esperado || tokenAdmin !== esperado) {
+      throw new Error('Operação não autorizada.');
+    }
+
+    if (!cupom || !senha) {
+      throw new Error('Informe o cupom e a senha.');
+    }
+
+    new ParceiroRepository().definirSenhaHash(cupom, criarSenhaHash(senha));
+
+    return { success: true, message: 'Senha definida.' };
+  });
+}
+
 function apiListarPagamentosDoCiclo(idCiclo) {
   return _comEnvelope(function () {
     const controller = new PagamentoController(

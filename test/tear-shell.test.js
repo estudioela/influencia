@@ -198,6 +198,69 @@ describe('fiação com o backend (Etapa 4)', () => {
   });
 });
 
+describe('sessão no cliente', () => {
+  function comStorage() {
+    const dados = new Map();
+    const sessionStorage = {
+      getItem: (k) => (dados.has(k) ? dados.get(k) : null),
+      setItem: (k, v) => dados.set(k, v),
+      removeItem: (k) => dados.delete(k)
+    };
+
+    return { dados, app: loadGasModule(path.join(RAIZ, 'tear', 'app.html'), { sessionStorage }) };
+  }
+
+  // O token do Apps Script é um bearer puro: o servidor só faz cache.get(token),
+  // sem binding de IP ou User-Agent. Em localStorage ele sobreviveria ao reboot.
+  test('a sessão usa sessionStorage, e localStorage não aparece no código', () => {
+    const fonte = fs.readFileSync(path.join(RAIZ, 'tear', 'app.html'), 'utf8');
+    // Os comentários citam localStorage para explicar por que NÃO é usado.
+    const codigo = fonte.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+    expect(codigo).toContain('sessionStorage');
+    expect(codigo).not.toMatch(/\blocalStorage\b/);
+  });
+
+  test('sem token persistido, não há sessão', () => {
+    const { app: a } = comStorage();
+
+    expect(a.estaAutenticado()).toBe(false);
+    expect(a.lerTokenPersistido()).toBe(null);
+  });
+
+  test('persistir e apagar o token', () => {
+    const { app: a, dados } = comStorage();
+
+    a.persistirToken('tok-1');
+    expect(a.lerTokenPersistido()).toBe('tok-1');
+
+    a.persistirToken(null);
+    expect(dados.has('tear.token')).toBe(false);
+  });
+
+  test('sem backend, restaurarSessao não autentica ninguém', async () => {
+    const { app: a } = comStorage();
+    a.persistirToken('tok-1');
+
+    await expect(a.restaurarSessao()).resolves.toBe(false);
+  });
+
+  test('sair encerra a sessão local mesmo sem backend', async () => {
+    const { app: a } = comStorage();
+    a.persistirToken('tok-1');
+
+    await a.sairDoApp();
+
+    expect(a.lerTokenPersistido()).toBe(null);
+    expect(a.estaAutenticado()).toBe(false);
+  });
+
+  test('login é uma rota conhecida e fica fora da bottom nav', () => {
+    expect(app.ehRotaValida('login')).toBe(true);
+    expect(app.ROTAS_DO_NAV).not.toContain('login');
+  });
+});
+
 describe('tear/Roteador.js — fronteira HTTP', () => {
   function carregarRoteador() {
     const saida = {
