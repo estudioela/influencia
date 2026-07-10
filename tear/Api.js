@@ -61,23 +61,21 @@ function apiListarAtivacoesDoCiclo(token, idCiclo) {
 
 function apiObterAtivacao(token, idAtivacao) {
   return _comEnvelope(function () {
-    _idDaSessao(token);
-
     return _montarControllerDeAtivacao().handleAtivacaoQuery({
       action: ACOES_ATIVACAO.GET_BY_ID,
-      idAtivacao: idAtivacao
+      idAtivacao: idAtivacao,
+      idInfluenciadora: _idDaSessao(token)
     });
   });
 }
 
 function apiAlterarEstadoDaAtivacao(token, idAtivacao, novoEstado) {
   return _comEnvelope(function () {
-    _idDaSessao(token);
-
     return _montarControllerDeAtivacao().handleAtivacaoUpdate({
       action: ACOES_ATIVACAO.CHANGE_STATE,
       idAtivacao: idAtivacao,
-      newState: novoEstado
+      newState: novoEstado,
+      idInfluenciadora: _idDaSessao(token)
     });
   });
 }

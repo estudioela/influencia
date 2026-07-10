@@ -13,7 +13,7 @@ const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
 function carregarDominio() {
   return loadGasFiles(
-    ['Config.js', 'Ativacao.js', 'AtivacaoRepository.js', 'AtivacaoService.js', 'WebAppController.js'].map(arquivo),
+    ['Config.js', 'Dto.js', 'Ativacao.js', 'AtivacaoRepository.js', 'AtivacaoService.js', 'WebAppController.js'].map(arquivo),
     {},
     ['AtivacaoService', 'WebAppController', 'CAMPOS_ATIVACAO', 'ESTADOS_ATIVACAO']
   );
@@ -116,8 +116,26 @@ describe('AtivacaoService — leitura', () => {
   test('obter devolve DTO e falha alto para id inexistente', () => {
     const { service } = montar([linhaCrua()]);
 
-    expect(service.obter('a-1').idAtivacao).toBe('a-1');
-    expect(() => service.obter('inexistente')).toThrow(/não encontrada/i);
+    expect(service.obter('a-1', 'i-1').idAtivacao).toBe('a-1');
+    expect(() => service.obter('inexistente', 'i-1')).toThrow(/não encontrada/i);
+  });
+
+  /**
+   * A ativação de outra parceira responde exatamente como uma inexistente.
+   * Uma mensagem diferente ("não é sua") confirmaria que o id existe.
+   */
+  test('obter não devolve a ativação de outra influenciadora', () => {
+    const { service } = montar([linhaCrua()]);
+
+    expect(() => service.obter('a-1', 'i-2')).toThrow(/não encontrada/i);
+    expect(() => service.obter('a-1', '')).toThrow(/influenciadora/i);
+  });
+
+  test('alterarEstado não altera a ativação de outra influenciadora', () => {
+    const { service } = montar([linhaCrua()]);
+
+    expect(() => service.alterarEstado('a-1', ESTADOS_ATIVACAO.AGUARDANDO_APROVACAO, 'i-2'))
+      .toThrow(/não encontrada/i);
   });
 });
 
@@ -135,7 +153,11 @@ describe('WebAppController — consulta', () => {
   test('GET_BY_ID devolve um único DTO', () => {
     const { controller } = montar([linhaCrua()]);
 
-    const resposta = controller.handleAtivacaoQuery({ action: 'GET_BY_ID', idAtivacao: 'a-1' });
+    const resposta = controller.handleAtivacaoQuery({
+      action: 'GET_BY_ID',
+      idAtivacao: 'a-1',
+      idInfluenciadora: 'i-1'
+    });
 
     expect(resposta).toEqual({ success: true, data: expect.objectContaining({ idAtivacao: 'a-1' }) });
   });
@@ -147,6 +169,7 @@ describe('WebAppController — consulta', () => {
     [{ action: 'LIST_BY_CYCLE' }, /idCiclo/],
     [{ action: 'LIST_BY_CYCLE', idCiclo: 'c-1' }, /idInfluenciadora/],
     [{ action: 'GET_BY_ID' }, /idAtivacao/],
+    [{ action: 'GET_BY_ID', idAtivacao: 'a-1' }, /idInfluenciadora/],
     [{ action: 'APAGAR_TUDO', idCiclo: 'c-1' }, /não é suportada/],
     [{ idCiclo: 'c-1' }, /não é suportada/],
     [null, /payload ausente/],
@@ -164,7 +187,11 @@ describe('WebAppController — consulta', () => {
   test('id inexistente vira erro de domínio em pt-BR, não exceção', () => {
     const { controller } = montar([linhaCrua()]);
 
-    const resposta = controller.handleAtivacaoQuery({ action: 'GET_BY_ID', idAtivacao: 'nao-existe' });
+    const resposta = controller.handleAtivacaoQuery({
+      action: 'GET_BY_ID',
+      idAtivacao: 'nao-existe',
+      idInfluenciadora: 'i-1'
+    });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error).toMatch(/não encontrada/i);
@@ -178,7 +205,8 @@ describe('WebAppController — a escrita não regrediu', () => {
     const ok = controller.handleAtivacaoUpdate({
       action: 'CHANGE_STATE',
       idAtivacao: 'a-1',
-      newState: ESTADOS_ATIVACAO.AGUARDANDO_APROVACAO
+      newState: ESTADOS_ATIVACAO.AGUARDANDO_APROVACAO,
+      idInfluenciadora: 'i-1'
     });
 
     expect(ok.success).toBe(true);
@@ -192,11 +220,25 @@ describe('WebAppController — a escrita não regrediu', () => {
     const resposta = controller.handleAtivacaoUpdate({
       action: 'CHANGE_STATE',
       idAtivacao: 'a-1',
-      newState: ESTADOS_ATIVACAO.PUBLICADA
+      newState: ESTADOS_ATIVACAO.PUBLICADA,
+      idInfluenciadora: 'i-1'
     });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error).toMatch(/Transição proibida/i);
+  });
+
+  test('CHANGE_STATE sem dono declarado não escreve', () => {
+    const { controller } = montar([linhaCrua()]);
+
+    const resposta = controller.handleAtivacaoUpdate({
+      action: 'CHANGE_STATE',
+      idAtivacao: 'a-1',
+      newState: ESTADOS_ATIVACAO.AGUARDANDO_APROVACAO
+    });
+
+    expect(resposta.success).toBe(false);
+    expect(resposta.error).toMatch(/idInfluenciadora/);
   });
 
   test('a consulta não aceita CHANGE_STATE, e a escrita não aceita consulta', () => {

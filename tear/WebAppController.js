@@ -18,7 +18,11 @@ class WebAppController {
     try {
       this._validarPayload(payload);
 
-      const ativacao = this.ativacaoService.alterarEstado(payload.idAtivacao, payload.newState);
+      const ativacao = this.ativacaoService.alterarEstado(
+        payload.idAtivacao,
+        payload.newState,
+        payload.idInfluenciadora
+      );
 
       return {
         success: true,
@@ -64,8 +68,12 @@ class WebAppController {
 
       if (payload.action === ACOES_ATIVACAO.GET_BY_ID) {
         this._exigirCampo(payload, 'idAtivacao');
+        this._exigirCampo(payload, 'idInfluenciadora');
 
-        return { success: true, data: this.ativacaoService.obter(payload.idAtivacao) };
+        return {
+          success: true,
+          data: this.ativacaoService.obter(payload.idAtivacao, payload.idInfluenciadora)
+        };
       }
 
       throw new Error(`Requisição inválida: ação "${payload.action}" não é suportada.`);
@@ -86,6 +94,7 @@ class WebAppController {
 
     this._exigirCampo(payload, 'idAtivacao');
     this._exigirCampo(payload, 'newState');
+    this._exigirCampo(payload, 'idInfluenciadora');
   }
 
   _exigirPayload(payload) {

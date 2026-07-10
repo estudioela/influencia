@@ -47,14 +47,34 @@ class AtivacaoService {
       .filter(dto => dto.estado === ESTADOS_ATIVACAO.ARQUIVADA);
   }
 
-  obter(idAtivacao) {
-    const dados = this.repository.getById(idAtivacao);
+  obter(idAtivacao, idInfluenciadora) {
+    return this._paraDto(this._exigirPropria(idAtivacao, idInfluenciadora));
+  }
 
-    if (!dados) {
+  /**
+   * Posse, antes de qualquer leitura ou escrita de UMA ativação.
+   *
+   * `listarDaInfluenciadoraNoCiclo` já filtrava por parceira, mas `obter` e
+   * `alterarEstado` recebiam só o id da ativação: bastava trocar o argumento
+   * para ler — e alterar o estado — a entrega de outra influenciadora.
+   *
+   * "Não é sua" e "não existe" devolvem a MESMA mensagem: distinguir as duas
+   * revelaria quais ids existem na planilha.
+   */
+  _exigirPropria(idAtivacao, idInfluenciadora) {
+    if (!idInfluenciadora) {
+      throw new Error('É obrigatório informar a influenciadora.');
+    }
+
+    const dados = this.repository.getById(idAtivacao);
+    const propria = dados &&
+      String(dados[CAMPOS_ATIVACAO.INFLUENCIADORA]) === String(idInfluenciadora);
+
+    if (!propria) {
       throw new Error(`Ativação "${idAtivacao}" não encontrada.`);
     }
 
-    return this._paraDto(dados);
+    return dados;
   }
 
   /**
@@ -66,36 +86,20 @@ class AtivacaoService {
     const C = CAMPOS_ATIVACAO;
 
     return {
-      idAtivacao: this._texto(linha[C.ID]),
-      idCiclo: this._texto(linha[C.CICLO]),
-      idInfluenciadora: this._texto(linha[C.INFLUENCIADORA]),
-      tipoConteudo: this._texto(linha[C.TIPO_CONTEUDO]),
-      estado: this._texto(linha[C.ESTADO]),
-      lookReferencia: this._texto(linha[C.LOOK]),
-      entregaPrevista: this._data(linha[C.ENTREGA_PREVISTA]),
-      linkBriefing: this._texto(linha[C.LINK_BRIEFING]),
-      linkUploadHd: this._texto(linha[C.LINK_UPLOAD_HD])
+      idAtivacao: textoDeCelula(linha[C.ID]),
+      idCiclo: textoDeCelula(linha[C.CICLO]),
+      idInfluenciadora: textoDeCelula(linha[C.INFLUENCIADORA]),
+      tipoConteudo: textoDeCelula(linha[C.TIPO_CONTEUDO]),
+      estado: textoDeCelula(linha[C.ESTADO]),
+      lookReferencia: textoDeCelula(linha[C.LOOK]),
+      entregaPrevista: dataIsoDeCelula(linha[C.ENTREGA_PREVISTA]),
+      linkBriefing: textoDeCelula(linha[C.LINK_BRIEFING]),
+      linkUploadHd: textoDeCelula(linha[C.LINK_UPLOAD_HD])
     };
   }
 
-  _texto(valor) {
-    return valor === null || valor === undefined ? '' : String(valor);
-  }
-
-  _data(valor) {
-    if (valor instanceof Date) {
-      return valor.toISOString();
-    }
-
-    return this._texto(valor);
-  }
-
-  alterarEstado(idAtivacao, novoEstado) {
-    const dados = this.repository.getById(idAtivacao);
-
-    if (!dados) {
-      throw new Error(`Ativação "${idAtivacao}" não encontrada.`);
-    }
+  alterarEstado(idAtivacao, novoEstado, idInfluenciadora) {
+    const dados = this._exigirPropria(idAtivacao, idInfluenciadora);
 
     const ativacao = new Ativacao(dados);
     ativacao.validateStateTransition(novoEstado);
