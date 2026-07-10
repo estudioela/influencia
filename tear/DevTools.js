@@ -15,23 +15,14 @@ function cabecalhosV2_() {
       'PASTA_DRIVE_LINK', 'SIM/NÃO', 'Senha_Hash'
     ],
 
-    // 2. ABA DE BRIEFING (Visão Criativa)
-    'Briefings': [
-      'INFLUENCIADORA', 'RESUMO DO MÊS', 'LOOK REEL', 'LOOK CARROSSEL', 
-      'LOOK STORIES 1', 'LOOK STORIES 2', 'DATA REEL', 'DATA CARROSSEL', 
-      'DATA STORIES 1', 'DATA STORIES 2', 'SOBRE REEL', 'SOBRE CARROSSEL', 
-      'SOBRE STORIES 1', 'SOBRE STORIES 2', 'APROVACAO REEL', 
-      'APROVACAO CARROSSEL', 'APROVACAO STORIES 1', 'APROVACAO STORIES 2'
-    ],
-
-    // 3. ABA DE LOGÍSTICA (entidade persistida V2 — docs/spec/SCHEMA_V2.md;
+    // 2. ABA DE LOGÍSTICA (entidade persistida V2 — docs/spec/SCHEMA_V2.md;
     //    cabeçalhos = CAMPOS_LOGISTICA em Repositories.js)
     [PLANILHAS.LOGISTICA]: [
       'ID_Logistica', 'ID_Ciclo', 'ID_Influenciadora', 'Endereco_Entrega',
       'Codigo_Rastreio', 'Data_Envio', 'Status_Logistica'
     ],
 
-    // 4. ABAS DE CONTROLE INTERNO (O motor da V2)
+    // 3. ABAS DE CONTROLE INTERNO (O motor da V2)
     [PLANILHAS.CICLOS]: [
       'ID_Ciclo', 'Nome_Ciclo', 'Data_Inicio_Logistica', 'Data_Fim_Operacao'
     ],
