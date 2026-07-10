@@ -87,11 +87,23 @@ function renderizarHistorico(itens) {
   }).join('');
 }
 
-function renderizarBriefing(briefing) {
-  if (!briefing) return renderizarVazio('sem briefing para o ciclo.');
+/**
+ * A V2 não tem aba de briefing: `Link_Briefing` é uma coluna da ativação.
+ * A tela lista, por entrega, o link do briefing correspondente.
+ */
+function renderizarBriefing(itens) {
+  if (!itens || !itens.length) return renderizarVazio('sem briefing para o ciclo.');
 
-  return '<h2 class="ela-font-display ela-text-xl">' + escaparHtml(briefing.titulo) + '</h2>' +
-         '<p class="tear-card__meta">' + escaparHtml(briefing.resumo) + '</p>';
+  return itens.map(function (item) {
+    var corpo = item.link
+      ? '<a class="tear-card__meta" href="' + escaparHtml(item.link) + '" target="_blank" rel="noopener noreferrer">abrir briefing</a>'
+      : '<span class="tear-card__meta">briefing ainda não publicado</span>';
+
+    return '<article class="tear-card">' +
+             '<div class="tear-card__titulo">' + escaparHtml(item.formato) + '</div>' +
+             corpo +
+           '</article>';
+  }).join('');
 }
 
 /* A V2 não guarda e-mail, PIX nem endereço: o perfil é somente leitura do que
@@ -204,7 +216,7 @@ var DADOS_MOCK = {
   historico: [
     { formato: 'stories', ciclo: 'ciclo de maio' }
   ],
-  briefing: { titulo: 'ciclo de julho', resumo: 'conteúdo simulado — sem backend, a tela cai no mock.' },
+  briefing: [{ formato: 'reel', link: '' }],
   perfil: { nome: 'influenciadora exemplo', statusContrato: 'ativo', categoria: 'moda' }
 };
 
@@ -245,6 +257,10 @@ function pendenciaDeDto(dto) {
     ciclo: dto.idCiclo,
     estado: dto.estado
   };
+}
+
+function briefingDeDto(dto) {
+  return { formato: dto.tipoConteudo, link: dto.linkBriefing };
 }
 
 /** `valorCache` vem cru da planilha; sem valor, não se inventa "R$ 0,00". */
@@ -350,17 +366,22 @@ var carregarHistorico = carregadorDeCiclo(
   function () { return DADOS_MOCK.historico; }
 );
 
-/** Briefing ainda não tem fonte na V2 (é um link na ativação, não um texto). */
+var carregarBriefing = carregadorDeCiclo(
+  'apiListarAtivacoesDoCiclo', renderizarBriefing, briefingDeDto,
+  function () { return DADOS_MOCK.briefing; }
+);
+
+/** O perfil vem da sessão, não de uma chamada: o login já o devolveu. */
 var RENDERIZADORES = {
-  'campo:briefing': function () { return renderizarBriefing(DADOS_MOCK.briefing); },
-  'campo:perfil':   function () { return renderizarPerfil(SESSAO ? SESSAO.perfil : DADOS_MOCK.perfil); }
+  'campo:perfil': function () { return renderizarPerfil(SESSAO ? SESSAO.perfil : DADOS_MOCK.perfil); }
 };
 
 /** Slots que buscam dados de verdade. */
 var CARREGADORES = {
   'lista:pendencias': carregarPendencias,
   'lista:pagamentos': carregarPagamentos,
-  'lista:historico':  carregarHistorico
+  'lista:historico':  carregarHistorico,
+  'lista:briefing':   carregarBriefing
 };
 
 /* ── Seleção de ciclo ─────────────────────────────────────────────────── */

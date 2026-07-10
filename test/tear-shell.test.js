@@ -86,8 +86,13 @@ describe('renderizadores — recebem dados por parâmetro e devolvem string', ()
   });
 
   test('briefing e perfil têm estado vazio próprio', () => {
-    expect(app.renderizarBriefing(null)).toContain('sem briefing');
+    expect(app.renderizarBriefing([])).toContain('sem briefing');
     expect(app.renderizarPerfil(null)).toContain('perfil indisponível');
+  });
+
+  test('briefing escapa o link e sinaliza quando não há', () => {
+    expect(app.renderizarBriefing([{ formato: 'reel', link: 'https://x?a=1&b=2' }])).toContain('a=1&amp;b=2');
+    expect(app.renderizarBriefing([{ formato: 'reel', link: '' }])).toContain('ainda não publicado');
   });
 
   test('os dados simulados não vazam nome real de influenciadora', () => {
