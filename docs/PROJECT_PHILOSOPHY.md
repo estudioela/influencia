@@ -1,139 +1,121 @@
-# PROJECT_PHILOSOPHY.md
-# Projeto Tear V2
+PROJECT PHILOSOPHY
 
-Versão: 1.0
+Objetivo
 
-======================================================================
-FILOSOFIA OPERACIONAL
-======================================================================
+Este documento define os princípios permanentes que orientam a engenharia, a evolução e a manutenção do Projeto Tear.
 
-Este projeto prioriza execução, estabilidade e evolução incremental.
+Esses princípios servem como referência para decisões arquiteturais, desenvolvimento de funcionalidades, consolidação documental e colaboração entre pessoas e agentes de IA.
 
-O objetivo do agente NÃO é produzir a solução mais sofisticada possível.
+Seu propósito não é descrever procedimentos operacionais, mas estabelecer os valores que devem permanecer estáveis ao longo da evolução do projeto.
 
-O objetivo é concluir corretamente a tarefa solicitada consumindo o mínimo
-possível de contexto, tokens, leituras, tempo e iterações.
+⸻
 
-======================================================================
-ORDEM DE PRIORIDADE
-======================================================================
+Princípios Fundamentais
 
-1. Correção funcional.
-2. Testes verdes.
-3. Estabilidade.
-4. Escopo solicitado.
-5. Economia de contexto.
-6. Economia de tokens.
-7. Velocidade de entrega.
-8. Elegância do código.
+Arquitetura antes da Implementação
 
-======================================================================
-REGRAS GERAIS
-======================================================================
+Toda implementação deve respeitar a arquitetura vigente.
 
-• Execute apenas o escopo solicitado.
+A evolução do sistema nunca deve comprometer sua consistência estrutural.
 
-• Não amplie a sprint por iniciativa própria.
+⸻
 
-• Não implemente funcionalidades futuras.
+Consolidação antes da Expansão
 
-• Não faça refatorações não solicitadas.
+Sempre que possível, evoluir soluções existentes antes de criar novas estruturas.
 
-• Não reabra decisões arquiteturais já aprovadas.
+Duplicações e fragmentações aumentam a complexidade do sistema.
 
-• Não interrompa a implementação para buscar uma arquitetura mais elegante.
+⸻
 
-======================================================================
-INVESTIGAÇÃO
-======================================================================
+Responsabilidade Única
 
-Investigue apenas até possuir informação suficiente para implementar.
+Cada componente, documento ou módulo deve possuir uma responsabilidade claramente definida.
 
-Assim que houver informação suficiente:
+Quando um elemento passa a responder múltiplas perguntas, sua organização deve ser revisada.
 
-PARE DE INVESTIGAR.
+⸻
 
-COMECE A IMPLEMENTAR.
+Fonte Única da Verdade
 
-Evite:
+Cada conceito possui um único local oficial de manutenção.
 
-- releitura de arquivos;
-- auditorias repetidas;
-- validações redundantes;
-- exploração desnecessária do projeto.
+Outros documentos podem referenciá-lo, mas nunca duplicá-lo.
 
-======================================================================
-DECISÕES
-======================================================================
+⸻
 
-Se existirem duas soluções tecnicamente corretas:
+Filosofia de Engenharia
 
-Escolha a que:
+Correção antes da Velocidade
 
-- altera menos arquivos;
-- exige menos contexto;
-- exige menos tokens;
-- possui menor risco;
-- preserva a arquitetura existente.
+Uma solução correta possui prioridade sobre uma solução rápida.
 
-======================================================================
-INCONSISTÊNCIAS
-======================================================================
+Velocidade não justifica perda de qualidade.
 
-Caso encontre inconsistências:
+⸻
 
-Se impedirem tecnicamente a implementação:
+Simplicidade antes da Sofisticação
 
-→ pare e solicite uma decisão.
+A solução mais simples que atende corretamente ao problema deve ser preferida.
 
-Caso contrário:
+Complexidade somente é aceitável quando agrega valor claro e justificável.
 
-→ registre a observação em poucas linhas;
-→ continue implementando.
+⸻
 
-Não interrompa a sprint.
+Evolução Incremental
 
-======================================================================
-MELHORIAS
-======================================================================
+O Projeto Tear evolui por pequenas melhorias contínuas.
 
-Se identificar melhorias fora do escopo:
+Grandes reescritas somente são justificadas quando não existir alternativa sustentável.
 
-- registre a sugestão;
-- não implemente;
-- continue a tarefa principal.
+⸻
 
-======================================================================
-COMUNICAÇÃO
-======================================================================
+Estabilidade como Prioridade
 
-Durante a implementação seja objetivo.
+Toda alteração deve preservar a previsibilidade do sistema.
 
-Informe apenas:
+Mudanças que aumentem risco operacional devem ser cuidadosamente avaliadas.
 
-- etapa atual;
-- resultado;
-- bloqueios.
+⸻
 
-Evite relatórios longos durante a execução.
+Filosofia de Colaboração
 
-======================================================================
-SESSÕES
-======================================================================
+Conhecimento como Patrimônio
 
-Considere que haverá outro agente depois de você.
+O conhecimento produzido durante o desenvolvimento faz parte do patrimônio do projeto.
 
-Sua responsabilidade termina quando a tarefa atual estiver concluída.
+Decisões importantes devem ser registradas e documentadas.
 
-Não prepare funcionalidades futuras.
+⸻
 
-Não prolongue a sessão sem necessidade.
+Continuidade
 
-======================================================================
-REGRA DE OURO
-======================================================================
+O projeto deve permanecer compreensível independentemente das pessoas ou ferramentas envolvidas.
 
-A melhor implementação é aquela que entrega corretamente o que foi solicitado
-com o menor consumo possível de contexto, tokens, tempo e alterações.
+Toda contribuição deve facilitar o trabalho dos próximos colaboradores.
 
-Perfeccionismo não é um objetivo deste projeto.
+⸻
+
+Evolução Responsável
+
+Decisões consolidadas somente devem ser revisitadas quando houver justificativa arquitetural clara.
+
+Mudanças motivadas apenas por preferência pessoal não devem orientar a evolução do projeto.
+
+⸻
+
+Escopo
+
+Este documento define exclusivamente os princípios permanentes do Projeto Tear.
+
+Não fazem parte de sua responsabilidade:
+
+* procedimentos operacionais;
+* fluxos de trabalho;
+* arquitetura do sistema;
+* decisões arquiteturais específicas;
+* especificações técnicas;
+* planejamento ou histórico do projeto.
+
+Esses assuntos pertencem aos respectivos documentos oficiais.
+
