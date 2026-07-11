@@ -39,10 +39,31 @@ Roteador → Controllers → Services → Repositories → Infra / Modelos
 
 ## Entrypoints (todos `function` de topo — contrato do google.script.run)
 
-`apiLogin`, `apiSessaoAtual`, `apiLogout`, `apiListarCiclos`,
-`apiListarAtivacoesDoCiclo`, `apiListarPagamentosDoCiclo`, `apiListarHistoricoDoCiclo`,
-`apiBuscarParceira` (admin), `apiSalvarParceira` (admin), `adminDefinirSenha` (admin),
-`doGet`, `include`.
+Entrypoints de autenticação e portal:
+
+`apiLogin`, `apiSessaoAtual`, `apiLogout`,
+`apiListarCiclos`,
+`apiListarAtivacoesDoCiclo`,
+`apiListarPagamentosDoCiclo`,
+`apiListarHistoricoDoCiclo`.
+
+Entrypoints administrativos:
+
+`apiBuscarParceira`,
+`apiSalvarParceira`,
+`adminDefinirSenha`,
+`apiListarCiclosAdmin`,
+`apiListarAtivacoesAdmin`,
+`apiAlterarEstadoAtivacaoAdmin`.
+
+Operações de atualização:
+
+`apiAlterarEstadoDaAtivacao`.
+
+Infraestrutura do Web App:
+
+`doGet`,
+`include`.
 
 ## Front-end
 
