@@ -1,229 +1,264 @@
-# SYSTEM_MAP.md — Mapa arquitetural completo (por aba da planilha)
+# SYSTEM_MAP.md — Mapa arquitetural do Projeto Tear
 
-> Gerado por leitura completa e literal de `mae/Código.js`, `mae/WebApp.js`, `mae/SidebarBackend.js`, `mae/PortalUi.gs` e `mae/Index.html` (3.347 linhas, 2026-07-05). Nenhum conteúdo aqui foi inferido — cada afirmação aponta pra arquivo+linha real. Onde o código diverge do que estava documentado em `FLOW.md`/relatado pelo usuário, a divergência é sinalizada explicitamente, não silenciada.
+## Objetivo
 
----
+Este documento descreve a arquitetura funcional atual do sistema.
 
-## Inventário de abas
+Ele define a responsabilidade de cada área de dados e os arquivos responsáveis por sua manipulação.
 
-| Aba | Constante | Arquivo de definição |
-|---|---|---|
-| `BASE DE DADOS` | `SETUP.ABAS.BASE` / `MAP.BASE.NOME_ABA` | `Código.js` ~L10, `WebApp.js` ~L30 |
-| `CADASTROS` | `SETUP.ABAS.CADASTROS` | `Código.js` ~L9 |
-| `BRIEFING` | `SETUP.ABAS.BRIEFING` / `MAP.BRIEFING.NOME_ABA` | `Código.js` ~L11, `WebApp.js` ~L48 |
-| `FLUXO LOGÍSTICO` | `SETUP.ABAS.FLUXO` | `Código.js` ~L12 |
-| `ATIVAÇÕES` | `SETUP.ABAS.ATIVACOES` / `MAP.ATIVACOES.NOME_ABA` | `Código.js` ~L13, `WebApp.js` ~L45 |
-| `PAGAMENTOS` | `SETUP.ABAS.PAGAMENTOS` / `MAP.PAGAMENTOS.NOME_ABA` | `Código.js` ~L14, `WebApp.js` ~L46 |
-| `HISTÓRICO DE CONTEÚDOS` | `SETUP.ABAS.HISTORICO_CONT` / `MAP.HISTORICO_CONT.NOME_ABA` | `Código.js` ~L15, `WebApp.js` ~L55 |
-| `HISTÓRICO DE PAGAMENTOS` | `SETUP.ABAS.HISTORICO_PAG` / `MAP.HISTORICO_PAG.NOME_ABA` | `Código.js` ~L16, `WebApp.js` ~L56 |
-| `HISTÓRICO LOGÍSTICO` | `SETUP.ABAS.HISTORICO_FLUXO` | `Código.js` ~L17 |
-| (legado, nome variável) | detecção dinâmica por cabeçalho | `WebApp.js:listarAbasHistoricoLegado()` ~L72 |
+Não contém histórico de alterações, correções ou decisões temporárias.
 
 ---
 
-## 1. `BASE DE DADOS`
+# Inventário de abas
 
-**Propósito**: cadastro mestre de influenciadoras — status ativo/inativo, dados de contato, PIX, endereço, quantidades de ativação contratadas, valor.
-
-**Colunas confirmadas** (resolvidas por nome via `getHeaderMap()` em `WebApp.js` — `MAP.BASE` migrou de índice fixo em 2026-07-07, hoje só guarda `NOME_ABA`): `INFLU_KEY`, `CUPOM`, `INFLUENCIADORA_RAZAO_SOCIAL` (nome), `EMAIL`, `CHAVE_PIX`, `INFLUENCIADORA_CNPJ` (cnpj), `CEP`, `RUA`, `NUMERO`, `COMPLEMENTO`, `CIDADE`, `UF`, `VALOR_TOTAL`, `BAIRRO`, `INFLUENCIADORA_ENDERECO`. As duas últimas migraram para esta lista em 2026-07-09: `updatePerfil()` passou a escrevê-las ao manter o endereço derivado em sincronia com o CEP (correção de V-03). Colunas adicionais usadas via `getHeaderMap()` só em `Código.js`/`SidebarBackend.js`: `PASTA_DRIVE_LINK`, `REELS_TEXTO`, `CARROSSEL_TEXTO`, `STORIES_TEXTO`, `INFLU_SHEET_URL`, `LOOKS_QTD`, `CANAIS`, `PRAZO`.
-
-**Funções que escrevem:**
-- `Código.js:onFormSubmit()` (~L544-592) — cria linha nova (`appendRow`), status inicial `"OFF"`, dados vindos de `CADASTROS` + enriquecimento via BrasilAPI (CEP).
-- `Código.js:preencherEnderecoPorCEP()` (~L613-640) — grava `RUA`, `BAIRRO`, `CIDADE`, `UF`, `INFLUENCIADORA_ENDERECO`.
-- `Código.js:organizarEPintarBase()` (~L642-668) — reordena linhas e repinta cor de fundo por status.
-- `SidebarBackend.js:salvarDadosSidebarV2()` (~L75-100) — grava `CUPOM`, `VALOR_TOTAL`, `REELS_TEXTO`, `CARROSSEL_TEXTO`, `STORIES_TEXTO`, `LOOKS_QTD`, `CANAIS`, `PRAZO`, `INFLU_SHEET_URL`.
-- `WebApp.js:updatePerfil()` (~L575-613) — grava `CHAVE_PIX`, `EMAIL`, `CEP`, `NUMERO`, `COMPLEMENTO` (únicos campos editáveis pelo Portal).
-
-**Funções que leem:**
-- `Código.js:gerarNovoMesCompleto()` (~L70-147), `lancarPagamentosDoMes()` (~L326-359), `gerarMensagemRevisao()` (~L379-406), `sincronizarLooks()` (~L411-448).
-- `SidebarBackend.js:getListaInfluenciadoras()`/`getDadosInfluenciadora()` (~L30-73).
-- `WebApp.js:login()` (~L153-208), `getPerfil()` (~L524-573), `getInfluKeyByCupom()` (~L702-712), `obterOuCriarPastaDestino()` (~L769-820).
-
-**Eventos automáticos:**
-- `onEdit()` (`Código.js` ~L262-267): coluna 1 (status) editada → `organizarEPintarBase()`; `CEP`/`NUMERO`/`COMPLEMENTO` editados → `preencherEnderecoPorCEP()`.
-- `onFormSubmit()` (trigger instalável, ~L544) — não verificável por código se está de fato instalado (mesma ressalva do `CLAUDE.md` seção 6).
-
-**Origem dos dados**: formulário externo (via `CADASTROS`), edição manual no ERP, sidebar do ERP, Portal (`updatePerfil`).
+| Aba | Responsabilidade |
+|---|---|
+| BASE DE DADOS | Cadastro mestre de influenciadoras |
+| CADASTROS | Entrada bruta de novos cadastros |
+| BRIEFING | Planejamento de conteúdo |
+| FLUXO LOGÍSTICO | Controle de envio de produtos |
+| ATIVAÇÕES | Execução operacional de campanhas |
+| PAGAMENTOS | Controle financeiro |
+| HISTÓRICO DE CONTEÚDOS | Arquivo de ativações concluídas |
+| HISTÓRICO DE PAGAMENTOS | Arquivo financeiro |
+| HISTÓRICO LOGÍSTICO | Arquivo logístico |
+| Abas legado | Histórico externo identificado dinamicamente |
 
 ---
 
-## 2. `CADASTROS`
+# 1. BASE DE DADOS
 
-**Propósito**: zona de pouso bruta das submissões do Google Form externo, antes de normalização para `BASE DE DADOS`.
+## Responsabilidade
 
-**Funções que escrevem**: nenhuma no repositório — o próprio Google Form grava aqui, mecanismo fora deste código-fonte.
+Cadastro principal das influenciadoras.
 
-**Funções que leem**: `Código.js:onFormSubmit()` (~L544-556) — lê a última linha (ou `e.range`), extrai campos por substring do cabeçalho (`getV`: `CHAMADA`, `MAIL`, `PIX`, `RAZAO`, `CNPJ`, `CEP`, `NUMERO`, `COMPLEMENTO`).
+É a fonte de dados cadastrais utilizada pelo ERP e Portal.
 
-**Eventos automáticos**: trigger `onFormSubmit` (instalável, não verificável).
+## Escrita
 
-**Origem dos dados**: Google Form externo (repositório `estudioela/estudioela`, fora deste repo).
+- `Código.js`
+  - `onFormSubmit`
+  - atualização de endereço
+  - organização da base
 
----
+- `SidebarBackend.js`
+  - atualização cadastral
 
-## 3. `BRIEFING`
+- `WebApp.js`
+  - atualização de perfil pelo Portal
 
-**Propósito**: conteúdo criativo do briefing por influenciadora/mês/formato — texto do briefing, datas de aprovação calculadas, resumo do mês, looks.
+## Leitura
 
-**Colunas confirmadas** (cabeçalho real da planilha viva, via `SYSTEM_SCHEMA.md` de 2026-07-07, 23 colunas): `INFLU_KEY`, `CUPOM`, `MES`, `RESUMO_MES`, `LOOK_REEL`, `LOOK_CARROSSEL`, `LOOK_STORIES_1`, `LOOK_STORIES_2`, `DATA_REEL`, `DATA_CARROSSEL`, `DATA_STORIES_1`, `DATA_STORIES_2`, `SOBRE_REEL`, `SOBRE_CARROSSEL`, `SOBRE_STORIES_1`, `SOBRE_STORIES_2`, `APROVACAO_REEL`, `APROVACAO_CARROSSEL`, `APROVACAO_STORIES_1`, `APROVACAO_STORIES_2`, `PASTA_DRIVE_LINK`, `SIM/NÃO`, `ANO_REFERENCIA`. **(2026-07-07) Resolução 100% por nome via `getHeaderMap()`** — os índices fixos remanescentes (`MAP.BRIEFING` 1-4, leituras hardcoded 12-15 em `getBriefing()`, fallbacks 17-20 em `onEdit()`) foram eliminados; `MAP.BRIEFING` só guarda `NOME_ABA`. `ANO_REFERENCIA` foi criada na planilha viva por `Código.js:garantirColunaAnoReferenciaBriefing()` (ação manual de menu, executada pelo usuário em 2026-07-07); vazia numa linha antiga = compatibilidade legado, casa com qualquer ano (ver abaixo).
+- `Código.js`
+  - geração de ciclos
+  - pagamentos
+  - operações administrativas
 
-**Funções que escrevem:**
-- `Código.js:gerarNovoMesCompleto()` — limpa linhas antigas, grava `INFLU_KEY`, `CUPOM`, `MES`, `PASTA_DRIVE_LINK` por influenciadora ativa; desde 2026-07-07 também grava `ANO_REFERENCIA` (condicional à coluna existir).
-- `Código.js:onEdit()` bloco `BRIEFING` — edição em coluna REEL/CARROSSEL/STORIES calcula e grava data em `APROVACAO_*`.
-- `Código.js:onEdit()` bloco `ATIVAÇÕES` — ao editar `DATA_ATIVACAO` em `ATIVAÇÕES`, localiza linha correspondente por `INFLU_KEY`+`MES`+`ANO_REFERENCIA` (corrigido 2026-07-07 — antes só `INFLU_KEY`+`MES`, causava colisão entre campanhas do mesmo mês em anos diferentes; linha de `BRIEFING` sem `ANO_REFERENCIA` continua casando com qualquer ano) e grava a data de aprovação calculada na coluna `APROVACAO_*` do formato certo.
-- `Código.js:sincronizarLooks()` (~L411-448) — grava `LOOK_REEL`/`LOOK_CARROSSEL`/`LOOK_STORIES_1`/`LOOK_STORIES_2` a partir de planilha externa por influenciadora (URL em `BASE DE DADOS.INFLU_SHEET_URL`).
+- `SidebarBackend.js`
+  - consultas administrativas
 
-**Funções que leem:**
-- `WebApp.js:getBriefing()` — lê `INFLU_KEY`, `MES`, `RESUMO` (com fallback de nome), `ANO_REFERENCIA` (mesmo critério de casamento acima, corrigido 2026-07-07), e colunas fixas 12-15 pro texto do briefing por formato.
-
-**Eventos automáticos**: `onEdit()` (dois blocos independentes: direto em `BRIEFING`, e indireto via `ATIVAÇÕES.DATA_ATIVACAO`).
-
-**Origem dos dados**: gerado por `gerarNovoMesCompleto()`; texto preenchido manualmente pela equipe; looks vindos de planilha externa por influenciadora.
-
----
-
-## 4. `FLUXO LOGÍSTICO`
-
-**Propósito**: rastreamento logístico de envio de produtos/looks — endereço, status de revisão, código de rastreio, status de entrega.
-
-**Colunas**: definidas em `Código.js:setupERP()` ~L735; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui — evita ficar desatualizada se a aba ganhar/perder coluna).
-
-**Funções que escrevem:**
-- `Código.js:gerarNovoMesCompleto()` (~L118) — cria linha inicial (`"Aguardando Confirmação"`, status `"pendente"`).
-- `Código.js:onEdit()` bloco `FLUXO` (~L273-277) — `RASTREIO` editado com link contendo `"http"` → preenche `DATA_DE_ENVIO` (se vazia).
-- `Código.js:atualizarRastreiosBRComerce()` (~L450-487) — consulta API externa BRComerce por código de rastreio, grava `STATUS_LOGISTICA`.
-- `Código.js:arquivarGenerico()` (via `arquivarFluxo()`/`menuArquivarTudo()`) — move linhas com `STATUS_LOGISTICA` contendo `"entregue"`/`"entrega realizada"`/`"objeto entregue"` para `HISTÓRICO LOGÍSTICO`.
-
-**Funções que leem:**
-- `Código.js:gerarMensagemRevisao()` (~L379-406) — lê `INFLU_KEY` da linha ativa selecionada no ERP.
-- `Código.js:atualizarRastreiosBRComerce()` — lê `RASTREIO`.
-
-**Eventos automáticos**: `onEdit()` (`RASTREIO`→`DATA_DE_ENVIO`). `atualizarRastreiosBRComerce()` é ação de **menu** (`onOpen()` item "Atualizar Rastreios Automáticos"), não automática por edição.
-
-**Origem dos dados**: gerada por `gerarNovoMesCompleto()`; atualizada por API externa BRComerce e edição manual.
+- `WebApp.js`
+  - login
+  - perfil
+  - dados do Portal
 
 ---
 
-## 5. `ATIVAÇÕES`
+# 2. CADASTROS
 
-**Propósito**: unidade de trabalho central — cada peça de conteúdo (REEL/CARROSSEL/STORIES) por influenciadora/mês, com status e arquivo enviado.
+## Responsabilidade
 
-**Colunas**: definidas em `Código.js:setupERP()` ~L737; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui). **(Achado 2026-07-07, via schema real)**: a planilha viva tinha só 7 colunas — **sem `ID` nem `ANO_REFERENCIA`**, ao contrário do que esta documentação afirmava — deixando inertes (em fallback) a resolução por ID estável no upload (`encontrarLinhaAtivacaoPorId` caía em `ROWn`) e o casamento por ano. Migração criada em 2026-07-08: `Código.js:garantirColunasIdAnoAtivacoes()` (menu " Cadastros & Configurações → 10"), cria as 2 colunas em `ATIVAÇÕES` + `HISTÓRICO DE CONTEÚDOS` e preenche só células vazias (ID=UUID na aba viva; ano derivado das datas da própria linha).
+Receber dados brutos provenientes do formulário externo.
 
-**Funções que escrevem:**
-- `Código.js:gerarNovoMesCompleto()` (~L124-138) — cria uma linha por unidade contratada (`ID`=UUID, `STATUS_CONTEUDO`='em aberto').
-- `Código.js:onEdit()` bloco `ATIVAÇÕES` (~L206-259) — `STATUS_CONTEUDO`→contém `"postado"` dispara arquivamento + reordenação; `DATA_ATIVACAO` editada dispara cálculo/gravação de `DATA_APROVACAO` + propagação pro `BRIEFING` + reordenação.
-- `WebApp.js:finalizarEnvioResumable()` (~L862-899) — grava `LINK_ARQUIVO` (concatenado) e **sempre** grava `STATUS_CONTEUDO = "ajustes"` (valor fixo, corrigido em 2026-07-06 — normalizado como `EM_APROVACAO`/"Em aprovação" na UI).
-- `Código.js:arquivarGenerico()` (via `onEdit` ou `menuArquivarTudo()`) — remove linhas arquivadas (`deleteRow`).
+## Escrita
 
-**Funções que leem:**
-- `WebApp.js:getPendencias()` (~L234-287), `getBriefing()` (~L289-374, via `encontrarLinhaAtivacaoPorId()`), `iniciarEnvioResumable()`/`finalizarEnvioResumable()` (~L822-899), `listarPeriodos()` (~L653-700).
-- `Código.js:ordenarAbaAtivacoesCronologico()` (~L314-321).
+Controlada pelo Google Forms.
 
-**Eventos automáticos**: `onEdit()` — dois comportamentos independentes (arquivamento ao marcar "postado"; cálculo/propagação de data ao editar `DATA_ATIVACAO`).
+## Leitura
 
-**Origem dos dados**: gerada por `gerarNovoMesCompleto()`; atualizada pelo Portal (upload) e edição manual do ERP.
-
-**⚠️ Nota (ver achado crítico acima)**: nenhuma função grava `STATUS_CONTEUDO` como `"APROVADO"` ou `"POSTADO"` automaticamente — só `"ajustes"` (normalizado como `EM_APROVACAO` na UI) é automático. Essas duas transições são edição manual.
+- `Código.js:onFormSubmit`
 
 ---
 
-## 6. `PAGAMENTOS`
+# 3. BRIEFING
 
-**Propósito**: controle financeiro por influenciadora/mês — valor, PIX, status de pagamento, data de pagamento, mensagem de cobrança.
+## Responsabilidade
 
-**Colunas**: definidas em `Código.js:setupERP()` ~L739; lista atual sempre gerada por `mae/SchemaExporter.js` em `SYSTEM_SCHEMA.md` (não duplicada aqui). Inclui `ANO_REFERENCIA` (achado abaixo).
+Armazena o planejamento criativo das entregas.
 
-**⚠️ Divergência de schema**: o schema informado anteriormente pelo usuário (7 colunas, sem `ANO_REFERENCIA`) não bate com o código real, que tem 8 colunas incluindo `ANO_REFERENCIA` (usada em `getPagamentos()`, `listarPeriodos()`, `gerarNovoMesCompleto()`).
+Contém informações de conteúdo, formatos e orientações.
 
-**Funções que escrevem:**
-- `Código.js:gerarNovoMesCompleto()` (~L119-122), `lancarPagamentosDoMes()` (~L326-359), `SidebarBackend.js:salvarPagamentoExtra()` (~L102-118) — todas criam linha nova com `STATUS_PAGAMENTO='em aberto'`.
-- `Código.js:gerarSolicitacaoPagamento()` (~L364-377) — grava `MENSAGEM_PIX` na linha ativa selecionada no ERP.
-- `Código.js:arquivarGenerico()` (~L509-539), disparada por `onEdit()` (~L269-270, quando `STATUS_PAGAMENTO` editado para conter `"pago"`) ou por `menuArquivarTudo()` (~L492-494, manual via menu) — preenche `DATA_PAGAMENTO` (se vazia, ~L527-528) e **move a linha inteira** (`appendRow`+`deleteRow`) para `HISTÓRICO DE PAGAMENTOS`.
+## Escrita
 
-**Funções que leem:**
-- `WebApp.js:getPagamentos()` (~L376-439), `listarPeriodos()` (~L653-700).
-- `Código.js:gerarSolicitacaoPagamento()` — lê `VALOR_TOTAL`, `MES_REFERENCIA`, `INFLU_KEY`, `CHAVE_PIX` da linha ativa.
+- `Código.js`
+  - geração de ciclo
+  - sincronização de informações
 
-**Eventos automáticos**: `onEdit()` (~L269-270) — dispara arquivamento imediato + preenchimento de `DATA_PAGAMENTO` quando `STATUS_PAGAMENTO` é editado manualmente para conter `"pago"`.
+- `onEdit`
+  - alterações manuais
 
-**Origem dos dados**: gerada por `gerarNovoMesCompleto()`/`lancarPagamentosDoMes()`/`salvarPagamentoExtra()`. `STATUS_PAGAMENTO = PAGO` é edição manual da equipe (confirmado por código: nenhuma função grava esse valor, só reage a ele).
+## Leitura
 
----
-
-## 7. `HISTÓRICO DE CONTEÚDOS`
-
-**Propósito**: arquivo de ativações finalizadas ("postado"), fora da operação corrente.
-
-**Colunas**: mesmas de `ATIVAÇÕES` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L738); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`). **(2026-07-08)** `arquivarGenerico()` passou a copiar origem→destino por NOME de cabeçalho (antes era posicional — com os cabeçalhos reais divergindo na coluna 7, `LINK_ARQUIVO` da ativação caía na coluna `DATA_ARQUIVAMENTO` do histórico e o carimbo numa coluna 8 sem cabeçalho). A migração `garantirColunasIdAnoAtivacoes()` também adiciona `ID`/`ANO_REFERENCIA` aqui — com `ANO_REFERENCIA` preenchido, o filtro por ano de `getHistorico()` volta a incluir o histórico oficial (sem a coluna, linhas eram excluídas de buscas com ano específico).
-
-**Funções que escrevem**: `Código.js:arquivarGenerico()` (~L509-539) — chamada por `onEdit()` (`ATIVAÇÕES.STATUS_CONTEUDO`→"postado") ou `menuArquivarTudo()` (manual).
-
-**Funções que leem**: `WebApp.js:getHistorico()` (~L441-522, função interna `extrairAtivacoes`), `listarPeriodos()` (~L653-700), `listarAbasHistoricoLegado()` indiretamente (mesma assinatura de cabeçalho).
-
-**Eventos automáticos**: recebe linhas via `arquivarGenerico()`, automático (onEdit) ou manual (menu).
-
-**Origem dos dados**: migração da aba `ATIVAÇÕES`.
+- `WebApp.js`
+  - carregamento do briefing no Portal
 
 ---
 
-## 8. `HISTÓRICO DE PAGAMENTOS`
+# 4. FLUXO LOGÍSTICO
 
-**Propósito**: arquivo de pagamentos já efetivados ("pago").
+## Responsabilidade
 
-**Colunas**: mesmas de `PAGAMENTOS` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L740); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`).
+Controle operacional de envio e recebimento de produtos.
 
-**Funções que escrevem**: `Código.js:arquivarGenerico()` — chamada por `onEdit()` (`PAGAMENTOS.STATUS_PAGAMENTO`→"pago") ou `menuArquivarTudo()` (manual).
+## Escrita
 
-**Funções que leem**: `WebApp.js:getHistorico()` (função interna `extrairPagamentos`), `listarPeriodos()`.
+- `Código.js`
 
-**Eventos automáticos**: idem `PAGAMENTOS` — migração automática (onEdit) ou manual (menu).
+## Leitura
 
-**Origem dos dados**: migração da aba `PAGAMENTOS`.
-
----
-
-## 9. `HISTÓRICO LOGÍSTICO`
-
-**Propósito**: arquivo de entregas logísticas concluídas.
-
-**Colunas**: mesmas de `FLUXO LOGÍSTICO` + `DATA_ARQUIVAMENTO` (`Código.js:setupERP()` ~L736); lista atual sempre em `SYSTEM_SCHEMA.md` (`mae/SchemaExporter.js`).
-
-**Funções que escrevem**: `Código.js:arquivarGenerico()` — chamada por `arquivarFluxo()` (dentro de `atualizarRastreiosBRComerce()`, ~L482) ou `menuArquivarTudo()` (~L495).
-
-**Funções que leem**: **nenhuma encontrada no código** — nem `Código.js` nem `WebApp.js` leem esta aba de volta. É destino puro de arquivamento, sem consumo automatizado conhecido.
-
-**Eventos automáticos**: nenhum `onEdit()` direto; disparada só por ações de menu (`atualizarRastreiosBRComerce()`, `menuArquivarTudo()`).
-
-**Origem dos dados**: migração da aba `FLUXO LOGÍSTICO`.
+- operações internas do ERP
 
 ---
 
-## 10. Abas legado (nome variável, detecção dinâmica)
+# 5. ATIVAÇÕES
 
-**Propósito**: abas de ativação/pagamento anteriores à consolidação em `HISTÓRICO DE CONTEÚDOS`/`HISTÓRICO DE PAGAMENTOS`, incluindo ocultas/desativadas.
+## Responsabilidade
 
-**Detecção**: `WebApp.js:detectarAbasHistoricoLegado()` (~L91-126, cacheada 5 min por `listarAbasHistoricoLegado()`) — qualquer aba não listada em `nomesConhecidos` (abas oficiais), com `INFLU_KEY` no cabeçalho **e** (nome contém "HISTÓRICO", normalizado — critério adicionado em 2026-07-05 — **ou** cabeçalho com `MES_REFERENCIA`+`STATUS_CONTEUDO`/`STATUS_PAGAMENTO`). Tipada como `CONTEUDO`/`PAGAMENTO` pelo header quando presente; se o nome bate mas o header não tem `STATUS_CONTEUDO`/`STATUS_PAGAMENTO`, tipada pelo próprio nome (contém "PAGAMENTO" → `PAGAMENTO`, senão `CONTEUDO`).
+Representa cada entrega de conteúdo em execução.
 
-**Funções que escrevem**: nenhuma — são só lidas.
+É a unidade operacional central do sistema.
 
-**Funções que leem**: `WebApp.js:getHistorico()` e `listarPeriodos()`, ambas via `listarAbasHistoricoLegado()`.
+## Escrita
 
-**Eventos automáticos**: nenhum.
+- `Código.js`
+  - criação de ativações
+  - atualização operacional
+  - arquivamento
 
-**Origem dos dados**: histórico anterior à consolidação, mantido só para leitura.
+- `WebApp.js`
+  - envio de materiais
+
+## Leitura
+
+- `WebApp.js`
+  - pendências
+  - histórico
+  - acompanhamento
+
+- `Código.js`
+  - operações administrativas
 
 ---
 
-## Referência cruzada — funções por arquivo
+# 6. PAGAMENTOS
 
-| Arquivo | Papel | Funções principais |
-|---|---|---|
-| `mae/Código.js` | ERP (roda na planilha) | `onOpen`, `onEdit`, `onFormSubmit`, `gerarNovoMesCompleto`, `lancarPagamentosDoMes`, `gerarSolicitacaoPagamento`, `gerarMensagemRevisao`, `sincronizarLooks`, `atualizarRastreiosBRComerce`, `menuArquivarTudo`, `arquivarFluxo`, `arquivarGenerico`, `preencherEnderecoPorCEP`, `organizarEPintarBase`, `garantirColunaAnoReferenciaBriefing` (2026-07-07, ação manual de menu), `getHeaderMap`, `montarLinha`, `setupERP` |
-| `mae/WebApp.js` | Backend do Portal | `doGet`, `login`, `validarToken`, `logout`, `getPendencias`, `getBriefing`, `getPagamentos`, `getHistorico`, `getPerfil`, `updatePerfil`, `listarPeriodos`, `iniciarEnvioResumable`, `finalizarEnvioResumable`, `getInfluKeyByCupom`, `listarAbasHistoricoLegado`, `encontrarLinhaAtivacaoPorId`, `normalizarStatusAtivacao`, `normalizarStatusPagamento` (`doPost`/`API_ACOES` removidos em 2026-07-07 — shim de API JSON nunca usado pelo `Index.html` real) |
-| `mae/SidebarBackend.js` | Backend das sidebars do ERP | `abrirSidebarInflu`, `abrirSidebarPagamento`, `getListaInfluenciadoras`, `getDadosInfluenciadora`, `salvarDadosSidebarV2`, `salvarPagamentoExtra` |
-| `mae/PortalUi.gs` | Preview do Portal dentro da planilha | `abrirPortalModal` |
-| `mae/Index.html` | Front-end do Portal (SPA) | `fazerLogin`, `carregarPendencias`, `abrirBriefing`, `abrirEnviarMaterial`/`arquivoSelecionado`/`iniciarEnvio`/`enviarArquivoResumable`, `carregarPagamentos`, `carregarHistorico`, `carregarPerfil`/`salvarPerfil`, `router`/`chamar` (camada de comunicação com `google.script.run`) |
+## Responsabilidade
+
+Controle financeiro das campanhas.
+
+## Escrita
+
+- `Código.js`
+  - geração financeira
+  - solicitações
+  - arquivamento
+
+## Leitura
+
+- `WebApp.js`
+  - consulta de pagamentos
+
+- `Código.js`
+  - operações financeiras
 
 ---
 
+# 7. HISTÓRICO DE CONTEÚDOS
+
+## Responsabilidade
+
+Armazenar ativações finalizadas.
+
+## Escrita
+
+- `Código.js:arquivarGenerico`
+
+## Leitura
+
+- `WebApp.js:getHistorico`
+
+---
+
+# 8. HISTÓRICO DE PAGAMENTOS
+
+## Responsabilidade
+
+Armazenar pagamentos finalizados.
+
+## Escrita
+
+- `Código.js:arquivarGenerico`
+
+## Leitura
+
+- `WebApp.js:getHistorico`
+
+---
+
+# 9. HISTÓRICO LOGÍSTICO
+
+## Responsabilidade
+
+Armazenar operações logísticas concluídas.
+
+## Escrita
+
+- `Código.js:arquivarGenerico`
+
+## Leitura
+
+Nenhuma função identificada atualmente.
+
+---
+
+# 10. Abas legado
+
+## Responsabilidade
+
+Consultar dados históricos anteriores à consolidação.
+
+## Escrita
+
+Nenhuma.
+
+## Leitura
+
+- `WebApp.js:getHistorico`
+- funções auxiliares de descoberta de histórico
+
+---
+
+# Referência cruzada de arquivos
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `mae/Código.js` | ERP, automações, ciclos, operações administrativas |
+| `mae/WebApp.js` | Backend do Portal |
+| `mae/SidebarBackend.js` | Operações das interfaces administrativas |
+| `mae/PortalUi.gs` | Abertura do Portal dentro da planilha |
+| `mae/Index.html` | Interface do Portal |
+| `mae/SchemaExporter.js` | Exportação estrutural do sistema |
+| `mae/QaShadow.js` | Testes de validação isolados |
+
+---
+
+# Regra arquitetural
+
+Cada conceito possui uma única fonte de verdade.
+
+A documentação descreve responsabilidades atuais.
+
+Histórico de mudanças pertence ao CHANGELOG.
+Decisões arquiteturais pertencem ao KNOWN_DECISIONS.
+Estado atual pertence ao PROJECT_STATUS.
