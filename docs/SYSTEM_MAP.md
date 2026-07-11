@@ -49,3 +49,14 @@ Roteador → Controllers → Services → Repositories → Infra / Modelos
 - Roteador de views: `ROTAS[nome] → {titulo, template}`; `navegar()` clona `<template>` em `#tear-view`.
 - Slots `data-lista`/`data-campo` → `CARREGADORES`/`RENDERIZADORES`. `chamar()` embrulha `google.script.run` em Promise.
 - Wizard de cadastro: casca única + schema `CAMPOS_PARCEIRA`; estado `WIZARD` é a fonte única; os 3 passos são sub-estado de uma rota, não rotas.
+
+---
+
+## Princípios Arquiteturais
+
+- Apenas Repositories acessam SpreadsheetApp.
+- Services implementam regras de negócio.
+- Controllers coordenam casos de uso.
+- Front-end nunca acessa planilhas diretamente.
+- Toda comunicação ocorre através do Roteador.
+- PROJECT_PHILOSOPHY.md governa o comportamento dos agentes.

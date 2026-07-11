@@ -25,3 +25,13 @@ convenções, restrições). Nada temporário.
 ## Restrições
 - `clasp push` exige autorização explícita do usuário (CLAUDE.md §12.4.4).
 - Migração roda só com `MIGRACAO_HABILITADA=true`; `parceirosDaBaseV1` migra TODO o histórico (ignora status ON/OFF), descartando só SEM_CUPOM/SEM_INFLU_KEY.
+
+## Governança
+
+- PROJECT_PHILOSOPHY.md é a autoridade máxima para comportamento dos agentes.
+- CLAUDE.md deve ser lido no início de toda sessão.
+- Commits devem ser pequenos e atômicos.
+- Push é realizado manualmente pelo operador.
+- Não ampliar escopo durante uma sprint.
+- Priorizar implementação sobre investigação.
+- Economia de contexto e tokens é um requisito do projeto.
