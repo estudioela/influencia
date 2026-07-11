@@ -212,6 +212,54 @@ function apiSalvarParceira(tokenAdmin, dados) {
   });
 }
 
+/* ── Gatilho de formulário (Google Forms → aba CADASTROS) ───────────────────
+   Entrypoint de AUTOMAÇÃO (Form Submit Trigger), não HTTP: roda server-side a
+   cada envio. Achata o evento em mapa título→resposta e delega ao
+   ParceiroService, que faz o upsert canônico seguro. Sem envelope (não há UI):
+   loga o desfecho e relança em erro, para o Apps Script registrar a falha. */
+
+function _valoresDeCadastroDoEvento_(evento) {
+  if (evento && evento.namedValues) {
+    return Object.keys(evento.namedValues).reduce(function (mapa, titulo) {
+      const valor = evento.namedValues[titulo];
+      mapa[titulo] = Array.isArray(valor) ? valor[0] : valor;
+      return mapa;
+    }, {});
+  }
+
+  // Fallback: linha recém-inserida (execução manual/teste). Lê o cabeçalho da
+  // própria aba do evento — nunca por índice fixo.
+  if (evento && evento.range && typeof evento.range.getSheet === 'function') {
+    const aba = evento.range.getSheet();
+    const cabecalho = aba.getRange(1, 1, 1, aba.getLastColumn()).getValues()[0];
+    const linha = evento.range.getValues()[0];
+    return cabecalho.reduce(function (mapa, coluna, i) {
+      if (coluna) mapa[String(coluna)] = linha[i];
+      return mapa;
+    }, {});
+  }
+
+  throw new Error('Evento de formulário sem namedValues nem range.');
+}
+
+function onFormSubmit(evento) {
+  try {
+    const valores = _valoresDeCadastroDoEvento_(evento);
+    const resultado = new ParceiroService(new ParceiroRepository()).registrarCadastro(valores);
+
+    if (resultado.ignorado) {
+      console.warn(`onFormSubmit: linha ignorada (${resultado.motivo}). Confira a pergunta "como prefere ser chamada".`);
+    } else {
+      console.log(`onFormSubmit: ${resultado.criado ? 'CRIADA' : 'ATUALIZADA'} — ${resultado.chave}`);
+    }
+
+    return resultado;
+  } catch (erro) {
+    console.error(`onFormSubmit falhou: ${erro.message}`);
+    throw erro;
+  }
+}
+
 /* ── Painel Admin — Logística ───────────────────────────────────────────────
    Operações administrativas cross-parceira. A autoridade é o `ADMIN_TOKEN`
    (`_exigirAdmin`), não a sessão de parceira — mesmo padrão de

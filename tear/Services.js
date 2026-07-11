@@ -411,6 +411,125 @@ class ParceiroService {
 
     return this.repository.upsert(dados, CHAVE_PARCEIRO);
   }
+
+  /**
+   * Funil de cadastro (Google Forms → aba CADASTROS → Parceiros_Influenciadoras).
+   *
+   * Escreve no cabeçalho CANÔNICO (`CAMPOS_PARCEIRO`), diferente do `salvar()`
+   * legado (vocabulário físico do wizard). Upsert SEGURO por `ID_Influenciadora`:
+   * - registro NOVO   → grava dados cadastrais + Status_Contrato = PENDENTE;
+   *                     Cupom, Autocrat e Senha_Hash nascem vazios.
+   * - registro EXISTE → atualiza SÓ os dados cadastrais (Nome, Endereço);
+   *                     jamais toca Cupom, Status_Contrato, Autocrat ou Senha_Hash.
+   *
+   * `valoresPorColuna`: mapa título-da-pergunta → resposta (ex.: `e.namedValues`
+   * achatado). Devolve `{ ignorado, criado?, chave? }`.
+   */
+  registrarCadastro(valoresPorColuna) {
+    const base = parceiroDeCadastro_(valoresPorColuna);
+
+    if (!base) {
+      return { ignorado: true, motivo: 'SEM_APELIDO' };
+    }
+
+    const id = base[CAMPOS_PARCEIRO.ID];
+    const jaExiste = !!this.repository.getById(id);
+
+    // Novo: acrescenta o status inicial. Existente: só os campos cadastrais de
+    // `base` — o upsert preserva toda coluna não presente no payload.
+    const dados = jaExiste
+      ? base
+      : Object.assign({}, base, { [CAMPOS_PARCEIRO.STATUS_CONTRATO]: STATUS_CADASTRO_PADRAO });
+
+    const resultado = this.repository.upsert(dados, CAMPOS_PARCEIRO.ID);
+
+    return { ignorado: false, criado: resultado.criado, chave: resultado.chave };
+  }
+}
+
+/* ── Funil de cadastro: transform puro (Forms → cadastro canônico) ─────────── */
+
+const STATUS_CADASTRO_PADRAO = 'PENDENTE';
+
+// Títulos candidatos por campo do formulário (a comparação normaliza acentos,
+// caixa e pontuação). Ajuste aqui se os títulos reais das perguntas diferirem.
+const CANDIDATOS_CADASTRO = Object.freeze({
+  APELIDO: ['como prefere ser chamada', 'como prefere ser chamado', 'apelido', 'como gostaria de ser chamada'],
+  RAZAO: ['razao social', 'nome completo', 'nome', 'razao social ou nome completo'],
+  RUA: ['rua', 'logradouro', 'endereco'],
+  NUMERO: ['numero', 'nº', 'no', 'n'],
+  COMPLEMENTO: ['complemento'],
+  CEP: ['cep']
+});
+
+function _textoCadastro_(valor) {
+  return valor === null || valor === undefined ? '' : String(valor).trim();
+}
+
+// Normaliza uma chave de cabeçalho/pergunta: sem acento, minúscula, pontuação
+// vira espaço, espaços colapsados. "Como prefere ser chamada?" → "como prefere ser chamada".
+function _normalizarChaveCadastro_(texto) {
+  return String(texto === null || texto === undefined ? '' : texto)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Devolve um leitor que resolve o primeiro título candidato presente no mapa.
+function _leitorDeCadastro_(valoresPorColuna) {
+  const normalizado = {};
+  Object.keys(valoresPorColuna || {}).forEach(chave => {
+    normalizado[_normalizarChaveCadastro_(chave)] = valoresPorColuna[chave];
+  });
+
+  return function (candidatos) {
+    for (let i = 0; i < candidatos.length; i++) {
+      const chave = _normalizarChaveCadastro_(candidatos[i]);
+      if (chave in normalizado) {
+        return _textoCadastro_(normalizado[chave]);
+      }
+    }
+    return '';
+  };
+}
+
+// Rua, Número - Complemento - CEP. Pula segmentos vazios para não deixar
+// separadores soltos (ex.: sem complemento → "Rua X, 10 - 01000-000").
+function _enderecoDeCadastro_(get) {
+  const rua = get(CANDIDATOS_CADASTRO.RUA);
+  const numero = get(CANDIDATOS_CADASTRO.NUMERO);
+  const complemento = get(CANDIDATOS_CADASTRO.COMPLEMENTO);
+  const cep = get(CANDIDATOS_CADASTRO.CEP);
+
+  let endereco = rua;
+  if (numero) endereco += (endereco ? ', ' : '') + numero;
+  if (complemento) endereco += (endereco ? ' - ' : '') + complemento;
+  if (cep) endereco += (endereco ? ' - ' : '') + cep;
+
+  return endereco;
+}
+
+/**
+ * Transform PURO da resposta bruta do formulário para o cadastro canônico.
+ * Devolve `null` quando falta o apelido (sem chave primária não há registro).
+ * `Nome` cai para o apelido quando a razão social vem vazia — nunca fica vazio.
+ */
+function parceiroDeCadastro_(valoresPorColuna) {
+  const get = _leitorDeCadastro_(valoresPorColuna);
+  const id = get(CANDIDATOS_CADASTRO.APELIDO).toUpperCase();
+
+  if (!id) {
+    return null;
+  }
+
+  const parceiro = {};
+  parceiro[CAMPOS_PARCEIRO.ID] = id;
+  parceiro[CAMPOS_PARCEIRO.NOME] = get(CANDIDATOS_CADASTRO.RAZAO) || id;
+  parceiro['Endereço_Formatado'] = _enderecoDeCadastro_(get);
+
+  return parceiro;
 }
 
 /* ═══════════════════════════════════════════════════════════════

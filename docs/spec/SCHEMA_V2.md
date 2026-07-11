@@ -97,10 +97,28 @@ alinhada a este cabeçalho após validação do relatório de dry-run.
 
 ### Funil de cadastro (`CADASTROS`)
 
-A aba `CADASTROS` é a entrada **raw** (crua) do Google Forms. Os dados são
-posteriormente formatados (ex.: concatenar campos de endereço em
-`Endereço_Formatado`) e inseridos em `Parceiros_Influenciadoras`. `CADASTROS`
-não é fonte de verdade do domínio — é a antessala do cadastro.
+A aba `CADASTROS` é a entrada **raw** (crua) do Google Forms. `CADASTROS` não é
+fonte de verdade do domínio — é a antessala do cadastro.
+
+O gatilho **`onFormSubmit(e)`** (`tear/Roteador.js`) escuta cada envio e promove
+a linha a `Parceiros_Influenciadoras` via `ParceiroService.registrarCadastro`
+(upsert canônico por `ID_Influenciadora`). Mapeamento:
+
+| Destino (V2) | Origem (pergunta do formulário) |
+|---|---|
+| `ID_Influenciadora` | "como prefere ser chamada" (caixa alta) |
+| `Nome` | "razão social" / nome completo (fallback: o apelido) |
+| `Status_Contrato` | `PENDENTE` (fixo no cadastro; **só na inserção**) |
+| `Endereço_Formatado` | `Rua, Número - Complemento - CEP` (segmentos vazios pulados) |
+| `Cupom` | **em branco** — preenchido manualmente pela marca depois |
+| `Senha_Hash` | vazio — provisionado no 1º login |
+| Colunas Autocrat | vazias — preenchidas ao fechar contrato |
+
+Upsert **seguro**: se a influenciadora já existe (mesmo `ID_Influenciadora`),
+atualiza apenas os dados cadastrais (`Nome`, `Endereço_Formatado`) e **não toca**
+`Cupom`, `Status_Contrato`, colunas Autocrat nem `Senha_Hash`. A leitura dos
+títulos das perguntas normaliza acento/caixa/pontuação (`CANDIDATOS_CADASTRO` em
+`tear/Services.js`) — ajuste os candidatos se os títulos reais divergirem.
 
 ---
 
