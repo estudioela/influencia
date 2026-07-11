@@ -284,11 +284,21 @@ class CicloService {
   }
 
   _gerarEstruturasOperacionais(ciclo) {
+    const linhasCadastro = this.cadastroRepository && typeof this.cadastroRepository.linhas === 'function'
+      ? this.cadastroRepository.linhas()
+      : [];
+
+    const parceirosAtivos = linhasCadastro.filter((parceiro) => {
+      const status = String(parceiro[CAMPOS_PARCEIRO.STATUS_CONTRATO] || '').trim().toUpperCase();
+      return status === 'ON' || status === 'ATIVO';
+    });
+
     return {
       briefings: 0,
       ativacoes: 0,
       logistica: 0,
-      pagamentos: 0
+      pagamentos: 0,
+      parceiros: parceirosAtivos.length
     };
   }
 
