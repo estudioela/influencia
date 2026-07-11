@@ -84,6 +84,7 @@ describe('entrypoints do google.script.run', () => {
         'apiBuscarParceira',
         'apiSalvarParceira',
         'apiListarCiclosAdmin',
+        'apiGerarCicloMensal',
         'apiListarLogisticaDoCiclo',
         'apiAlterarStatusLogistica',
         'apiListarAtivacoesAdmin',

@@ -299,6 +299,25 @@ function apiListarCiclosAdmin(tokenAdmin) {
   });
 }
 
+/**
+ * Gatilho administrativo de geração do ciclo mensal: registra o ciclo do mês e
+ * provisiona as subpastas mensais das parceiras no Drive. Operação cross-parceira,
+ * gated por `_exigirAdmin`. `referencia` (ISO opcional) define o mês; ausente ou
+ * inválida → mês corrente. Fail-safe interno (ver CicloService.gerarCicloMensal).
+ */
+function apiGerarCicloMensal(tokenAdmin, referencia) {
+  return _comEnvelope(function () {
+    _exigirAdmin(tokenAdmin);
+
+    var data = referencia ? new Date(referencia) : new Date();
+    if (isNaN(data.getTime())) {
+      data = new Date();
+    }
+
+    return new CicloService(new CicloRepository()).gerarCicloMensal(data);
+  });
+}
+
 function apiListarLogisticaDoCiclo(tokenAdmin, idCiclo) {
   return _comEnvelope(function () {
     _exigirAdmin(tokenAdmin);

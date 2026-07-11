@@ -834,6 +834,33 @@ function carregarCiclosLogistica() {
     });
 }
 
+/**
+ * Gatilho admin de geração do ciclo mensal: registra o ciclo do mês e provisiona
+ * as subpastas mensais das parceiras no Drive (server: apiGerarCicloMensal, gated
+ * por _exigirAdmin). Feedback simples via toast; o botão trava durante a chamada.
+ */
+function gerarNovoCicloMensal(botao) {
+  if (!temBackend()) return mostrarToast('Sem backend nesta visualização.', 'erro');
+
+  var token = tokenAdminDaLogistica();
+  if (!token) return mostrarToast('Informe o token administrativo.', 'erro');
+
+  if (botao) botao.disabled = true;
+  mostrarToast('Gerando ciclo mensal…', 'ok');
+
+  return chamar('apiGerarCicloMensal', token)
+    .then(function (r) {
+      if (!r || !r.success) return mostrarToast(r && r.error ? r.error : 'Não foi possível gerar o ciclo.', 'erro');
+      mostrarToast('Ciclo "' + r.data.nomeCiclo + '" pronto — ' + r.data.pastasProvisionadas + ' pasta(s) no Drive.', 'ok');
+    })
+    .catch(function (e) {
+      mostrarToast('Falha de comunicação: ' + (e && e.message ? e.message : e), 'erro');
+    })
+    .then(function () {
+      if (botao) botao.disabled = false;
+    });
+}
+
 function carregarEnviosLogistica() {
   var lista = document.getElementById('tear-logistica-lista');
   if (!lista) return;
@@ -1009,6 +1036,12 @@ function iniciarApp() {
     if (evento.target.closest('[data-acao="logistica-carregar"]')) {
       evento.preventDefault();
       return carregarCiclosLogistica();
+    }
+
+    var gerarCiclo = evento.target.closest('[data-acao="gerar-ciclo"]');
+    if (gerarCiclo) {
+      evento.preventDefault();
+      return gerarNovoCicloMensal(gerarCiclo);
     }
 
     var atualizarLog = evento.target.closest('[data-acao="logistica-atualizar"]');
@@ -1574,6 +1607,7 @@ if (typeof document !== 'undefined') {
     </div>
 
     <button type="button" class="tear-botao ela-mb-sm" data-acao="logistica-carregar">carregar envios</button>
+    <button type="button" class="tear-botao ela-mb-sm" data-acao="gerar-ciclo">gerar novo ciclo mensal</button>
 
     <div id="tear-logistica-lista" aria-live="polite"></div>
   </section>
