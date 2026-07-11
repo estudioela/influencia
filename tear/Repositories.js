@@ -605,6 +605,17 @@ const CAMPOS_LOGISTICA = Object.freeze({
   STATUS: 'Status_Logistica'
 });
 
+const CAMPOS_PAGAMENTO = Object.freeze({
+  ID: 'ID_Pagamento',
+  CICLO: 'ID_Ciclo',
+  INFLUENCIADORA: 'ID_Influenciadora',
+  VALOR: 'Valor_Cache',
+  PIX: 'Chave_PIX',
+  STATUS: 'Status_Pagamento',
+  DATA_PAGAMENTO: 'Data_Pagamento',
+  MENSAGEM: 'Mensagem_Pagamento'
+});
+
 class LogisticaRepository {
   constructor(spreadsheet) {
     this.spreadsheet = spreadsheet || SpreadsheetApp.getActive();
@@ -670,6 +681,78 @@ class LogisticaRepository {
 
   _lerDados() {
     return lerAbaComCabecalho(this.spreadsheet, PLANILHAS.LOGISTICA);
+  }
+
+  _mesmoId(valorCelula, valorBusca) {
+    return String(valorCelula).trim() === String(valorBusca).trim();
+  }
+}
+
+class PagamentoRepository {
+  constructor(spreadsheet) {
+    this.spreadsheet = spreadsheet || SpreadsheetApp.getActive();
+  }
+
+  getById(id) {
+    if (!id) {
+      return null;
+    }
+
+    const { cabecalho, linhas } = this._lerDados();
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_PAGAMENTO.ID, PLANILHAS.PAGAMENTOS);
+    const linha = linhas.find(l => this._mesmoId(l[idIdx], id));
+
+    return linha ? linhaParaObjeto(cabecalho, linha) : null;
+  }
+
+  findByCiclo(cicloId) {
+    if (!cicloId) {
+      return [];
+    }
+
+    const { cabecalho, linhas } = this._lerDados();
+    const cicloIdx = indiceDaColuna(cabecalho, CAMPOS_PAGAMENTO.CICLO, PLANILHAS.PAGAMENTOS);
+
+    return linhas
+      .filter(l => this._mesmoId(l[cicloIdx], cicloId))
+      .map(l => linhaParaObjeto(cabecalho, l));
+  }
+
+  save(pagamentoData) {
+    if (!pagamentoData || typeof pagamentoData !== 'object') {
+      throw new TypeError('save() espera um objeto de pagamento.');
+    }
+
+    const { aba, cabecalho, linhas } = this._lerDados();
+    const idIdx = indiceDaColuna(cabecalho, CAMPOS_PAGAMENTO.ID, PLANILHAS.PAGAMENTOS);
+    const id = pagamentoData[CAMPOS_PAGAMENTO.ID];
+    const posicao = id ? linhas.findIndex(l => this._mesmoId(l[idIdx], id)) : -1;
+
+    if (posicao === -1) {
+      const novo = Object.assign({}, pagamentoData);
+      novo[CAMPOS_PAGAMENTO.ID] = id || Utilities.getUuid();
+      aba.appendRow(cabecalho.map(coluna => (coluna in novo ? novo[coluna] : '')));
+      return novo;
+    }
+
+    const linhaAtual = linhas[posicao];
+    const intervalo = aba.getRange(posicao + 2, 1, 1, cabecalho.length);
+    const formulas = intervalo.getFormulas()[0];
+
+    const atualizada = cabecalho.map((coluna, i) =>
+      coluna && Object.prototype.hasOwnProperty.call(pagamentoData, coluna)
+        ? pagamentoData[coluna]
+        : linhaAtual[i]
+    );
+
+    const paraGravar = atualizada.map((valor, i) => (formulas[i] ? formulas[i] : valor));
+
+    intervalo.setValues([paraGravar]);
+    return linhaParaObjeto(cabecalho, atualizada);
+  }
+
+  _lerDados() {
+    return lerAbaComCabecalho(this.spreadsheet, PLANILHAS.PAGAMENTOS);
   }
 
   _mesmoId(valorCelula, valorBusca) {

@@ -37,6 +37,7 @@ const PLANILHAS = Object.freeze({
   CICLOS: 'Ciclos',
   ATIVACOES: 'Ativacoes',
   LOGISTICA: 'Logistica',
+  PAGAMENTOS: 'Pagamentos',
   // Entrada raw do Google Forms; formatada e promovida a Parceiros_Influenciadoras
   // pelo gatilho onFormSubmit (docs/spec/SCHEMA_V2.md).
   CADASTROS: 'CADASTROS'
