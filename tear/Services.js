@@ -7,14 +7,25 @@ const EVENTO_ATIVACAO_ESTADO_ALTERADO = 'AtivacaoEstadoAlterado';
 /** Prazo de aprovação = 7 dias corridos antes da entrega (regra do briefing). */
 const DIAS_ANTECEDENCIA_APROVACAO = 7;
 
+/** Coluna da base principal com o link da planilha individual (legado, V1). */
+const CAMPO_SHEET_URL_PARCEIRO = 'INFLU_SHEET_URL';
+
+/** Looks vazios: forma neutra usada quando não há planilha/looks a puxar. */
+const LOOKS_BRIEFING_VAZIO = Object.freeze({ lookReel: '', lookCarrossel: '', lookStories1: '', lookStories2: '' });
+
 class AtivacaoService {
-  constructor(eventDispatcher, repository) {
+  constructor(eventDispatcher, repository, briefingService, parceiroRepository) {
     if (!eventDispatcher) {
       throw new TypeError('AtivacaoService exige um EventDispatcher.');
     }
 
     this.eventDispatcher = eventDispatcher;
     this.repository = repository || new AtivacaoRepository();
+    // Resolvidos preguiçosamente em `_looksDoBriefing`: instanciar
+    // `ParceiroRepository`/`BriefingService` aqui tocaria `SpreadsheetApp` já na
+    // construção, mas nem todo fluxo de ativação puxa looks.
+    this.briefingService = briefingService || null;
+    this.parceiroRepository = parceiroRepository || null;
   }
 
   /**
@@ -41,8 +52,37 @@ class AtivacaoService {
       throw new Error('É obrigatório informar a influenciadora.');
     }
 
-    return this.listarPorCiclo(idCiclo)
+    const ativacoes = this.listarPorCiclo(idCiclo)
       .filter(dto => dto.idInfluenciadora === String(idInfluenciadora));
+
+    // Looks do BRIEFING vêm da planilha INDIVIDUAL da parceira (INFLU_SHEET_URL),
+    // varrida uma única vez por ciclo e anexada a cada ativação — mesma origem da
+    // V1 (`sincronizarLooks`).
+    const looks = this._looksDoBriefing(idInfluenciadora);
+
+    return ativacoes.map(dto => Object.assign({}, dto, { looksBriefing: looks }));
+  }
+
+  /**
+   * Puxa os looks da planilha individual da parceira. FAIL-SAFE TOTAL: sem
+   * parceira, sem `INFLU_SHEET_URL`, URL inválida ou acesso negado → looks
+   * vazios. Nada aqui pode derrubar a montagem do ciclo (o `puxarLooks` já é
+   * fail-safe; este `try` cobre também a leitura da parceira).
+   */
+  _looksDoBriefing(idInfluenciadora) {
+    try {
+      const parceiroRepository = this.parceiroRepository || (this.parceiroRepository = new ParceiroRepository());
+      const briefingService = this.briefingService || (this.briefingService = new BriefingService());
+
+      const parceiro = parceiroRepository.getById(idInfluenciadora);
+      const url = parceiro ? parceiro[CAMPO_SHEET_URL_PARCEIRO] : '';
+
+      return briefingService.puxarLooks(url);
+    } catch (erro) {
+      console.warn(`AtivacaoService._looksDoBriefing: ignorado (fail-safe) — ${erro.message}`);
+
+      return LOOKS_BRIEFING_VAZIO;
+    }
   }
 
   /**
