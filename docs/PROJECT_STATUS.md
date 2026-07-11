@@ -93,6 +93,10 @@ O único bloqueio conhecido é de provisionamento de plataforma (ações de oper
 
 Enquanto esses passos não forem executados, o Painel Admin de Logística está pronto no código, mas inerte em produção.
 
+Débitos técnicos conhecidos:
+
+* **Wizard admin de parceiras usa vocabulário legado.** `ParceiroService.salvar()` e os entrypoints `apiBuscarParceira`/`apiSalvarParceira` (`tear/`) operam no cabeçalho FÍSICO antigo (`INFLU_KEY`, `INFLUENCIADORA_RAZAO_SOCIAL`, `CUPOM`, `EMAIL`, `INFLUENCIADORA_CNPJ`) e fazem upsert por `INFLU_KEY`. Após a Fase 2, a aba `Parceiros_Influenciadoras` passou ao cabeçalho CANÔNICO (`ID_Influenciadora`, `Nome`, `Cupom` — `CAMPOS_PARCEIRO`), então esse wizard **não casa** com a base migrada (o upsert não acha `INFLU_KEY`). O funil de cadastro (`onFormSubmit` → `ParceiroService.registrarCadastro`) já opera no vocabulário canônico e não é afetado. Pendente: alinhar o wizard admin ao cabeçalho canônico em missão dedicada (tem testes verdes próprios, por isso foi deixado intacto para não abrir frente dupla).
+
 Novos bloqueios devem ser registrados nesta seção à medida que forem identificados.
 
 ⸻
