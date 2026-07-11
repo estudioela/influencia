@@ -452,14 +452,20 @@ class ParceiroService {
 const STATUS_CADASTRO_PADRAO = 'PENDENTE';
 
 // Títulos candidatos por campo do formulário (a comparação normaliza acentos,
-// caixa e pontuação). Ajuste aqui se os títulos reais das perguntas diferirem.
+// caixa e pontuação). O 1º de cada lista é o título LITERAL da pergunta no Google
+// Forms; os demais são fallbacks tolerantes. Ajuste aqui se os títulos mudarem.
 const CANDIDATOS_CADASTRO = Object.freeze({
-  APELIDO: ['como prefere ser chamada', 'como prefere ser chamado', 'apelido', 'como gostaria de ser chamada'],
-  RAZAO: ['razao social', 'nome completo', 'nome', 'razao social ou nome completo'],
+  APELIDO: [
+    'como prefere ser chamada (pode ser apelido + sobrenome, por exemplo)',
+    'como prefere ser chamada', 'como prefere ser chamado', 'apelido', 'como gostaria de ser chamada'
+  ],
+  RAZAO: ['razão social', 'razao social', 'nome completo', 'nome', 'razao social ou nome completo'],
   RUA: ['rua', 'logradouro', 'endereco'],
-  NUMERO: ['numero', 'nº', 'no', 'n'],
-  COMPLEMENTO: ['complemento'],
-  CEP: ['cep']
+  NUMERO: ['número (prédio, casa, condomínio...)', 'numero', 'nº', 'no', 'n'],
+  COMPLEMENTO: ['complemento (se houver: bloco, torre, apto...)', 'complemento'],
+  // No Forms o CEP veio rotulado ora como "CEP", ora como "CNPJ" (título trocado
+  // na origem). Tentamos "cep" primeiro; "cnpj" é o fallback observado.
+  CEP: ['cep', 'cnpj']
 });
 
 function _textoCadastro_(valor) {
@@ -501,7 +507,8 @@ function _enderecoDeCadastro_(get) {
   const rua = get(CANDIDATOS_CADASTRO.RUA);
   const numero = get(CANDIDATOS_CADASTRO.NUMERO);
   const complemento = get(CANDIDATOS_CADASTRO.COMPLEMENTO);
-  const cep = get(CANDIDATOS_CADASTRO.CEP);
+  // CEP entra só com dígitos: pontos e hífens saem na concatenação.
+  const cep = get(CANDIDATOS_CADASTRO.CEP).replace(/[.\-]/g, '');
 
   let endereco = rua;
   if (numero) endereco += (endereco ? ', ' : '') + numero;
@@ -518,7 +525,7 @@ function _enderecoDeCadastro_(get) {
  */
 function parceiroDeCadastro_(valoresPorColuna) {
   const get = _leitorDeCadastro_(valoresPorColuna);
-  const id = get(CANDIDATOS_CADASTRO.APELIDO).toUpperCase();
+  const id = get(CANDIDATOS_CADASTRO.APELIDO).trim().toUpperCase();
 
   if (!id) {
     return null;

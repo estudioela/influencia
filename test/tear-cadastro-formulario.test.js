@@ -18,14 +18,14 @@ const { parceiroDeCadastro_, ParceiroService, CAMPOS_PARCEIRO } = loadGasFiles(
   ['parceiroDeCadastro_', 'ParceiroService', 'CAMPOS_PARCEIRO']
 );
 
-// Respostas cruas do formulário — títulos "sujos" de propósito (acento, caixa,
-// pontuação) para provar a normalização.
+// Respostas cruas do formulário — títulos LITERAIS das perguntas do Google Forms
+// (com parênteses e reticências) para provar que a normalização casa com eles.
 const RESPOSTA = {
-  'Como prefere ser chamada?': 'Dani Perrut',
-  'Razão Social': 'Daniela Perrut ME',
+  'como prefere ser chamada (pode ser apelido + sobrenome, por exemplo)': ' Dani Perrut ',
+  'razão social': 'Daniela Perrut ME',
   'Rua': 'Rua das Flores',
-  'Número': '120',
-  'Complemento': 'Apto 3',
+  'número (prédio, casa, condomínio...)': '120',
+  'complemento (se houver: bloco, torre, apto...)': 'Apto 3',
   'CEP': '01000-000'
 };
 
@@ -33,26 +33,26 @@ describe('parceiroDeCadastro_ (transform puro)', () => {
   test('apelido vira ID em caixa alta; razão social vira Nome; endereço concatenado', () => {
     const p = parceiroDeCadastro_(RESPOSTA);
 
-    expect(p[CAMPOS_PARCEIRO.ID]).toBe('DANI PERRUT');
+    expect(p[CAMPOS_PARCEIRO.ID]).toBe('DANI PERRUT'); // trim das pontas + caixa alta
     expect(p[CAMPOS_PARCEIRO.NOME]).toBe('Daniela Perrut ME');
-    expect(p['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000-000');
+    expect(p['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000000'); // CEP sem hífen
     // Não inventa Cupom/Status/Senha — ficam a cargo do Service/upsert.
     expect(p[CAMPOS_PARCEIRO.CUPOM]).toBeUndefined();
     expect(p[CAMPOS_PARCEIRO.STATUS_CONTRATO]).toBeUndefined();
   });
 
   test('endereço pula segmentos vazios (sem complemento não deixa separador solto)', () => {
-    const semComplemento = Object.assign({}, RESPOSTA, { 'Complemento': '' });
-    expect(parceiroDeCadastro_(semComplemento)['Endereço_Formatado']).toBe('Rua das Flores, 120 - 01000-000');
+    const semComplemento = Object.assign({}, RESPOSTA, { 'complemento (se houver: bloco, torre, apto...)': '' });
+    expect(parceiroDeCadastro_(semComplemento)['Endereço_Formatado']).toBe('Rua das Flores, 120 - 01000000');
   });
 
   test('sem razão social, o Nome cai para o apelido — nunca vazio', () => {
-    const semRazao = Object.assign({}, RESPOSTA, { 'Razão Social': '' });
+    const semRazao = Object.assign({}, RESPOSTA, { 'razão social': '' });
     expect(parceiroDeCadastro_(semRazao)[CAMPOS_PARCEIRO.NOME]).toBe('DANI PERRUT');
   });
 
   test('sem apelido (sem chave primária) devolve null — nada a gravar', () => {
-    const semApelido = Object.assign({}, RESPOSTA, { 'Como prefere ser chamada?': '  ' });
+    const semApelido = Object.assign({}, RESPOSTA, { 'como prefere ser chamada (pode ser apelido + sobrenome, por exemplo)': '  ' });
     expect(parceiroDeCadastro_(semApelido)).toBeNull();
   });
 });
@@ -83,7 +83,7 @@ describe('ParceiroService.registrarCadastro (upsert seguro)', () => {
     expect(chave).toBe(CAMPOS_PARCEIRO.ID);
     expect(dados[CAMPOS_PARCEIRO.STATUS_CONTRATO]).toBe('PENDENTE');
     expect(dados[CAMPOS_PARCEIRO.NOME]).toBe('Daniela Perrut ME');
-    expect(dados['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000-000');
+    expect(dados['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000000');
     // Cupom em branco: nem entra no payload → upsert não escreve a coluna.
     expect(CAMPOS_PARCEIRO.CUPOM in dados).toBe(false);
   });
