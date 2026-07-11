@@ -58,18 +58,49 @@ Janela temporal de operação. Agrupa ativações.
 
 ## Aba `Parceiros_Influenciadoras`
 
-Cadastro de influenciadoras parceiras. Uma linha = uma parceira.
+Cadastro de influenciadoras parceiras. Uma linha = uma parceira. Estrutura
+**horizontal** (uma linha por parceira, sem explosão de entregáveis): a aba é
+fortemente acoplada ao **Autocrat** (geração de contratos/mala direta) da V1, e
+os templates dependem dessa forma. Cabeçalho canônico gerado por
+`cabecalhoParceirosV2_()` (`tear/DevTools.js`); consumido pelo `setupV2Database()`.
+
+União reconciliada (decisão de Fase 2): identidade estável do runtime
+(`CAMPOS_PARCEIRO`, lida pelo login/`ParceiroRepository`) + colunas de
+consolidação do Autocrat.
 
 | Coluna | Papel | Descrição |
 |---|---|---|
-| `ID_Influenciadora` | **Chave primária** | Referenciada por `Ativacoes.ID_Influenciadora` e `Planos_Colaboracao.ID_Influenciadora`. |
-| `Nome` | Dado | Nome da influenciadora. |
-| `Status_Contrato` | Dado | Situação contratual vigente. Domínio de valores ainda não fechado. |
-| `Categoria` | Dado | Segmento/classificação da parceira. |
+| `ID_Influenciadora` | **Chave primária** | Referenciada por `Ativacoes.ID_Influenciadora` e `Planos_Colaboracao.ID_Influenciadora`. Migração: vem do `INFLU_KEY` da V1. |
+| `Nome` | Dado | Nome da influenciadora. Migração: vem de `INFLUENCIADORA_RAZAO_SOCIAL`; se vazio, cai para a chave. |
+| `Status_Contrato` | Dado | Situação contratual. Migração: `STATUS` (ON/OFF) da V1 → `ATIVO`/`INATIVO`. Inativos **não são descartados**. |
+| `Categoria` | Dado | Segmento/classificação da parceira. Não existe na V1 (migra vazia). |
 | `Cupom` | Dado | Identificador de login da parceira. Único. Equivalente ao `CUPOM` da V1. |
-| `Senha_Hash` | Dado (credencial) | Senha com hash, formato `salt$hash`: `salt` é um UUID, `hash` é SHA-256 hex de (`salt` + senha). **Nunca a senha em texto puro.** Implementado em `tear/Senha.js`. Nenhum Service da V2 devolve esta coluna em DTO. |
+| `Qtd_Reels` | Dado (Autocrat) | Quantidade de Reels contratada. Consolidação para o template de contrato. |
+| `Qtd_Carrossel` | Dado (Autocrat) | Quantidade de Carrosséis contratada. |
+| `Qtd_Stories` | Dado (Autocrat) | Quantidade de Stories contratada. |
+| `Valor_Total_Contrato` | Dado (Autocrat) | Valor total do contrato. Migração: vem de `VALOR_TOTAL` da V1. |
+| `Looks_Qtd` | Dado (Autocrat) | Quantidade de looks. |
+| `Endereço_Formatado` | Dado (Autocrat) | Endereço em uma célula, pronto para o contrato. Migração: coluna de endereço pronta da V1 **ou** concatenação de `RUA, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, CEP`. |
+| `Senha_Hash` | Dado (credencial) | Senha com hash, formato `salt$hash`: `salt` é um UUID, `hash` é SHA-256 hex de (`salt` + senha). **Nunca a senha em texto puro.** Implementado em `tear/Senha.js`. Nenhum Service da V2 devolve esta coluna em DTO. **Jamais migrada da V1** — provisionada por `provisionarSenhasIniciais()`. |
 
 > A V2 não armazena CNPJ da parceira. A V1 usa prefixo do CNPJ como senha (baixa entropia por design, ver `CLAUDE.md` seção 3 "Login") — decisão abandonada na V2 em favor de `Senha_Hash`.
+
+### Migração V1 → V2 (ETL, Fase 2)
+
+Transform puro `transformarParceirosV1ParaV2()` + dry-run `simularMigracaoDeParceiros()`
+(`tear/DevTools.js`). O dry-run lê a **planilha ANTIGA** por ID
+(`SpreadsheetApp.openById`, aba `BASE DE DADOS`) e loga o De-Para resolvido sem
+gravar nada. Leitura sempre por **nome de cabeçalho**; o De-Para aceita nomes
+alternativos de origem e relata colunas não encontradas. A escrita real
+(`migrarParceirosDaV1()`) é gated por `MIGRACAO_HABILITADA=true` e só será
+alinhada a este cabeçalho após validação do relatório de dry-run.
+
+### Funil de cadastro (`CADASTROS`)
+
+A aba `CADASTROS` é a entrada **raw** (crua) do Google Forms. Os dados são
+posteriormente formatados (ex.: concatenar campos de endereço em
+`Endereço_Formatado`) e inseridos em `Parceiros_Influenciadoras`. `CADASTROS`
+não é fonte de verdade do domínio — é a antessala do cadastro.
 
 ---
 
