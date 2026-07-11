@@ -387,12 +387,15 @@ const CAMPOS_OBRIGATORIOS_PARCEIRO = Object.freeze(['INFLU_KEY', 'INFLUENCIADORA
 const CAMPOS_BUSCAVEIS_PARCEIRO = Object.freeze(['EMAIL', 'INFLUENCIADORA_CNPJ']);
 
 class ParceiroService {
-  constructor(parceiroRepository) {
+  constructor(parceiroRepository, cadastroRepository) {
     if (!parceiroRepository) {
       throw new TypeError('ParceiroService exige uma instância de ParceiroRepository.');
     }
 
     this.repository = parceiroRepository;
+    // Fonte do CNPJ para a senha padrão. Construção preguiçosa: só toca a
+    // planilha quando o provisionamento realmente roda (ver CadastroRepository).
+    this.cadastroRepository = cadastroRepository || new CadastroRepository();
   }
 
   /** Preenchimento inteligente: devolve o cadastro por e-mail/CNPJ, ou null. */
@@ -415,7 +418,79 @@ class ParceiroService {
       }
     });
 
-    return this.repository.upsert(dados, CHAVE_PARCEIRO);
+    const resultado = this.repository.upsert(dados, CHAVE_PARCEIRO);
+
+    // Ativação da parceira: com o cupom preenchido, provisiona a senha padrão
+    // (5 primeiros dígitos do CNPJ vindo do CADASTROS). FAIL-SAFE — nunca
+    // derruba o salvamento (ver `provisionarSenhaPadrao`).
+    const senha = this.provisionarSenhaPadrao(dados);
+
+    return Object.assign({}, resultado, { senhaProvisionada: senha.provisionada });
+  }
+
+  /**
+   * Provisionamento automático da senha padrão no fluxo de salvar (regra da V1,
+   * BASE.csv: "padrão sempre será 5 primeiros dígitos do CNPJ, depois ela pode
+   * mudar se quiser"). Só age quando há cupom (parceira ativada) e ela ainda não
+   * tem senha — nunca sobrescreve uma senha já trocada. O CNPJ vem do CADASTROS,
+   * casado pelo apelido (a identidade da V1), pois a base canônica não o guarda.
+   *
+   * FAIL-SAFE por contrato: qualquer ausência (sem cupom, sem CNPJ válido) ou
+   * erro devolve `{ provisionada: false, motivo }` e NUNCA lança — o cadastro da
+   * parceira não pode se perder porque o CNPJ não foi encontrado.
+   */
+  provisionarSenhaPadrao(dados) {
+    try {
+      const cupom = dados.CUPOM || dados[CAMPOS_PARCEIRO.CUPOM];
+      if (!cupom || String(cupom).trim() === '') {
+        return { provisionada: false, motivo: 'SEM_CUPOM' };
+      }
+
+      const chave = dados[CHAVE_PARCEIRO] || dados[CAMPOS_PARCEIRO.ID];
+
+      const atual = this.repository.buscarPorCampo(CHAVE_PARCEIRO, chave) || this.repository.getById(chave);
+      if (atual && String(atual[CAMPOS_PARCEIRO.SENHA_HASH] || '').trim() !== '') {
+        return { provisionada: false, motivo: 'JA_TEM_SENHA' };
+      }
+
+      const cnpj = this._cnpjDoCadastroPorChave(chave);
+      if (!cnpj) {
+        return { provisionada: false, motivo: 'SEM_CNPJ' };
+      }
+
+      this.repository.definirSenhaHashPorChave(CHAVE_PARCEIRO, chave, criarSenhaHash(senhaPadraoDeCnpj(cnpj)));
+
+      return { provisionada: true, motivo: 'OK' };
+    } catch (erro) {
+      console.warn(`provisionarSenhaPadrao: ignorado (fail-safe) — ${erro.message}`);
+      return { provisionada: false, motivo: 'ERRO' };
+    }
+  }
+
+  /**
+   * Localiza no CADASTROS a linha cuja pergunta de apelido casa com a chave da
+   * parceira (apelido `.trim().toUpperCase()` = ID, mesma regra do funil) e
+   * devolve os dígitos do CNPJ válido, ou '' se não achar. Mesma lógica de
+   * varredura da V1: identidade pelo apelido.
+   */
+  _cnpjDoCadastroPorChave(chave) {
+    const alvo = String(chave === null || chave === undefined ? '' : chave).trim().toUpperCase();
+    if (!alvo) {
+      return '';
+    }
+
+    const linhas = this.cadastroRepository.linhas();
+
+    for (let i = 0; i < linhas.length; i++) {
+      const get = _leitorDeCadastro_(linhas[i]);
+      const id = get(CANDIDATOS_CADASTRO.APELIDO).trim().toUpperCase();
+
+      if (id === alvo) {
+        return _cnpjDeCadastroValido_(linhas[i]);
+      }
+    }
+
+    return '';
   }
 
   /**
@@ -476,8 +551,25 @@ const CANDIDATOS_CADASTRO = Object.freeze({
   COMPLEMENTO: ['complemento (se houver: bloco, torre, apto...)', 'complemento'],
   // No Forms o CEP veio rotulado ora como "CEP", ora como "CNPJ" (título trocado
   // na origem). Tentamos "cep" primeiro; "cnpj" é o fallback observado.
-  CEP: ['cep', 'cnpj']
+  CEP: ['cep', 'cnpj'],
+  // CNPJ da parceira — fonte da senha padrão (5 primeiros dígitos, regra da V1).
+  CNPJ: ['cnpj', 'cnpj (apenas números)', 'cnpj (somente números)', 'cnpj/cpf', 'cpf/cnpj', 'documento']
 });
+
+/**
+ * Dígitos de um CNPJ válido o bastante para virar senha, ou '' se não houver.
+ *
+ * O guard de 11 dígitos existe por causa da colisão conhecida no Forms: a
+ * pergunta de CEP às vezes veio rotulada "CNPJ" (ver `CANDIDATOS_CADASTRO.CEP`).
+ * Um CEP tem 8 dígitos; exigir ao menos 11 (CPF/CNPJ) impede provisionar uma
+ * senha a partir de um CEP mascarado de CNPJ. PURA.
+ */
+function _cnpjDeCadastroValido_(valores) {
+  const bruto = _leitorDeCadastro_(valores)(CANDIDATOS_CADASTRO.CNPJ);
+  const digitos = String(bruto === null || bruto === undefined ? '' : bruto).replace(/\D/g, '');
+
+  return digitos.length >= 11 ? digitos : '';
+}
 
 function _textoCadastro_(valor) {
   return valor === null || valor === undefined ? '' : String(valor).trim();
@@ -804,5 +896,81 @@ class LogisticaService {
       dataEnvio: dataIsoDeCelula(linha[C.DATA_ENVIO]),
       status: textoDeCelula(linha[C.STATUS])
     };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   services/BriefingService.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Chaves dos looks na planilha INDIVIDUAL da influenciadora (col A, em maiúsculo)
+ * — exatamente as que o script antigo (`sincronizarLooks`) lia. LOOK REEL /
+ * CARROSSEL / STORIES 1 e 2 do BRIEFING (ver briefing CSV, linha 0: "puxado da
+ * planilha ... da aba INFLUENCIADORA, mesmo esquema do script antigo").
+ */
+const CHAVES_LOOK_BRIEFING = Object.freeze({
+  REEL: 'LOOK_REEL',
+  CARROSSEL: 'LOOK_CARROSSEL',
+  STORIES_1: 'LOOK_STORIES_1',
+  STORIES_2: 'LOOK_STORIES_2'
+});
+
+/**
+ * Centraliza a varredura de looks do BRIEFING herdando o esquema da V1
+ * (`mae/Código.js sincronizarLooks`): abre a planilha individual da parceira,
+ * lê a aba "LOOKS BRIEFING" como pares col A→col B (chave em MAIÚSCULA, trim) e
+ * projeta os 4 formatos em Title Case. Toda a lógica de interpretação vive aqui;
+ * o BriefingRepository só faz o I/O externo (a camada nunca se inverte).
+ */
+class BriefingService {
+  constructor(briefingRepository) {
+    this.repository = briefingRepository || new BriefingRepository();
+  }
+
+  /**
+   * Mesma montagem do mapa da V1: `dadosEx.forEach(l => if(l[0]) looks[l[0]
+   * .toString().toUpperCase().trim()] = l[1])`. Linhas sem chave são ignoradas.
+   */
+  _mapaDeLooks(linhas) {
+    const mapa = {};
+
+    (linhas || []).forEach(function (linha) {
+      if (linha && linha[0]) {
+        mapa[String(linha[0]).toUpperCase().trim()] = linha[1];
+      }
+    });
+
+    return mapa;
+  }
+
+  /**
+   * Puxa os looks da planilha individual (`url`) e devolve os 4 formatos em
+   * Title Case, como a V1 gravava no BRIEFING. FAIL-SAFE: URL inválida ou
+   * planilha inacessível → looks vazios, nunca lança (a sincronia de um look
+   * não pode derrubar a montagem do briefing).
+   */
+  puxarLooks(url) {
+    const K = CHAVES_LOOK_BRIEFING;
+    const vazio = { lookReel: '', lookCarrossel: '', lookStories1: '', lookStories2: '' };
+
+    try {
+      const linhas = this.repository.lerLooksExternos(url);
+      if (!linhas) {
+        return vazio;
+      }
+
+      const looks = this._mapaDeLooks(linhas);
+
+      return {
+        lookReel: formatarTitleCase(looks[K.REEL]),
+        lookCarrossel: formatarTitleCase(looks[K.CARROSSEL]),
+        lookStories1: formatarTitleCase(looks[K.STORIES_1]),
+        lookStories2: formatarTitleCase(looks[K.STORIES_2])
+      };
+    } catch (erro) {
+      console.warn(`BriefingService.puxarLooks: ignorado (fail-safe) — ${erro.message}`);
+      return vazio;
+    }
   }
 }

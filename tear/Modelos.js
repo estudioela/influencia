@@ -109,6 +109,15 @@ function textoDeCelula(valor) {
   return valor === null || valor === undefined ? '' : String(valor);
 }
 
+/**
+ * Title Case idêntico ao do script antigo (`mae/Código.js formatarTitleCase`),
+ * usado na varredura de looks do briefing. Mantido byte-a-byte para não divergir
+ * do legado: cada palavra ganha inicial maiúscula, o resto minúsculo. PURA.
+ */
+function formatarTitleCase(t) {
+  return (!t) ? '' : String(t).toLowerCase().split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+}
+
 /** `Date` vira ISO 8601; qualquer outro valor cai em `textoDeCelula`. */
 function dataIsoDeCelula(valor) {
   if (valor instanceof Date) {

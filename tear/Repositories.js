@@ -231,6 +231,35 @@ class ParceiroRepository {
     aba.getRange(posicao + 2, senhaIdx + 1).setValue(hash);
   }
 
+  /**
+   * Grava o `Senha_Hash` na linha localizada por uma coluna-chave arbitrária
+   * (ex.: `INFLU_KEY`, o mesmo vocabulário do upsert do wizard). Existe ao lado
+   * de `definirSenhaHash` (que casa por `Cupom`) porque o provisionamento
+   * automático já conhece a parceira pela chave que acabou de salvar — não
+   * precisa procurá-la de novo pelo cupom.
+   */
+  definirSenhaHashPorChave(colunaChave, valorChave, hash) {
+    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const { aba, cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
+    const chaveIdx = indiceDaColuna(cabecalho, colunaChave, nome);
+    const senhaIdx = indiceDaColuna(cabecalho, CAMPOS_PARCEIRO.SENHA_HASH, nome);
+
+    const alvo = this._normalizar(valorChave);
+    const posicoes = linhas
+      .map((linha, i) => (this._normalizar(linha[chaveIdx]) === alvo ? i : -1))
+      .filter(i => i !== -1);
+
+    if (posicoes.length > 1) {
+      throw new Error(`Cadastro inconsistente: "${colunaChave}" = "${valorChave}" está duplicado.`);
+    }
+
+    if (!posicoes.length) {
+      throw new Error(`Parceira com "${colunaChave}" = "${valorChave}" não encontrada.`);
+    }
+
+    aba.getRange(posicoes[0] + 2, senhaIdx + 1).setValue(hash);
+  }
+
   buscarPorCampo(campo, valor) {
     if (!campo || valor === null || valor === undefined || String(valor).trim() === '') {
       return null;
@@ -301,6 +330,87 @@ class ParceiroRepository {
 
   _normalizar(valor) {
     return String(valor === null || valor === undefined ? '' : valor).trim().toUpperCase();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   repositories/CadastroRepository.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Leitura da aba `CADASTROS` — a entrada RAW do Google Forms (docs/spec/
+ * SCHEMA_V2.md). Fonte do CNPJ original, que a base canônica da V2 não guarda:
+ * o provisionamento da senha padrão (5 primeiros dígitos do CNPJ, regra da V1)
+ * precisa voltar aqui para achá-lo. Só devolve linhas cruas título→valor; a
+ * lógica de casar apelido e extrair CNPJ fica no ParceiroService, ao lado dos
+ * demais leitores de cadastro (`_leitorDeCadastro_`).
+ *
+ * `spreadsheet` resolvido preguiçosamente (em `linhas()`, não no construtor):
+ * instanciar o repositório — o que o ParceiroService faz por padrão — nunca
+ * pode exigir `SpreadsheetApp`, senão fluxos puros quebrariam à toa.
+ */
+class CadastroRepository {
+  constructor(spreadsheet) {
+    this._spreadsheet = spreadsheet || null;
+  }
+
+  linhas() {
+    const planilha = this._spreadsheet || SpreadsheetApp.getActive();
+    const nome = PLANILHAS.CADASTROS;
+    const { cabecalho, linhas } = lerAbaComCabecalho(planilha, nome);
+
+    return linhas
+      .filter(linha => linha.some(celula => String(celula === null || celula === undefined ? '' : celula).trim() !== ''))
+      .map(linha => linhaParaObjeto(cabecalho, linha));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   repositories/BriefingRepository.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/** Aba da planilha INDIVIDUAL da influenciadora onde ficam os looks (esquema V1). */
+const ABA_LOOKS_EXTERNA = 'LOOKS BRIEFING';
+
+/**
+ * Leitura dos looks na planilha EXTERNA de cada influenciadora — o mesmo
+ * `INFLU_SHEET_URL` que o script antigo (`sincronizarLooks`) abria. Só faz o
+ * I/O bruto (abre a URL, acha a aba, devolve as linhas); a interpretação
+ * (col A → col B, title-case) fica no BriefingService, como manda a camada.
+ *
+ * `abrirPorUrl` injetável para teste; em produção cai em `SpreadsheetApp.openByUrl`.
+ */
+class BriefingRepository {
+  constructor(abrirPorUrl) {
+    this._abrirPorUrl = abrirPorUrl || null;
+  }
+
+  lerLooksExternos(url) {
+    const texto = String(url === null || url === undefined ? '' : url).trim();
+
+    // Mesma porteira da V1: só URL de Google Docs de parceira ativa é aberta.
+    if (!texto || texto.indexOf('docs.google.com') === -1) {
+      return null;
+    }
+
+    const abrir = this._abrirPorUrl ||
+      (typeof SpreadsheetApp !== 'undefined' ? (u) => SpreadsheetApp.openByUrl(u) : null);
+    if (!abrir) {
+      return null;
+    }
+
+    const externa = abrir(texto);
+    if (!externa) {
+      return null;
+    }
+
+    const abaLooks = externa.getSheetByName(ABA_LOOKS_EXTERNA) ||
+      (typeof externa.getSheets === 'function' ? externa.getSheets()[0] : null);
+    if (!abaLooks) {
+      return null;
+    }
+
+    return abaLooks.getDataRange().getValues();
   }
 }
 

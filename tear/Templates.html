@@ -727,6 +727,34 @@ function salvarParceira() {
     });
 }
 
+/**
+ * Disparo manual da senha padrão (5 primeiros dígitos do CNPJ). O salvar já
+ * provisiona sozinho ao ativar a parceira; este botão cobre o reenvio avulso
+ * (ex.: parceira que pediu reset). Usa o CUPOM e o CNPJ digitados no wizard.
+ */
+function provisionarSenhaPadraoManual() {
+  coletarPassoParceira(); // garante que CUPOM/CNPJ recém-digitados entrem no estado
+
+  var aviso = document.getElementById('tear-senha-padrao-aviso');
+  function mostrar(texto) { if (aviso) { aviso.textContent = texto; aviso.hidden = false; } }
+
+  if (!temBackend()) return mostrar('Sem backend nesta visualização.');
+
+  var cupom = WIZARD.dados.CUPOM;
+  var cnpj = WIZARD.dados.INFLUENCIADORA_CNPJ;
+  if (!cupom || !String(cupom).trim()) return mostrar('Informe o cupom antes de provisionar a senha.');
+  if (!cnpj || !String(cnpj).trim()) return mostrar('Informe o CNPJ antes de provisionar a senha.');
+
+  mostrar('Provisionando…');
+  chamar('adminProvisionarSenhaPadrao', cupom, cnpj, tokenAdminDoCadastro())
+    .then(function (r) {
+      mostrar(r && r.success ? 'Senha padrão provisionada a partir do CNPJ.' : (r && r.error ? r.error : 'Não foi possível provisionar a senha.'));
+    })
+    .catch(function (e) {
+      mostrar('Falha de comunicação: ' + (e && e.message ? e.message : e));
+    });
+}
+
 /* ── Painel Admin — Logística (Etapa 6) ────────────────────────────────────
    Ferramenta interna: os entrypoints exigem o token administrativo, digitado na
    própria tela e validado no servidor (`_exigirAdmin`), como no wizard de
@@ -974,6 +1002,9 @@ function iniciarApp() {
     // "voltar" é type=button; "avançar" é type=submit e vai pelo evento de submit.
     var voltar = evento.target.closest('[data-wizard="voltar"]');
     if (voltar) { evento.preventDefault(); return voltarPassoParceira(); }
+
+    var provisionar = evento.target.closest('[data-wizard="provisionar-senha"]');
+    if (provisionar) { evento.preventDefault(); return provisionarSenhaPadraoManual(); }
 
     if (evento.target.closest('[data-acao="logistica-carregar"]')) {
       evento.preventDefault();
@@ -1583,8 +1614,12 @@ if (typeof document !== 'undefined') {
       <fieldset id="tear-wizard-slot" class="tear-form"></fieldset>
       <p id="tear-wizard-erro" class="tear-campo__erro" role="alert"></p>
       <p id="tear-wizard-aviso" class="tear-card__meta" hidden></p>
+      <p id="tear-senha-padrao-aviso" class="tear-card__meta" role="status" hidden></p>
       <div class="tear-wizard__acoes">
         <button type="button" class="tear-nav__item" data-wizard="voltar">← sair</button>
+        <!-- Provisiona a senha padrão (5 primeiros dígitos do CNPJ) manualmente.
+             O salvar já faz isso sozinho; este botão é o disparo avulso. -->
+        <button type="button" class="tear-nav__item" data-wizard="provisionar-senha">provisionar senha padrão</button>
         <button type="submit" class="tear-botao" data-wizard="avancar">avançar</button>
       </div>
     </form>
