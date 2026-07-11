@@ -426,7 +426,12 @@ class ParceiroService {
    * achatado). Devolve `{ ignorado, criado?, chave? }`.
    */
   registrarCadastro(valoresPorColuna) {
-    const base = parceiroDeCadastro_(valoresPorColuna);
+    // Resolve Rua/Bairro/Cidade a partir do CEP (o Forms não pergunta a Rua).
+    // Se todas as APIs falharem, `enderecoApi` vem null e o endereço degrada
+    // graciosamente — o cadastro nunca se perde por causa do CEP.
+    const cep = _cepDoCadastro_(valoresPorColuna);
+    const enderecoApi = cep ? buscarCepMultiAPI(cep) : null;
+    const base = parceiroDeCadastro_(valoresPorColuna, enderecoApi);
 
     if (!base) {
       return { ignorado: true, motivo: 'SEM_APELIDO' };
@@ -501,29 +506,113 @@ function _leitorDeCadastro_(valoresPorColuna) {
   };
 }
 
-// Rua, Número - Complemento - CEP. Pula segmentos vazios para não deixar
-// separadores soltos (ex.: sem complemento → "Rua X, 10 - 01000-000").
-function _enderecoDeCadastro_(get) {
-  const rua = get(CANDIDATOS_CADASTRO.RUA);
-  const numero = get(CANDIDATOS_CADASTRO.NUMERO);
-  const complemento = get(CANDIDATOS_CADASTRO.COMPLEMENTO);
-  // CEP entra só com dígitos: pontos e hífens saem na concatenação.
-  const cep = get(CANDIDATOS_CADASTRO.CEP).replace(/[.\-]/g, '');
+// Lê o CEP cru do formulário (título candidato), para alimentar a busca multi-API.
+function _cepDoCadastro_(valoresPorColuna) {
+  return _leitorDeCadastro_(valoresPorColuna)(CANDIDATOS_CADASTRO.CEP);
+}
 
-  let endereco = rua;
-  if (numero) endereco += (endereco ? ', ' : '') + numero;
-  if (complemento) endereco += (endereco ? ' - ' : '') + complemento;
-  if (cep) endereco += (endereco ? ' - ' : '') + cep;
+// Formata 8 dígitos como CEP brasileiro (XXXXX-XXX); devolve o texto original
+// trimado se não tiver 8 dígitos. PURA.
+function _formatarCep_(cep) {
+  const digitos = String(cep === null || cep === undefined ? '' : cep).replace(/\D/g, '');
+  return digitos.length === 8
+    ? `${digitos.slice(0, 5)}-${digitos.slice(5)}`
+    : _textoCadastro_(cep);
+}
 
-  return endereco;
+/**
+ * Monta o Endereço_Formatado no padrão EXATO exigido pelo Autocrat:
+ *   "RUA, NÚMERO, COMPLEMENTO, BAIRRO - CIDADE/UF, CEP"  (tudo em caixa alta)
+ * Ex.: "RUA QUELUZ, 450, APTO 202, BOM PASTOR - DIVINÓPOLIS/MG, 35500-166".
+ * Segmentos vazios são omitidos junto do separador (sem complemento não deixa
+ * vírgula solta; sem bairro/cidade não deixa " - " órfão). PURA.
+ */
+function _montarEnderecoFormatado_(partes) {
+  const rua = _textoCadastro_(partes.rua);
+  const numero = _textoCadastro_(partes.numero);
+  const complemento = _textoCadastro_(partes.complemento);
+  const bairro = _textoCadastro_(partes.bairro);
+  const cidade = _textoCadastro_(partes.cidade);
+  const uf = _textoCadastro_(partes.uf);
+  const cep = _formatarCep_(partes.cep);
+
+  const cidadeUf = cidade ? (uf ? `${cidade}/${uf}` : cidade) : '';
+  const local = [bairro, cidadeUf].filter(Boolean).join(' - ');
+
+  return [rua, numero, complemento, local, cep].filter(Boolean).join(', ').toUpperCase();
+}
+
+/* ── Resolução de CEP: varredura multi-API com fallback sequencial ─────────── */
+
+// Cada provedor devolve um shape diferente; normalizamos todos para
+// { logradouro, bairro, localidade, uf }. Funções PURAS (testáveis no Jest).
+function _normViaCep_(j) {
+  if (!j || j.erro) return null;
+  return { logradouro: j.logradouro, bairro: j.bairro, localidade: j.localidade, uf: j.uf };
+}
+function _normBrasilApi_(j) {
+  if (!j || !j.city) return null;
+  return { logradouro: j.street, bairro: j.neighborhood, localidade: j.city, uf: j.state };
+}
+function _normAwesomeApi_(j) {
+  if (!j || !j.city) return null;
+  return { logradouro: j.address, bairro: j.district, localidade: j.city, uf: j.state };
+}
+function _normOpenCep_(j) {
+  if (!j || j.erro) return null;
+  return { logradouro: j.logradouro, bairro: j.bairro, localidade: j.localidade, uf: j.uf };
+}
+
+// Ordem de tentativa: ViaCEP → BrasilAPI → AwesomeAPI → OpenCEP.
+const PROVEDORES_CEP = Object.freeze([
+  { nome: 'ViaCEP',     url: (c) => `https://viacep.com.br/ws/${c}/json/`,        norm: _normViaCep_ },
+  { nome: 'BrasilAPI',  url: (c) => `https://brasilapi.com.br/api/cep/v1/${c}`,   norm: _normBrasilApi_ },
+  { nome: 'AwesomeAPI', url: (c) => `https://cep.awesomeapi.com.br/json/${c}`,    norm: _normAwesomeApi_ },
+  { nome: 'OpenCEP',    url: (c) => `https://opencep.com/v1/${c}`,                norm: _normOpenCep_ }
+]);
+
+// Um resultado só vale se trouxe ao menos a localidade (cidade sempre presente
+// quando o CEP existe). Sem isso, cai para o próximo provedor.
+function _cepValido_(dados) {
+  return !!(dados && String(dados.localidade || '').trim());
+}
+
+/**
+ * Varre os provedores de CEP em ORDEM; devolve { logradouro, bairro, localidade,
+ * uf } do primeiro que responder 200 com dados válidos, ou `null` se todos
+ * falharem/estiverem fora do ar ou o CEP for inválido. NUNCA lança — a
+ * indisponibilidade do CEP degrada o endereço, não derruba o gatilho.
+ */
+function buscarCepMultiAPI(cep) {
+  const digitos = String(cep === null || cep === undefined ? '' : cep).replace(/\D/g, '');
+  if (digitos.length !== 8) return null;
+  if (typeof UrlFetchApp === 'undefined') return null; // ambiente sem rede (Jest)
+
+  for (let i = 0; i < PROVEDORES_CEP.length; i++) {
+    const provedor = PROVEDORES_CEP[i];
+    try {
+      const resposta = UrlFetchApp.fetch(provedor.url(digitos), {
+        muteHttpExceptions: true,
+        followRedirects: true
+      });
+      if (resposta.getResponseCode() !== 200) continue;
+      const dados = provedor.norm(JSON.parse(resposta.getContentText()));
+      if (_cepValido_(dados)) return dados;
+    } catch (erro) {
+      console.warn(`buscarCepMultiAPI: ${provedor.nome} falhou (${erro.message}); tentando o próximo.`);
+    }
+  }
+  return null;
 }
 
 /**
  * Transform PURO da resposta bruta do formulário para o cadastro canônico.
+ * `enderecoApi` (opcional) traz { logradouro, bairro, localidade, uf } resolvidos
+ * pelo CEP; quando ausente, o endereço degrada para o que veio no formulário.
  * Devolve `null` quando falta o apelido (sem chave primária não há registro).
  * `Nome` cai para o apelido quando a razão social vem vazia — nunca fica vazio.
  */
-function parceiroDeCadastro_(valoresPorColuna) {
+function parceiroDeCadastro_(valoresPorColuna, enderecoApi) {
   const get = _leitorDeCadastro_(valoresPorColuna);
   const id = get(CANDIDATOS_CADASTRO.APELIDO).trim().toUpperCase();
 
@@ -531,10 +620,19 @@ function parceiroDeCadastro_(valoresPorColuna) {
     return null;
   }
 
+  const api = enderecoApi || {};
   const parceiro = {};
   parceiro[CAMPOS_PARCEIRO.ID] = id;
   parceiro[CAMPOS_PARCEIRO.NOME] = get(CANDIDATOS_CADASTRO.RAZAO) || id;
-  parceiro['Endereço_Formatado'] = _enderecoDeCadastro_(get);
+  parceiro['Endereço_Formatado'] = _montarEnderecoFormatado_({
+    rua: api.logradouro || get(CANDIDATOS_CADASTRO.RUA),
+    numero: get(CANDIDATOS_CADASTRO.NUMERO),
+    complemento: get(CANDIDATOS_CADASTRO.COMPLEMENTO),
+    bairro: api.bairro,
+    cidade: api.localidade,
+    uf: api.uf,
+    cep: get(CANDIDATOS_CADASTRO.CEP)
+  });
 
   return parceiro;
 }

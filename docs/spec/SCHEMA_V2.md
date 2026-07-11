@@ -106,13 +106,24 @@ a linha a `Parceiros_Influenciadoras` via `ParceiroService.registrarCadastro`
 
 | Destino (V2) | Origem (pergunta do formulário) |
 |---|---|
-| `ID_Influenciadora` | "como prefere ser chamada" (caixa alta) |
+| `ID_Influenciadora` | "como prefere ser chamada" (`.trim().toUpperCase()`) |
 | `Nome` | "razão social" / nome completo (fallback: o apelido) |
 | `Status_Contrato` | `PENDENTE` (fixo no cadastro; **só na inserção**) |
-| `Endereço_Formatado` | `Rua, Número - Complemento - CEP` (segmentos vazios pulados) |
+| `Endereço_Formatado` | `RUA, NÚMERO, COMPLEMENTO, BAIRRO - CIDADE/UF, CEP` (caixa alta; segmentos vazios pulados) |
 | `Cupom` | **em branco** — preenchido manualmente pela marca depois |
 | `Senha_Hash` | vazio — provisionado no 1º login |
 | Colunas Autocrat | vazias — preenchidas ao fechar contrato |
+
+**Resolução de endereço por CEP.** O Forms **não** pergunta a Rua — só Número,
+Complemento e CEP. `registrarCadastro` higieniza o CEP (só dígitos) e resolve
+Rua/Bairro/Cidade/UF via `buscarCepMultiAPI(cep)`, uma cadeia com fallback
+sequencial: **ViaCEP → BrasilAPI → AwesomeAPI → OpenCEP** (na 1ª resposta 200
+válida, para). Cada provedor tem shape próprio, normalizado para
+`{ logradouro, bairro, localidade, uf }`. O CEP é reexibido mascarado
+(`XXXXX-XXX`) na string final. Se **todas** as APIs falharem, o endereço degrada
+para o que veio no formulário (sem Rua/Bairro) — o gatilho **nunca** perde um
+cadastro por causa do CEP. Requer o escopo OAuth `script.external_request`
+(auto-detectado pelo manifesto; a 1ª execução após o deploy pede reautorização).
 
 Upsert **seguro**: se a influenciadora já existe (mesmo `ID_Influenciadora`),
 atualiza apenas os dados cadastrais (`Nome`, `Endereço_Formatado`) e **não toca**

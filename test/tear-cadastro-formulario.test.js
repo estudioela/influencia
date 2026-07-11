@@ -1,10 +1,14 @@
 /**
  * Funil de cadastro (Google Forms → aba CADASTROS → Parceiros_Influenciadoras).
  *
- * Cobre o transform puro `parceiroDeCadastro_` (leitura tolerante a acento/caixa/
- * pontuação nos títulos das perguntas) e o upsert SEGURO de
- * `ParceiroService.registrarCadastro`: novo grava Status=PENDENTE; existente
- * atualiza só dados cadastrais, sem tocar Cupom/Status/Autocrat/Senha.
+ * Cobre:
+ *  - transform puro `parceiroDeCadastro_` (leitura tolerante a acento/caixa/
+ *    pontuação nos títulos; endereço no padrão Autocrat, em caixa alta);
+ *  - enriquecimento de endereço por CEP (`buscarCepMultiAPI` + normalizadores);
+ *  - upsert SEGURO de `ParceiroService.registrarCadastro`.
+ *
+ * O Jest roda sem `UrlFetchApp`, então `buscarCepMultiAPI` devolve null e o
+ * endereço degrada graciosamente — o cadastro nunca se perde por causa do CEP.
  */
 const path = require('path');
 const { loadGasFiles } = require('./helpers/loadGasModule');
@@ -12,10 +16,20 @@ const { loadGasFiles } = require('./helpers/loadGasModule');
 const RAIZ = path.join(__dirname, '..');
 const arquivo = (nome) => path.join(RAIZ, 'tear', nome);
 
-const { parceiroDeCadastro_, ParceiroService, CAMPOS_PARCEIRO } = loadGasFiles(
+const exportados = [
+  'parceiroDeCadastro_', 'ParceiroService', 'CAMPOS_PARCEIRO', 'buscarCepMultiAPI',
+  '_montarEnderecoFormatado_', '_formatarCep_',
+  '_normViaCep_', '_normBrasilApi_', '_normAwesomeApi_', '_normOpenCep_'
+];
+
+const {
+  parceiroDeCadastro_, ParceiroService, CAMPOS_PARCEIRO, buscarCepMultiAPI,
+  _montarEnderecoFormatado_, _formatarCep_,
+  _normViaCep_, _normBrasilApi_, _normAwesomeApi_, _normOpenCep_
+} = loadGasFiles(
   ['Infra.js', 'Modelos.js', 'Repositories.js', 'Services.js'].map(arquivo),
   { console: { warn() {}, error() {}, log() {} } },
-  ['parceiroDeCadastro_', 'ParceiroService', 'CAMPOS_PARCEIRO']
+  exportados
 );
 
 // Respostas cruas do formulário — títulos LITERAIS das perguntas do Google Forms
@@ -29,21 +43,35 @@ const RESPOSTA = {
   'CEP': '01000-000'
 };
 
+// Endereço resolvido pelo CEP (o que buscarCepMultiAPI devolveria em produção).
+const ENDERECO_API = { logradouro: 'Rua Queluz', bairro: 'Bom Pastor', localidade: 'Divinópolis', uf: 'MG' };
+const RESPOSTA_MG = Object.assign({}, RESPOSTA, {
+  'número (prédio, casa, condomínio...)': '450',
+  'complemento (se houver: bloco, torre, apto...)': 'APTO 202',
+  'CEP': '35500-166'
+});
+
 describe('parceiroDeCadastro_ (transform puro)', () => {
-  test('apelido vira ID em caixa alta; razão social vira Nome; endereço concatenado', () => {
-    const p = parceiroDeCadastro_(RESPOSTA);
+  test('com endereço do CEP: monta o padrão EXATO do Autocrat em caixa alta', () => {
+    const p = parceiroDeCadastro_(RESPOSTA_MG, ENDERECO_API);
 
     expect(p[CAMPOS_PARCEIRO.ID]).toBe('DANI PERRUT'); // trim das pontas + caixa alta
     expect(p[CAMPOS_PARCEIRO.NOME]).toBe('Daniela Perrut ME');
-    expect(p['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000000'); // CEP sem hífen
-    // Não inventa Cupom/Status/Senha — ficam a cargo do Service/upsert.
-    expect(p[CAMPOS_PARCEIRO.CUPOM]).toBeUndefined();
-    expect(p[CAMPOS_PARCEIRO.STATUS_CONTRATO]).toBeUndefined();
+    expect(p['Endereço_Formatado'])
+      .toBe('RUA QUELUZ, 450, APTO 202, BOM PASTOR - DIVINÓPOLIS/MG, 35500-166');
   });
 
-  test('endereço pula segmentos vazios (sem complemento não deixa separador solto)', () => {
-    const semComplemento = Object.assign({}, RESPOSTA, { 'complemento (se houver: bloco, torre, apto...)': '' });
-    expect(parceiroDeCadastro_(semComplemento)['Endereço_Formatado']).toBe('Rua das Flores, 120 - 01000000');
+  test('sem complemento (com CEP): não deixa vírgula sobressalente', () => {
+    const semComplemento = Object.assign({}, RESPOSTA_MG, {
+      'complemento (se houver: bloco, torre, apto...)': ''
+    });
+    expect(parceiroDeCadastro_(semComplemento, ENDERECO_API)['Endereço_Formatado'])
+      .toBe('RUA QUELUZ, 450, BOM PASTOR - DIVINÓPOLIS/MG, 35500-166');
+  });
+
+  test('sem endereço do CEP (APIs fora do ar): degrada com o que veio no Forms', () => {
+    const p = parceiroDeCadastro_(RESPOSTA, null);
+    expect(p['Endereço_Formatado']).toBe('RUA DAS FLORES, 120, APTO 3, 01000-000');
   });
 
   test('sem razão social, o Nome cai para o apelido — nunca vazio', () => {
@@ -52,8 +80,63 @@ describe('parceiroDeCadastro_ (transform puro)', () => {
   });
 
   test('sem apelido (sem chave primária) devolve null — nada a gravar', () => {
-    const semApelido = Object.assign({}, RESPOSTA, { 'como prefere ser chamada (pode ser apelido + sobrenome, por exemplo)': '  ' });
+    const semApelido = Object.assign({}, RESPOSTA, {
+      'como prefere ser chamada (pode ser apelido + sobrenome, por exemplo)': '  '
+    });
     expect(parceiroDeCadastro_(semApelido)).toBeNull();
+  });
+});
+
+describe('_formatarCep_', () => {
+  test('8 dígitos crus viram XXXXX-XXX', () => {
+    expect(_formatarCep_('35500166')).toBe('35500-166');
+  });
+  test('já mascarado é preservado', () => {
+    expect(_formatarCep_('35500-166')).toBe('35500-166');
+  });
+  test('tamanho inesperado é devolvido trimado (sem quebrar)', () => {
+    expect(_formatarCep_('  123 ')).toBe('123');
+  });
+});
+
+describe('_montarEnderecoFormatado_ (omite segmentos vazios)', () => {
+  test('só cidade/UF, sem bairro: não deixa " - " órfão', () => {
+    expect(_montarEnderecoFormatado_({ rua: 'Rua X', numero: '10', cidade: 'Belo Horizonte', uf: 'MG', cep: '30100000' }))
+      .toBe('RUA X, 10, BELO HORIZONTE/MG, 30100-000');
+  });
+  test('endereço mínimo (só número e CEP)', () => {
+    expect(_montarEnderecoFormatado_({ numero: '10', cep: '30100000' })).toBe('10, 30100-000');
+  });
+});
+
+describe('normalizadores de CEP (shapes distintos → forma canônica)', () => {
+  test('ViaCEP', () => {
+    expect(_normViaCep_({ logradouro: 'Rua Queluz', bairro: 'Bom Pastor', localidade: 'Divinópolis', uf: 'MG' }))
+      .toEqual(ENDERECO_API);
+  });
+  test('ViaCEP com {erro:true} → null', () => {
+    expect(_normViaCep_({ erro: true })).toBeNull();
+  });
+  test('BrasilAPI (street/neighborhood/city/state)', () => {
+    expect(_normBrasilApi_({ street: 'Rua Queluz', neighborhood: 'Bom Pastor', city: 'Divinópolis', state: 'MG' }))
+      .toEqual(ENDERECO_API);
+  });
+  test('AwesomeAPI (address/district/city/state)', () => {
+    expect(_normAwesomeApi_({ address: 'Rua Queluz', district: 'Bom Pastor', city: 'Divinópolis', state: 'MG' }))
+      .toEqual(ENDERECO_API);
+  });
+  test('OpenCEP (shape ViaCEP)', () => {
+    expect(_normOpenCep_({ logradouro: 'Rua Queluz', bairro: 'Bom Pastor', localidade: 'Divinópolis', uf: 'MG' }))
+      .toEqual(ENDERECO_API);
+  });
+});
+
+describe('buscarCepMultiAPI (guardas sem rede)', () => {
+  test('CEP com tamanho inválido → null (nem tenta rede)', () => {
+    expect(buscarCepMultiAPI('123')).toBeNull();
+  });
+  test('sem UrlFetchApp (ambiente Jest) → null, sem lançar', () => {
+    expect(buscarCepMultiAPI('35500-166')).toBeNull();
   });
 });
 
@@ -83,7 +166,8 @@ describe('ParceiroService.registrarCadastro (upsert seguro)', () => {
     expect(chave).toBe(CAMPOS_PARCEIRO.ID);
     expect(dados[CAMPOS_PARCEIRO.STATUS_CONTRATO]).toBe('PENDENTE');
     expect(dados[CAMPOS_PARCEIRO.NOME]).toBe('Daniela Perrut ME');
-    expect(dados['Endereço_Formatado']).toBe('Rua das Flores, 120 - Apto 3 - 01000000');
+    // Sem rede no Jest → endereço degrada para o que veio no Forms (caixa alta).
+    expect(dados['Endereço_Formatado']).toBe('RUA DAS FLORES, 120, APTO 3, 01000-000');
     // Cupom em branco: nem entra no payload → upsert não escreve a coluna.
     expect(CAMPOS_PARCEIRO.CUPOM in dados).toBe(false);
   });
