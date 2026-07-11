@@ -702,7 +702,7 @@ class PagamentoRepository {
     const idIdx = indiceDaColuna(cabecalho, CAMPOS_PAGAMENTO.ID, PLANILHAS.PAGAMENTOS);
     const linha = linhas.find(l => this._mesmoId(l[idIdx], id));
 
-    return linha ? linhaParaObjeto(cabecalho, linha) : null;
+    return linha ? new Pagamento(linhaParaObjeto(cabecalho, linha)) : null;
   }
 
   findByCiclo(cicloId) {
@@ -715,7 +715,7 @@ class PagamentoRepository {
 
     return linhas
       .filter(l => this._mesmoId(l[cicloIdx], cicloId))
-      .map(l => linhaParaObjeto(cabecalho, l));
+      .map(l => new Pagamento(linhaParaObjeto(cabecalho, l)));
   }
 
   save(pagamentoData) {
@@ -723,16 +723,18 @@ class PagamentoRepository {
       throw new TypeError('save() espera um objeto de pagamento.');
     }
 
+    const dados = pagamentoData instanceof Pagamento ? pagamentoData.dados : pagamentoData;
+
     const { aba, cabecalho, linhas } = this._lerDados();
     const idIdx = indiceDaColuna(cabecalho, CAMPOS_PAGAMENTO.ID, PLANILHAS.PAGAMENTOS);
-    const id = pagamentoData[CAMPOS_PAGAMENTO.ID];
+    const id = dados[CAMPOS_PAGAMENTO.ID];
     const posicao = id ? linhas.findIndex(l => this._mesmoId(l[idIdx], id)) : -1;
 
     if (posicao === -1) {
-      const novo = Object.assign({}, pagamentoData);
+      const novo = Object.assign({}, dados);
       novo[CAMPOS_PAGAMENTO.ID] = id || Utilities.getUuid();
       aba.appendRow(cabecalho.map(coluna => (coluna in novo ? novo[coluna] : '')));
-      return novo;
+      return new Pagamento(novo);
     }
 
     const linhaAtual = linhas[posicao];
@@ -740,15 +742,15 @@ class PagamentoRepository {
     const formulas = intervalo.getFormulas()[0];
 
     const atualizada = cabecalho.map((coluna, i) =>
-      coluna && Object.prototype.hasOwnProperty.call(pagamentoData, coluna)
-        ? pagamentoData[coluna]
+      coluna && Object.prototype.hasOwnProperty.call(dados, coluna)
+        ? dados[coluna]
         : linhaAtual[i]
     );
 
     const paraGravar = atualizada.map((valor, i) => (formulas[i] ? formulas[i] : valor));
 
     intervalo.setValues([paraGravar]);
-    return linhaParaObjeto(cabecalho, atualizada);
+    return new Pagamento(linhaParaObjeto(cabecalho, atualizada));
   }
 
   _lerDados() {
