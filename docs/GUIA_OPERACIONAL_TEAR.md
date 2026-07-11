@@ -1,5 +1,3 @@
-# GUIA OPERACIONAL ERP TEAR
-
 # GUIA OPERACIONAL TEAR
 
 > Documento operacional do Projeto Tear.
