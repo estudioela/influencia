@@ -1355,19 +1355,23 @@ if (typeof document !== 'undefined') {
 }
 
 /* ── Botão primário ─────────────────────────────────────────────────── */
+/* CTA oficial da marca: pílula (o único raio permitido pelo Design System),
+   bordô sobre branco, rótulo centralizado. Ver componente CTA do DS. */
 .tear-botao {
   display: block;
   width: 100%;
-  border: none;
-  border-radius: var(--ela-radius-none);
+  border: 1px solid var(--ela-color-accent);
+  border-radius: var(--ela-radius-pill);
   background: var(--ela-color-accent);
   color: var(--ela-color-content-on-accent);
   padding: var(--ela-space-sm) 0;
   font-family: var(--ela-font-label);
   font-size: var(--ela-font-size-sm);
   letter-spacing: var(--ela-letter-spacing-wide);
+  text-align: center;
   cursor: pointer;
-  transition: background-color var(--ela-duration-fast) var(--ela-easing-base);
+  transition: background-color var(--ela-duration-fast) var(--ela-easing-base),
+    color var(--ela-duration-fast) var(--ela-easing-base);
 }
 
 .tear-botao:hover,
@@ -1619,7 +1623,7 @@ if (typeof document !== 'undefined') {
         <button type="button" class="tear-nav__item" data-wizard="voltar">← sair</button>
         <!-- Provisiona a senha padrão (5 primeiros dígitos do CNPJ) manualmente.
              O salvar já faz isso sozinho; este botão é o disparo avulso. -->
-        <button type="button" class="tear-nav__item" data-wizard="provisionar-senha">provisionar senha padrão</button>
+        <button type="button" class="tear-botao" data-wizard="provisionar-senha">provisionar senha padrão</button>
         <button type="submit" class="tear-botao" data-wizard="avancar">avançar</button>
       </div>
     </form>

@@ -1,5 +1,12 @@
 <!-- ═══════════════ styles_core.html ═══════════════ -->
 <style>
+/* Fontes da marca (Estúdio Elã Design System). Os OTFs oficiais — IvyPresto
+   Display e Helvetica Neue — vivem no projeto do Design System e o Apps Script
+   não serve estáticos; então carregamos os fallbacks declarados pela própria
+   marca: Cormorant Garamond (display) e Archivo (rótulos/secundário). Helvetica
+   Neue é fonte de sistema. @import precisa vir antes de qualquer regra. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap");
+
 /* GERADO — não editar aqui.
    Espelho de design-system/core/variables.css + core/utility-classes.css.
    Divergência é detectada por test/styles-sync.test.js. */
@@ -317,6 +324,54 @@
    Aquele componente exige align-items: flex-start; alinhar ao centro já
    foi causa raiz de um bug de layout corrigido em produção.
    Use .ela-items-start. Ver CLAUDE.md, seção 3, "Pagamentos". */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Convergência Estúdio Elã — paleta e tipografia OFICIAIS do Design System
+   (claude.ai/design · "Estúdio Elã Design System", colors_and_type.css).
+   Última na cascata: sobrescreve os tokens --ela-* do núcleo e a divergência
+   do tema do Portal para os valores canônicos da marca. Os componentes do Tear
+   consomem só --ela-*, então herdam a marca sem tocar no markup.
+   Proporção da marca: ~70% branco · 20% bordô · 10% vinho.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Cor: primitivos da marca ─────────────────────────────────────── */
+  --ela-brand-600: #cd0005;   /* bordô — vermelho sangue, acento primário */
+  --ela-brand-700: #791815;   /* vinho tinto — acento profundo */
+  --ela-brand-500: #cd0005;
+
+  --ela-neutral-950: #000000; /* preto — títulos fortes */
+  --ela-neutral-700: #3a3838; /* corpo */
+  --ela-neutral-500: #6b6b6b; /* legendas */
+  --ela-neutral-200: #efe9df; /* paper quente */
+  --ela-neutral-150: #f6f3ee; /* paper editorial */
+  --ela-neutral-100: #f6f3ee;
+  --ela-neutral-50:  #ffffff; /* branco — fundo dominante */
+
+  /* ── Cor: semânticos (redefinidos direto, à prova de cascata) ─────── */
+  --ela-color-background: #ffffff;
+  --ela-color-surface: #ffffff;
+  --ela-color-surface-container: #f6f3ee;
+  --ela-color-surface-container-low: #f6f3ee;
+  --ela-color-surface-container-high: #efe9df;
+
+  --ela-color-content: #3a3838;
+  --ela-color-content-muted: #6b6b6b;
+  --ela-color-content-faint: #9a9a9a;
+  --ela-color-content-on-accent: #ffffff;
+
+  --ela-color-border-subtle: rgba(58, 56, 56, 0.18); /* --rule-dark do DS */
+
+  --ela-color-accent: #cd0005;
+  --ela-color-accent-strong: #791815;
+
+  /* ── Tipografia oficial ───────────────────────────────────────────────
+     Display: IvyPresto Display → fallback Cormorant Garamond (carregada).
+     Corpo:   Helvetica Neue (fonte de sistema).
+     Rótulos: Archivo (carregada). */
+  --ela-font-display: 'IvyPrestoDisplay', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --ela-font-body: 'Helvetica Neue', 'HelveticaNeue', Helvetica, Arial, sans-serif;
+  --ela-font-label: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
 
 </style>
 
