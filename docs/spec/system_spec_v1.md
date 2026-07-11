@@ -1,5 +1,13 @@
 # SYSTEM_SPEC v1 — Jescri (ERP + Portal de Influenciadoras)
 
+> ⚠️ **DOCUMENTO HISTÓRICO — NÃO É FONTE DA VERDADE.**
+> Descreve a arquitetura **legada `mae/`** (ERP + Portal em `mae/Código.js` / `mae/WebApp.js`,
+> banco único `BASE DE DADOS`), **anterior** à consolidação V2 em `tear/` (10 arquivos por
+> camada). Contradiz o estado atual e é mantido apenas como registro do snapshot de 2026-07-05.
+> Para o estado vigente, consulte:
+> **`docs/SYSTEM_MAP.md`** (arquitetura) · **`docs/spec/SCHEMA_V2.md`** (schema) · **`docs/PROJECT_STATUS.md`** (estado).
+> O companheiro `FLOW.md` (raiz) descreve o mesmo mundo legado e também não é fonte da verdade.
+
 > Snapshot oficial pós-auditoria de 2026-07-05. Cada afirmação aqui foi verificada nesta sessão (diff real entre `mae/` e o projeto Apps Script ao vivo, `clasp status`/`clasp deployments`, leitura de código) — não é resumo de suposição. Para detalhe função-a-função, ver `CLAUDE.md` (mapa técnico), `FLOW.md` (fluxos executáveis) e `SYSTEM_MAP.md` (mapa por aba da planilha).
 
 ## 1. Visão geral

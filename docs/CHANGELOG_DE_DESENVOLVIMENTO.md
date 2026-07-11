@@ -2,6 +2,29 @@
 
 Registro objetivo por data. Mais recente no topo.
 
+## 2026-07-10 — Verificação do Painel Admin + reconciliação documental
+
+**Objetivo:** confirmar que a UI de Logística e a autenticação por `ADMIN_TOKEN`
+estão concluídas e alinhar a documentação oficial ao estado real do código. **Sem
+alteração de código** — apenas verificação e documentação.
+
+**Verificação (código já existente, não reimplementado)**
+- Auth: `_exigirAdmin` (Roteador.js) — `ADMIN_TOKEN` em `PropertiesService`, rate-limit
+  (`SessaoRepository`) e comparação em tempo constante. Coberto por testes.
+- UI: `view-logistica`/`view-ativacoes` (Templates.html), token-gated, lê backend real,
+  entrada pelo login. Entrypoints `apiListarCiclosAdmin`/`apiListarLogisticaDoCiclo`/`apiAlterarStatusLogistica` gated.
+- Item "Briefings" já resolvido em entrada anterior (removido de `cabecalhosV2_()`); nada a corrigir.
+- `jest` — **486/486 verdes** (33 suítes), sem mudança.
+
+**Documentação**
+- `docs/spec/system_spec_v1.md`: marcado como **HISTÓRICO** (banner no topo) — descreve a
+  arquitetura legada `mae/`, superada pela V2 (`tear/`). Não é mais fonte da verdade.
+- `docs/PROJECT_STATUS.md`: módulo Logística → Painel Admin concluído (dev); bloqueio
+  reclassificado como provisionamento de plataforma (`setupV2Database()` + `ADMIN_TOKEN`).
+
+**Pendência sinalizada (fora deste escopo):** `FLOW.md` (raiz) também descreve o mundo
+legado `mae/` — candidato a arquivamento numa limpeza futura.
+
 ## 2026-07-10 — CRUD de Ativações no Painel Admin + Planos_Colaboracao (V2)
 
 **Objetivo:** estender o Painel Admin (já existente para Logística) à gestão de

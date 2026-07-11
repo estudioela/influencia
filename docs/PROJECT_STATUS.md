@@ -33,7 +33,7 @@ Arquitetura	🟢 Consolidada
 Backend	🟢 Estruturado
 Administração	🟡 Em evolução
 Portal da Parceira	🟡 Em desenvolvimento
-Logística	🟡 Em desenvolvimento
+Logística	🟢 Painel Admin (UI + auth ADMIN_TOKEN) concluído; aguarda provisionamento
 Pagamentos	⚪ Planejado
 Integrações	🟡 Em desenvolvimento
 
@@ -86,9 +86,12 @@ O projeto possui base de testes automatizados para apoiar a evolução contínua
 
 Bloqueios
 
-Atualmente existe o seguinte bloqueio conhecido:
+O único bloqueio conhecido é de provisionamento de plataforma (ações de operador no editor Apps Script, não de desenvolvimento):
 
-* criação manual da aba de Logística na planilha principal.
+* executar `setupV2Database()` para materializar as abas `Logistica`, `Ativacoes` e `Planos_Colaboracao` na planilha principal;
+* definir a propriedade `ADMIN_TOKEN` em `PropertiesService` (Script Properties) para habilitar os entrypoints administrativos.
+
+Enquanto esses passos não forem executados, o Painel Admin de Logística está pronto no código, mas inerte em produção.
 
 Novos bloqueios devem ser registrados nesta seção à medida que forem identificados.
 
