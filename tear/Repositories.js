@@ -919,6 +919,7 @@ class BaseRepository {
   _paraBase(objFisico) {
     const dados = {};
     Object.values(CAMPOS_BASE).forEach(campo => { dados[campo] = null; });
+    dados.id = this._ouNulo(objFisico[CAMPOS_PARCEIRO.ID]);
 
     dados[CAMPOS_BASE.INFLUENCER] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.NOME]);
     dados[CAMPOS_BASE.CUPOM] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.CUPOM]);

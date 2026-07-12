@@ -16,6 +16,12 @@ const HEADER = [
   'ID_Influenciadora',
   'Nome',
   'Status_Contrato',
+  'Qtd_Reels',
+  'Qtd_Carrossel',
+  'Qtd_Stories',
+  'Valor_Total_Contrato',
+  'Looks_Qtd',
+  'Endereço_Formatado',
   'Categoria',
   'Cupom',
   'Senha_Hash'
@@ -69,10 +75,10 @@ function metodoDeAtivas(repo) {
 
 function statusAtivo(campoStatus) {
   return [
-    ['i-1', 'Ana', 'ATIVO', 'Moda', 'ANA10', ''],
-    ['i-2', 'Bia', 'ON', 'Beleza', 'BIA10', ''],
-    ['i-3', 'Cris', 'INATIVO', 'Moda', 'CRIS10', ''],
-    ['i-4', 'Dani', 'OFF', 'Lifestyle', 'DANI10', '']
+    ['i-1', 'Ana', 'ATIVO', 'Um', 'Dois', 'Três', 'R$ 100,00', 2, 'Rua A', 'Moda', 'ANA10', 'hash-1'],
+    ['i-2', 'Bia', 'ON', 'Um', 'Dois', 'Três', 'R$ 100,00', 2, 'Rua B', 'Beleza', 'BIA10', 'hash-2'],
+    ['i-3', 'Cris', 'INATIVO', 'Um', 'Dois', 'Três', 'R$ 100,00', 2, 'Rua C', 'Moda', 'CRIS10', 'hash-3'],
+    ['i-4', 'Dani', 'OFF', 'Um', 'Dois', 'Três', 'R$ 100,00', 2, 'Rua D', 'Lifestyle', 'DANI10', 'hash-4']
   ].map((linha) => {
     const base = linha.slice();
     if (campoStatus && campoStatus !== 'Status_Contrato') {
@@ -91,8 +97,8 @@ const describeBaseRepository = boot.possuiBaseRepository ? describe : describe.s
 describeBaseRepository('BaseRepository — leitura/filtro/mapeamento', () => {
   test('lê linhas da base usando fixture', () => {
     const { ctx } = montar([
-      ['i-1', 'Ana', 'ATIVO', 'Moda', 'ANA10', ''],
-      ['i-2', 'Bia', 'INATIVO', 'Beleza', 'BIA10', '']
+      ['i-1', 'Ana', 'ATIVO', 'Um', 'Dois', 'Três', 'R$ 720,00', 2, 'Rua X', 'Moda', 'ANA10', 'hash-1'],
+      ['i-2', 'Bia', 'INATIVO', 'Um', 'Dois', 'Três', 'R$ 500,00', 1, 'Rua Y', 'Beleza', 'BIA10', 'hash-2']
     ]);
 
     expect(typeof ctx.BaseRepository).toBe('function');
@@ -126,8 +132,8 @@ describeBaseRepository('BaseRepository — leitura/filtro/mapeamento', () => {
 
   test('mapeia saída para entidade Base', () => {
     const { ctx } = montar([
-      ['i-1', 'Ana', 'ATIVO', 'Moda', 'ANA10', ''],
-      ['i-2', 'Bia', 'ON', 'Beleza', 'BIA10', '']
+      ['i-1', 'Ana', 'ATIVO', 'Um', 'Dois', 'Três', 'R$ 720,00', 2, 'Rua X', 'Moda', 'ANA10', 'hash-1'],
+      ['i-2', 'Bia', 'ON', 'Um', 'Dois', 'Três', 'R$ 500,00', 1, 'Rua Y', 'Beleza', 'BIA10', 'hash-2']
     ]);
 
     expect(typeof ctx.BaseRepository).toBe('function');
@@ -144,5 +150,38 @@ describeBaseRepository('BaseRepository — leitura/filtro/mapeamento', () => {
     linhas.forEach((item) => {
       expect(item instanceof ctx.Base).toBe(true);
     });
+  });
+
+  test('mapeia legado para contrato BASE completo + id técnico', () => {
+    const { ctx } = montar([
+      ['i-42', 'Ana', 'ATIVO', 'Um', 'Dois', 'Três', 'R$ 720,00', 2, 'Rua X, 100', 'Moda', 'ANA10', 'hash-42']
+    ]);
+
+    const repo = new ctx.BaseRepository();
+    const base = metodoDeLeitura(repo).call(repo)[0];
+
+    expect(base.dados.id).toBe('i-42');
+    expect(base.influencer).toBe('Ana');
+    expect(base.status).toBe('ATIVO');
+    expect(base.reel).toBe('Um');
+    expect(base.carrossel).toBe('Dois');
+    expect(base.stories).toBe('Três');
+    expect(base.fee).toBe('R$ 720,00');
+    expect(base.looksQuantidade).toBe(2);
+    expect(base.endereco).toBe('Rua X, 100');
+    expect(base.senha).toBe('hash-42');
+  });
+
+  test('campos ausentes no legado (PIX/DRIVE/LOOKS_URL) permanecem nulos sem quebrar', () => {
+    const { ctx } = montar([
+      ['i-7', 'Bia', 'ON', 'Um', 'Dois', 'Três', 'R$ 300,00', 1, 'Rua Y, 200', 'Beleza', 'BIA10', 'hash-7']
+    ]);
+
+    const repo = new ctx.BaseRepository();
+    const base = metodoDeLeitura(repo).call(repo)[0];
+
+    expect(base.pix).toBeNull();
+    expect(base.drive).toBeNull();
+    expect(base.looksUrl).toBeNull();
   });
 });
