@@ -314,7 +314,28 @@ function apiGerarCicloMensal(tokenAdmin, referencia) {
       data = new Date();
     }
 
-    return new CicloService(new CicloRepository()).gerarCicloMensal(data);
+    var resultado = new CicloService(new CicloRepository()).gerarCicloMensal(data);
+    var resumo = resultado && resultado.resumoOperacional ? resultado.resumoOperacional : {};
+
+    var saida = {
+      ciclo: resultado && (resultado.idCiclo || resultado.nomeCiclo || ''),
+      parceirosProcessados: resumo.parceiros || 0,
+      briefingsGerados: resumo.briefingsGerados || resumo.briefings || 0,
+      ativacoesGeradas: resumo.ativacoesGeradas || resumo.ativacoes || 0,
+      logisticaGerada: resumo.logisticaGerada || resumo.logistica || 0,
+      pagamentosGerados: resumo.pagamentosGerados || resumo.pagamentos || 0
+    };
+
+    console.log(
+      'apiGerarCicloMensal: ciclo=' + saida.ciclo +
+      ' parceiros=' + saida.parceirosProcessados +
+      ' briefing=' + saida.briefingsGerados +
+      ' ativacoes=' + saida.ativacoesGeradas +
+      ' logistica=' + saida.logisticaGerada +
+      ' pagamentos=' + saida.pagamentosGerados
+    );
+
+    return saida;
   });
 }
 

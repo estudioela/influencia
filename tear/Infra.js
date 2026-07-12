@@ -32,16 +32,29 @@ const ESTADOS_LOGISTICA = Object.freeze({
 });
 
 const PLANILHAS = Object.freeze({
-  PARCEIROS_INFLUENCIADORAS: 'Parceiros_Influenciadoras',
-  PLANOS_COLABORACAO: 'Planos_Colaboracao',
-  BRIEFINGS: 'Briefings',
-  CICLOS: 'Ciclos',
-  ATIVACOES: 'Ativacoes',
-  LOGISTICA: 'Logistica',
-  PAGAMENTOS: 'Pagamentos',
+  BASE: 'BASE',
+  PARCEIROS_INFLUENCIADORAS: 'BASE',
+  PLANO_COLABORACAO: 'PLANO_COLABORACAO',
+  PLANOS_COLABORACAO: 'PLANO_COLABORACAO',
+  BRIEFING: 'BRIEFING',
+  BRIEFINGS: 'BRIEFING',
+  CICLOS: 'CICLOS',
+  ATIVACOES: 'ATIVACOES',
+  LOGISTICA: 'LOGISTICA',
+  PAGAMENTOS: 'PAGAMENTOS',
   // Entrada raw do Google Forms; formatada e promovida a Parceiros_Influenciadoras
   // pelo gatilho onFormSubmit (docs/spec/SCHEMA_V2.md).
   CADASTROS: 'CADASTROS'
+});
+
+const ALIASES_PLANILHAS_LEGADO = Object.freeze({
+  BASE: 'Parceiros_Influenciadoras',
+  CICLOS: 'Ciclos',
+  PLANO_COLABORACAO: 'Planos_Colaboracao',
+  BRIEFING: 'Briefings',
+  ATIVACOES: 'Ativacoes',
+  LOGISTICA: 'Logistica',
+  PAGAMENTOS: 'Pagamentos'
 });
 
 /* ═══════════════════════════════════════════════════════════════
@@ -60,10 +73,12 @@ const PLANILHAS = Object.freeze({
  */
 
 function abaObrigatoria(planilha, nomeAba) {
-  const aba = planilha.getSheetByName(nomeAba);
+  const aba = planilha.getSheetByName(nomeAba)
+    || planilha.getSheetByName(ALIASES_PLANILHAS_LEGADO[nomeAba]);
 
   if (!aba) {
-    throw new Error(`Aba "${nomeAba}" não encontrada na planilha.`);
+    const nomeParaErro = ALIASES_PLANILHAS_LEGADO[nomeAba] || nomeAba;
+    throw new Error(`Aba "${nomeParaErro}" não encontrada na planilha.`);
   }
 
   return aba;

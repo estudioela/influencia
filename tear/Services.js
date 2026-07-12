@@ -219,7 +219,10 @@ class CicloService {
     briefingRepository,
     ativacaoRepository,
     logisticaRepository,
-    pagamentoRepository
+    pagamentoRepository,
+    baseRepository,
+    planoRepository,
+    cicloCompilerService
   ) {
     this.repository = repository || new CicloRepository();
     // Preguiçoso: só toca DriveApp quando a subpasta é realmente criada.
@@ -232,6 +235,9 @@ class CicloService {
     this.ativacaoRepository = ativacaoRepository || null;
     this.logisticaRepository = logisticaRepository || null;
     this.pagamentoRepository = pagamentoRepository || null;
+    this.baseRepository = baseRepository || null;
+    this.planoRepository = planoRepository || null;
+    this.cicloCompilerService = cicloCompilerService || null;
   }
 
   listar() {
@@ -284,22 +290,55 @@ class CicloService {
   }
 
   _gerarEstruturasOperacionais(ciclo) {
-    const linhasCadastro = this.cadastroRepository && typeof this.cadastroRepository.linhas === 'function'
-      ? this.cadastroRepository.linhas()
-      : [];
+    try {
+      const compiler = this._compiler();
+      const compilado = compiler.compilar({ ciclo: ciclo });
+      const persistencia = compiler.persistirCompilacao(compilado);
 
-    const parceirosAtivos = linhasCadastro.filter((parceiro) => {
-      const status = String(parceiro[CAMPOS_PARCEIRO.STATUS_CONTRATO] || '').trim().toUpperCase();
-      return status === 'ON' || status === 'ATIVO';
-    });
+      return {
+        briefings: compilado.briefings.length,
+        ativacoes: compilado.ativacoes.length,
+        logistica: compilado.logistica.length,
+        pagamentos: compilado.pagamentos.length,
+        parceiros: compilado.briefings.length,
+        briefingsGerados: compilado.briefings.length,
+        ativacoesGeradas: compilado.ativacoes.length,
+        logisticaGerada: compilado.logistica.length,
+        pagamentosGerados: compilado.pagamentos.length,
+        briefingsSalvos: persistencia.briefingsSalvos,
+        ativacoesSalvas: persistencia.ativacoesSalvas,
+        logisticaSalva: persistencia.logisticaSalva,
+        pagamentosSalvos: persistencia.pagamentosSalvos
+      };
+    } catch (erro) {
+      console.warn(`CicloService._gerarEstruturasOperacionais: compilação ignorada (fail-safe) — ${erro.message}`);
+      return {
+        briefings: 0,
+        ativacoes: 0,
+        logistica: 0,
+        pagamentos: 0,
+        parceiros: 0,
+        briefingsGerados: 0,
+        ativacoesGeradas: 0,
+        logisticaGerada: 0,
+        pagamentosGerados: 0,
+        briefingsSalvos: 0,
+        ativacoesSalvas: 0,
+        logisticaSalva: 0,
+        pagamentosSalvos: 0
+      };
+    }
+  }
 
-    return {
-      briefings: 0,
-      ativacoes: 0,
-      logistica: 0,
-      pagamentos: 0,
-      parceiros: parceirosAtivos.length
-    };
+  _compiler() {
+    return this.cicloCompilerService || (this.cicloCompilerService = new CicloCompilerService(
+      this.baseRepository,
+      this.planoRepository,
+      this.briefingRepository,
+      this.ativacaoRepository,
+      this.logisticaRepository,
+      this.pagamentoRepository
+    ));
   }
 
   /**
@@ -391,6 +430,307 @@ class CicloService {
       inicioLogistica: dataIsoDeCelula(linha[C.INICIO_LOGISTICA]),
       fimOperacao: dataIsoDeCelula(linha[C.FIM_OPERACAO])
     };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   services/CicloCompilerService.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Núcleo do compilador do ciclo em memória (sem I/O). Só transforma entradas
+ * já carregadas em entidades de saída, preservando o ciclo informado.
+ */
+class CicloCompilerService {
+  constructor(
+    baseRepository,
+    planoRepository,
+    briefingRepository,
+    ativacaoRepository,
+    logisticaRepository,
+    pagamentoRepository
+  ) {
+    this.baseRepository = baseRepository || null;
+    this.planoRepository = planoRepository || null;
+    this.briefingRepository = briefingRepository || null;
+    this.ativacaoRepository = ativacaoRepository || null;
+    this.logisticaRepository = logisticaRepository || null;
+    this.pagamentoRepository = pagamentoRepository || null;
+  }
+
+  compilar(entrada) {
+    const payload = entrada && typeof entrada === 'object' ? entrada : {};
+    const ciclo = payload.ciclo || {};
+    const cicloId = this._idCiclo(ciclo);
+    const bases = Array.isArray(payload.bases)
+      ? payload.bases
+      : this._carregarBasesAtivas();
+    const planos = Array.isArray(payload.planos)
+      ? payload.planos
+      : this._carregarPlanosDoCiclo(cicloId);
+
+    const ativas = bases
+      .map(base => this._normalizarBase(base))
+      .filter(base => this._baseAtiva(base));
+    const planosNormalizados = planos
+      .map(plano => this._normalizarPlano(plano))
+      .filter(plano => !!plano);
+
+    const resultado = {
+      briefings: [],
+      ativacoes: [],
+      logistica: [],
+      pagamentos: []
+    };
+
+    ativas.forEach(base => {
+      const idInfluenciadora = this._idInfluenciadora(base);
+      if (!idInfluenciadora) {
+        return;
+      }
+
+      const plano = this._planoDa(base, cicloId, planosNormalizados);
+
+      resultado.briefings.push(this._novoBriefing(idInfluenciadora));
+      resultado.ativacoes.push(this._novaAtivacao(idInfluenciadora, cicloId));
+      resultado.logistica.push(this._novaLogistica(base, idInfluenciadora, cicloId));
+      resultado.pagamentos.push(this._novoPagamento(base, plano, idInfluenciadora, cicloId));
+    });
+
+    return resultado;
+  }
+
+  persistirCompilacao(resultado) {
+    const compilado = resultado && typeof resultado === 'object' ? resultado : {};
+    const briefings = Array.isArray(compilado.briefings) ? compilado.briefings : [];
+    const ativacoes = Array.isArray(compilado.ativacoes) ? compilado.ativacoes : [];
+    const logistica = Array.isArray(compilado.logistica) ? compilado.logistica : [];
+    const pagamentos = Array.isArray(compilado.pagamentos) ? compilado.pagamentos : [];
+
+    const briefingRepo = this.briefingRepository || (this.briefingRepository = new BriefingRepository());
+    const ativacaoRepo = this.ativacaoRepository || (this.ativacaoRepository = new AtivacaoRepository());
+    const logisticaRepo = this.logisticaRepository || (this.logisticaRepository = new LogisticaRepository());
+    const pagamentoRepo = this.pagamentoRepository || (this.pagamentoRepository = new PagamentoRepository());
+
+    briefings.forEach((briefing) => {
+      const dados = briefing instanceof Briefing ? briefing.dados : briefing;
+      if (!dados) return;
+      briefingRepo.save(dados);
+    });
+
+    ativacoes.forEach((ativacao) => {
+      const dados = ativacao instanceof Ativacao ? Object.assign({}, ativacao.dados) : Object.assign({}, ativacao);
+      if (!dados) return;
+
+      const cicloId = textoDeCelula(dados[CAMPOS_ATIVACAO.CICLO]);
+      const influenciadora = textoDeCelula(dados[CAMPOS_ATIVACAO.INFLUENCIADORA]);
+
+      const existente = ativacaoRepo.findByCiclo(cicloId).find((linha) =>
+        textoDeCelula(linha[CAMPOS_ATIVACAO.INFLUENCIADORA]) === influenciadora
+      );
+
+      if (existente && existente[CAMPOS_ATIVACAO.ID]) {
+        dados[CAMPOS_ATIVACAO.ID] = existente[CAMPOS_ATIVACAO.ID];
+      }
+
+      ativacaoRepo.save(dados);
+    });
+
+    logistica.forEach((registro) => {
+      const dados = registro instanceof Logistica ? Object.assign({}, registro.dados) : Object.assign({}, registro);
+      if (!dados) return;
+
+      const cicloId = textoDeCelula(dados[CAMPOS_LOGISTICA.CICLO]);
+      const influenciadora = textoDeCelula(dados[CAMPOS_LOGISTICA.INFLUENCIADORA]);
+
+      const existente = logisticaRepo.findByCiclo(cicloId).find((linha) =>
+        textoDeCelula(linha[CAMPOS_LOGISTICA.INFLUENCIADORA]) === influenciadora
+      );
+
+      if (existente && existente[CAMPOS_LOGISTICA.ID]) {
+        dados[CAMPOS_LOGISTICA.ID] = existente[CAMPOS_LOGISTICA.ID];
+      }
+
+      logisticaRepo.save(dados);
+    });
+
+    pagamentos.forEach((pagamento) => {
+      const dados = pagamento instanceof Pagamento ? Object.assign({}, pagamento.dados) : Object.assign({}, pagamento);
+      if (!dados) return;
+
+      const cicloId = textoDeCelula(dados[CAMPOS_PAGAMENTO.CICLO]);
+      const influenciadora = textoDeCelula(dados[CAMPOS_PAGAMENTO.INFLUENCIADORA]);
+
+      const existente = pagamentoRepo.findByCiclo(cicloId).find((linha) =>
+        textoDeCelula(linha[CAMPOS_PAGAMENTO.INFLUENCIADORA]) === influenciadora
+      );
+
+      if (existente && existente[CAMPOS_PAGAMENTO.ID]) {
+        dados[CAMPOS_PAGAMENTO.ID] = existente[CAMPOS_PAGAMENTO.ID];
+      }
+
+      pagamentoRepo.save(dados);
+    });
+
+    return {
+      briefingsSalvos: briefings.length,
+      ativacoesSalvas: ativacoes.length,
+      logisticaSalva: logistica.length,
+      pagamentosSalvos: pagamentos.length
+    };
+  }
+
+  _carregarBasesAtivas() {
+    const repo = this.baseRepository || (this.baseRepository = new BaseRepository());
+    if (!repo || typeof repo.listarAtivas !== 'function') {
+      return [];
+    }
+
+    return repo.listarAtivas();
+  }
+
+  _carregarPlanosDoCiclo(cicloId) {
+    const repo = this.planoRepository || (this.planoRepository = new PlanoRepository());
+    if (!repo || typeof repo.findByCiclo !== 'function') {
+      return [];
+    }
+
+    return repo.findByCiclo(cicloId);
+  }
+
+  _idCiclo(ciclo) {
+    if (!ciclo || typeof ciclo !== 'object') {
+      return '';
+    }
+
+    return textoDeCelula(
+      ciclo.idCiclo || ciclo.id || (typeof CAMPOS_CICLO !== 'undefined' ? ciclo[CAMPOS_CICLO.ID] : '')
+    );
+  }
+
+  _idInfluenciadora(base) {
+    if (!base || typeof base !== 'object') {
+      return '';
+    }
+
+    const dados = base.dados || {};
+    return textoDeCelula(
+      dados.id ||
+      dados[CAMPOS_PARCEIRO.ID] ||
+      dados[CAMPOS_BASE.INFLUENCER] ||
+      base.id ||
+      base.influenciadora
+    );
+  }
+
+  _normalizarBase(base) {
+    if (!base || typeof base !== 'object') {
+      return null;
+    }
+
+    if (base instanceof Base) {
+      return base;
+    }
+
+    return new Base(base);
+  }
+
+  _normalizarPlano(plano) {
+    if (!plano || typeof plano !== 'object') {
+      return null;
+    }
+
+    if (plano instanceof PlanoColaboracao) {
+      return plano;
+    }
+
+    return new PlanoColaboracao(plano);
+  }
+
+  _baseAtiva(base) {
+    if (!base || typeof base !== 'object') {
+      return false;
+    }
+
+    const status = String(base.status || '').trim().toUpperCase();
+    return status === 'ATIVO' || status === 'ON';
+  }
+
+  _planoDa(base, cicloId, planos) {
+    const idInfluenciadora = this._idInfluenciadora(base);
+
+    return planos.find((plano) => {
+      if (!plano || typeof plano !== 'object') {
+        return false;
+      }
+
+      const mesmoCiclo = textoDeCelula(plano.ciclo) === textoDeCelula(cicloId);
+      const mesmaInfluenciadora = textoDeCelula(plano.influenciadora) === textoDeCelula(idInfluenciadora);
+
+      return mesmoCiclo && mesmaInfluenciadora;
+    }) || null;
+  }
+
+  _novoBriefing(idInfluenciadora) {
+    return new Briefing({
+      [CAMPOS_BRIEFING.INFLUENCIADORA]: idInfluenciadora,
+      [CAMPOS_BRIEFING.RESUMO_DO_MES]: '',
+      [CAMPOS_BRIEFING.LOOK_REEL]: '',
+      [CAMPOS_BRIEFING.LOOK_CARROSSEL]: '',
+      [CAMPOS_BRIEFING.LOOK_STORIES_1]: '',
+      [CAMPOS_BRIEFING.LOOK_STORIES_2]: '',
+      [CAMPOS_BRIEFING.DATA_REEL]: '',
+      [CAMPOS_BRIEFING.DATA_CARROSSEL]: '',
+      [CAMPOS_BRIEFING.DATA_STORIES_1]: '',
+      [CAMPOS_BRIEFING.DATA_STORIES_2]: '',
+      [CAMPOS_BRIEFING.SOBRE_REEL]: '',
+      [CAMPOS_BRIEFING.SOBRE_CARROSSEL]: '',
+      [CAMPOS_BRIEFING.SOBRE_STORIES_1]: '',
+      [CAMPOS_BRIEFING.SOBRE_STORIES_2]: '',
+      [CAMPOS_BRIEFING.APROVACAO_REEL]: '',
+      [CAMPOS_BRIEFING.APROVACAO_CARROSSEL]: '',
+      [CAMPOS_BRIEFING.APROVACAO_STORIES_1]: '',
+      [CAMPOS_BRIEFING.APROVACAO_STORIES_2]: ''
+    });
+  }
+
+  _novaAtivacao(idInfluenciadora, cicloId) {
+    return new Ativacao({
+      [CAMPOS_ATIVACAO.ID]: '',
+      [CAMPOS_ATIVACAO.CICLO]: cicloId,
+      [CAMPOS_ATIVACAO.INFLUENCIADORA]: idInfluenciadora,
+      [CAMPOS_ATIVACAO.TIPO_CONTEUDO]: '',
+      [CAMPOS_ATIVACAO.ESTADO]: ESTADOS_ATIVACAO.PLANEJAMENTO,
+      [CAMPOS_ATIVACAO.LOOK]: '',
+      [CAMPOS_ATIVACAO.ENTREGA_PREVISTA]: '',
+      [CAMPOS_ATIVACAO.LINK_BRIEFING]: '',
+      [CAMPOS_ATIVACAO.LINK_UPLOAD_HD]: ''
+    });
+  }
+
+  _novaLogistica(base, idInfluenciadora, cicloId) {
+    return new Logistica({
+      [CAMPOS_LOGISTICA.ID]: '',
+      [CAMPOS_LOGISTICA.CICLO]: cicloId,
+      [CAMPOS_LOGISTICA.INFLUENCIADORA]: idInfluenciadora,
+      [CAMPOS_LOGISTICA.ENDERECO]: textoDeCelula(base.endereco),
+      [CAMPOS_LOGISTICA.RASTREIO]: '',
+      [CAMPOS_LOGISTICA.DATA_ENVIO]: '',
+      [CAMPOS_LOGISTICA.STATUS]: ESTADOS_LOGISTICA.PENDENTE
+    });
+  }
+
+  _novoPagamento(base, plano, idInfluenciadora, cicloId) {
+    return new Pagamento({
+      [CAMPOS_PAGAMENTO.ID]: '',
+      [CAMPOS_PAGAMENTO.CICLO]: cicloId,
+      [CAMPOS_PAGAMENTO.INFLUENCIADORA]: idInfluenciadora,
+      [CAMPOS_PAGAMENTO.VALOR]: plano ? plano.valorCache : '',
+      [CAMPOS_PAGAMENTO.PIX]: textoDeCelula(base.pix),
+      [CAMPOS_PAGAMENTO.STATUS]: 'em aberto',
+      [CAMPOS_PAGAMENTO.DATA_PAGAMENTO]: '',
+      [CAMPOS_PAGAMENTO.MENSAGEM]: ''
+    });
   }
 }
 

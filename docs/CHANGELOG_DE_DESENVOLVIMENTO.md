@@ -2,6 +2,37 @@
 
 Registro objetivo por data. Mais recente no topo.
 
+## 2026-07-11 — F2/F3: Compiler do ciclo + acionamento administrativo
+
+**Objetivo:** concluir o fechamento operacional do M1 com o compilador de ciclo
+em memória, integração com repositories, persistência idempotente e acionamento
+administrativo de geração mensal, sem alterar o núcleo de domínio.
+
+**Entregas (F2.0 → F3.0)**
+- **F2.0:** `CicloCompilerService` criado em `tear/Services.js` (compilação em memória),
+  gerando `Briefing`, `Ativacao`, `Logistica` e `Pagamento` a partir de
+  `{ ciclo, bases, planos }`.
+- **F2.1:** integração dos repositories de entrada (`BaseRepository` +
+  `PlanoRepository`) por injeção, sem escrita em planilha.
+- **F2.2:** persistência via repositories de saída (`BriefingRepository`,
+  `AtivacaoRepository`, `LogisticaRepository`, `PagamentoRepository`) com
+  idempotência básica por ciclo/parceira e resumo de persistência.
+- **F2.3:** orquestração final em `CicloService.gerarCicloMensal()` usando
+  `CicloCompilerService` (compilar + persistir), removendo o stub operacional.
+- **F3.0:** acionamento administrativo final em `apiGerarCicloMensal`
+  (`tear/Roteador.js`) retornando resumo operacional padronizado:
+  `ciclo`, `parceirosProcessados`, `briefingsGerados`, `ativacoesGeradas`,
+  `logisticaGerada`, `pagamentosGerados`.
+
+**Testes**
+- Novos testes para compiler e integração de geração mensal/admin.
+- Resultado final após F3.0: **588/588 testes verdes** (49 suítes).
+
+**Escopo preservado**
+- Sem alteração em `Modelos.js`, `Repositories.js` (contratos), `Infra.js`
+  (domínio/config), Controllers e UI para regras de negócio.
+- Sem duplicação de lógica do compilador no acionador/admin.
+
 ## 2026-07-10 — Verificação do Painel Admin + reconciliação documental
 
 **Objetivo:** confirmar que a UI de Logística e a autenticação por `ADMIN_TOKEN`

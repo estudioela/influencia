@@ -168,7 +168,7 @@ class PlanoRepository {
       return [];
     }
 
-    const nome = PLANILHAS.PLANOS_COLABORACAO;
+    const nome = PLANILHAS.PLANO_COLABORACAO;
     const { cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
     const cicloIdx = indiceDaColuna(cabecalho, CAMPOS_PLANO.CICLO, nome);
 
@@ -233,7 +233,7 @@ class ParceiroRepository {
   }
 
   definirSenhaHash(cupom, hash) {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { aba, cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
     const cupomIdx = indiceDaColuna(cabecalho, CAMPOS_PARCEIRO.CUPOM, nome);
     const senhaIdx = indiceDaColuna(cabecalho, CAMPOS_PARCEIRO.SENHA_HASH, nome);
@@ -264,7 +264,7 @@ class ParceiroRepository {
    * precisa procurá-la de novo pelo cupom.
    */
   definirSenhaHashPorChave(colunaChave, valorChave, hash) {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { aba, cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
     const chaveIdx = indiceDaColuna(cabecalho, colunaChave, nome);
     const senhaIdx = indiceDaColuna(cabecalho, CAMPOS_PARCEIRO.SENHA_HASH, nome);
@@ -292,7 +292,7 @@ class ParceiroRepository {
    * pela chave recém-salva.
    */
   definirCampoPorChave(colunaChave, valorChave, coluna, valor) {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { aba, cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
     const chaveIdx = indiceDaColuna(cabecalho, colunaChave, nome);
     const colunaIdx = indiceDaColuna(cabecalho, coluna, nome);
@@ -328,7 +328,7 @@ class ParceiroRepository {
 
   upsert(dados, chave) {
     const colunaChave = chave || 'INFLU_KEY';
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { aba, cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
     const chaveIdx = indiceDaColuna(cabecalho, colunaChave, nome);
     const alvo = this._normalizar(dados[colunaChave]);
@@ -374,7 +374,7 @@ class ParceiroRepository {
   }
 
   _todasAsLinhas() {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
 
     return linhas
@@ -383,7 +383,7 @@ class ParceiroRepository {
   }
 
   _linhas() {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
 
     return linhasComChave(cabecalho, linhas, CAMPOS_PARCEIRO.ID, nome)
@@ -555,7 +555,7 @@ class BriefingRepository {
   }
 
   _nomeAbaBriefings() {
-    return PLANILHAS.BRIEFINGS;
+    return PLANILHAS.BRIEFING;
   }
 
   _mesmoValor(valorCelula, valorBusca) {
@@ -903,7 +903,7 @@ class BaseRepository {
   }
 
   _lerObjetos() {
-    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const nome = PLANILHAS.BASE;
     const { cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
 
     return linhas
