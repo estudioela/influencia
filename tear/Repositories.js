@@ -761,3 +761,98 @@ class PagamentoRepository {
     return String(valorCelula).trim() === String(valorBusca).trim();
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   repositories/BaseRepository.js
+
+   Adapter/ACL TEMPORÁRIO (F0.1.4.A). Traduz a infraestrutura legada
+   `Parceiros_Influenciadoras` para o contrato de domínio BASE.csv
+   (entidade `Base`/`CAMPOS_BASE`). A entidade Base permanece 100% fiel
+   ao contrato — toda tradução vive aqui, isolada num único ponto
+   removível quando a aba física for migrada.
+
+   Somente leitura: sem escrita, sem upsert.
+
+   Guardrails:
+   - Service/Controller não sabem que a aba é legada (só veem `Base`).
+   - Colunas ausentes no físico não quebram: leitura por NOME via
+     `linhaParaObjeto` (nunca `indiceDaColuna`, que lança).
+   - Campos sem origem física retornam `null` — nada é inventado.
+   - `Nome` NÃO vira `RAZÃO SOCIAL` (sem origem → `null`).
+   - Mapeamentos semânticos aprovados em F0.1.4.B: `Senha_Hash`→`SENHA`,
+     `Valor_Total_Contrato`→`FEE`, `Qtd_*`→`REEL/CARROSSEL/STORIES`,
+     `Looks_Qtd`→`LOOKS (quantidade)`, `Endereço_Formatado`→`ENDEREÇO`.
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Nomes das colunas físicas legadas usados exclusivamente pelo adapter.
+ * Mantidos aqui (e não em `CAMPOS_PARCEIRO`) para não alterar o contrato do
+ * `ParceiroRepository`; concentram o De-Para físico→BASE num único ponto.
+ */
+const CAMPOS_FISICO_BASE = Object.freeze({
+  QTD_REELS: 'Qtd_Reels',
+  QTD_CARROSSEL: 'Qtd_Carrossel',
+  QTD_STORIES: 'Qtd_Stories',
+  VALOR_TOTAL_CONTRATO: 'Valor_Total_Contrato',
+  LOOKS_QTD: 'Looks_Qtd',
+  ENDERECO_FORMATADO: 'Endereço_Formatado'
+});
+
+class BaseRepository {
+  constructor(spreadsheet) {
+    this.spreadsheet = spreadsheet || SpreadsheetApp.getActive();
+  }
+
+  /** Todas as entidades Base da aba física. */
+  listar() {
+    return this._lerObjetos().map(obj => this._paraBase(obj));
+  }
+
+  /** Apenas contratos com Status_Contrato ATIVO/ON, como entidades Base. */
+  listarAtivas() {
+    return this._lerObjetos()
+      .filter(obj => this._ativo(obj[CAMPOS_PARCEIRO.STATUS_CONTRATO]))
+      .map(obj => this._paraBase(obj));
+  }
+
+  _lerObjetos() {
+    const nome = PLANILHAS.PARCEIROS_INFLUENCIADORAS;
+    const { cabecalho, linhas } = lerAbaComCabecalho(this.spreadsheet, nome);
+
+    return linhas
+      .filter(linha => linha.some(celula => String(celula).trim() !== ''))
+      .map(linha => linhaParaObjeto(cabecalho, linha));
+  }
+
+  /**
+   * De-Para físico → contrato BASE. Inicializa os 14 campos com `null` e
+   * sobrescreve só os que têm origem física; o restante fica nulo. O `LOOKS`
+   * duplicado permanece em duas chaves distintas do contrato.
+   */
+  _paraBase(objFisico) {
+    const dados = {};
+    Object.values(CAMPOS_BASE).forEach(campo => { dados[campo] = null; });
+
+    dados[CAMPOS_BASE.INFLUENCER] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.NOME]);
+    dados[CAMPOS_BASE.CUPOM] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.CUPOM]);
+    dados[CAMPOS_BASE.STATUS] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.STATUS_CONTRATO]);
+    dados[CAMPOS_BASE.REEL] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.QTD_REELS]);
+    dados[CAMPOS_BASE.CARROSSEL] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.QTD_CARROSSEL]);
+    dados[CAMPOS_BASE.STORIES] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.QTD_STORIES]);
+    dados[CAMPOS_BASE.FEE] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.VALOR_TOTAL_CONTRATO]);
+    dados[CAMPOS_BASE.LOOKS_QUANTIDADE] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.LOOKS_QTD]);
+    dados[CAMPOS_BASE.ENDERECO] = this._ouNulo(objFisico[CAMPOS_FISICO_BASE.ENDERECO_FORMATADO]);
+    dados[CAMPOS_BASE.SENHA] = this._ouNulo(objFisico[CAMPOS_PARCEIRO.SENHA_HASH]);
+
+    return new Base(dados);
+  }
+
+  _ouNulo(valor) {
+    return valor === undefined ? null : valor;
+  }
+
+  _ativo(status) {
+    const s = String(status === undefined || status === null ? '' : status).trim().toUpperCase();
+    return s === 'ATIVO' || s === 'ON';
+  }
+}

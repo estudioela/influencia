@@ -334,3 +334,201 @@ class Pagamento {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   dominio/Ciclo.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Entidade do Core Domain para o mês de competência (CICLO), com contrato de
+ * dados próprio. Leitura pura, como `Pagamento` — só getters pelo vocabulário
+ * do contrato `CAMPOS_CICLO`, sem I/O e sem regra de negócio (o contrato de
+ * CICLO não tem transições de estado). `CAMPOS_CICLO`
+ * (definido em `Repositories.js`) é referenciado só dentro dos getters: `const`
+ * não sofre hoisting entre arquivos e a ordem de carga do Apps Script não é
+ * garantida (CLAUDE.md §13).
+ */
+class Ciclo {
+  constructor(dados) {
+    if (!dados || typeof dados !== 'object') {
+      throw new TypeError('Ciclo exige um objeto de dados do ciclo.');
+    }
+
+    this.dados = dados;
+  }
+
+  get id() {
+    return this.dados[CAMPOS_CICLO.ID];
+  }
+
+  get nome() {
+    return this.dados[CAMPOS_CICLO.NOME];
+  }
+
+  get inicioLogistica() {
+    return this.dados[CAMPOS_CICLO.INICIO_LOGISTICA];
+  }
+
+  get fimOperacao() {
+    return this.dados[CAMPOS_CICLO.FIM_OPERACAO];
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   dominio/PlanoColaboracao.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Entidade do Core Domain para o plano de colaboração por parceira/ciclo
+ * (junção BASE × CICLO). Representa exclusivamente o contrato `Planos_Colaboracao`
+ * (`CAMPOS_PLANO`). Leitura pura, como `Ciclo`/`Pagamento` — só getters pelo
+ * vocabulário do contrato, sem I/O e sem regra de negócio.
+ *
+ * `qtdEntregaveis` e `valorCache` são devolvidos CRUS: a entidade não interpreta
+ * quantidade nem faz qualquer cálculo/normalização financeira — parse e valores
+ * derivados pertencem à compilação da Geração do Mês, não ao modelo.
+ *
+ * `CAMPOS_PLANO` (definido em `Repositories.js`) é referenciado só dentro dos
+ * getters: `const` não sofre hoisting entre arquivos e a ordem de carga do
+ * Apps Script não é garantida (CLAUDE.md §13).
+ */
+class PlanoColaboracao {
+  constructor(dados) {
+    if (!dados || typeof dados !== 'object') {
+      throw new TypeError('PlanoColaboracao exige um objeto de dados do plano.');
+    }
+
+    this.dados = dados;
+  }
+
+  get id() {
+    return this.dados[CAMPOS_PLANO.ID];
+  }
+
+  get influenciadora() {
+    return this.dados[CAMPOS_PLANO.INFLUENCIADORA];
+  }
+
+  get ciclo() {
+    return this.dados[CAMPOS_PLANO.CICLO];
+  }
+
+  get qtdEntregaveis() {
+    return this.dados[CAMPOS_PLANO.QTD_ENTREGAVEIS];
+  }
+
+  get valorCache() {
+    return this.dados[CAMPOS_PLANO.VALOR_CACHE];
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   dominio/Base.js
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Vocabulário do contrato BASE (arquivo `[ELÃ] PROJETO TEAR 1.0 - BASE.csv`),
+ * 14 campos na ordem do CSV. Excepcionalmente definido aqui — e não em
+ * `Repositories.js` como os demais `CAMPOS_*` — porque o escopo de F0.1.3.A só
+ * permite tocar `Modelos.js` e não cria Repository; em GAS o escopo é global,
+ * então o futuro `BaseRepository` enxerga esta const normalmente.
+ *
+ * O CSV traz `LOOKS` duas vezes (posições 10 e 14). Como `dados` é um
+ * dicionário, as duas ocorrências recebem chaves distintas e rastreáveis ao
+ * rótulo original — `'LOOKS (quantidade)'` e `'LOOKS (URL)'`. A desambiguação
+ * FÍSICA (qual coluna do CSV alimenta cada chave) é diferida ao BaseRepository.
+ */
+const CAMPOS_BASE = Object.freeze({
+  INFLUENCER: 'INFLUENCER',
+  CUPOM: 'CUPOM',
+  STATUS: 'STATUS',
+  RAZAO_SOCIAL: 'RAZÃO SOCIAL',
+  PIX: 'PIX',
+  REEL: 'REEL',
+  CARROSSEL: 'CARROSSEL',
+  STORIES: 'STORIES',
+  FEE: 'FEE',
+  LOOKS_QUANTIDADE: 'LOOKS (quantidade)',
+  ENDERECO: 'ENDEREÇO',
+  SENHA: 'SENHA',
+  DRIVE: 'DRIVE',
+  LOOKS_URL: 'LOOKS (URL)'
+});
+
+/**
+ * Entidade do Core Domain para a BASE (cadastro-mestre da parceira). Representa
+ * INTEGRALMENTE o contrato `CAMPOS_BASE` (14 campos), sem remover campos por
+ * interpretação de domínio e sem separar os campos de plano — essa separação é
+ * migração futura, não escopo deste modelo. Leitura pura, como
+ * `Ciclo`/`Pagamento`: só getters pelo vocabulário do contrato, sem I/O e sem
+ * regra de negócio; valores devolvidos CRUS (sem parse/cálculo).
+ *
+ * `CAMPOS_BASE` é referenciado só dentro dos getters (idioma da base: `const`
+ * não sofre hoisting entre arquivos e a ordem de carga do Apps Script não é
+ * garantida — CLAUDE.md §13).
+ */
+class Base {
+  constructor(dados) {
+    if (!dados || typeof dados !== 'object') {
+      throw new TypeError('Base exige um objeto de dados da base.');
+    }
+
+    this.dados = dados;
+  }
+
+  get influencer() {
+    return this.dados[CAMPOS_BASE.INFLUENCER];
+  }
+
+  get cupom() {
+    return this.dados[CAMPOS_BASE.CUPOM];
+  }
+
+  get status() {
+    return this.dados[CAMPOS_BASE.STATUS];
+  }
+
+  get razaoSocial() {
+    return this.dados[CAMPOS_BASE.RAZAO_SOCIAL];
+  }
+
+  get pix() {
+    return this.dados[CAMPOS_BASE.PIX];
+  }
+
+  get reel() {
+    return this.dados[CAMPOS_BASE.REEL];
+  }
+
+  get carrossel() {
+    return this.dados[CAMPOS_BASE.CARROSSEL];
+  }
+
+  get stories() {
+    return this.dados[CAMPOS_BASE.STORIES];
+  }
+
+  get fee() {
+    return this.dados[CAMPOS_BASE.FEE];
+  }
+
+  get looksQuantidade() {
+    return this.dados[CAMPOS_BASE.LOOKS_QUANTIDADE];
+  }
+
+  get endereco() {
+    return this.dados[CAMPOS_BASE.ENDERECO];
+  }
+
+  get senha() {
+    return this.dados[CAMPOS_BASE.SENHA];
+  }
+
+  get drive() {
+    return this.dados[CAMPOS_BASE.DRIVE];
+  }
+
+  get looksUrl() {
+    return this.dados[CAMPOS_BASE.LOOKS_URL];
+  }
+}
+

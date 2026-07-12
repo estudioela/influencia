@@ -2,28 +2,30 @@
 
 > Documento oficial de evolução da V2.
 >
-> Este roadmap define a direção estratégica da plataforma, as fases de
-> implementação e os critérios de evolução do Projeto Tear.
+> Este roadmap define a direção do projeto, as fases de implementação e os
+> critérios de evolução da plataforma.
 >
-> O estado atual do projeto é documentado em:
+> O estado atual da implementação deve ser consultado em:
 >
 > **docs/PROJECT_STATUS.md**
 >
-> As decisões permanentes estão em:
->
-> **docs/KNOWN_DECISIONS.md**
->
-> A filosofia operacional dos agentes está em:
+> As regras permanentes do projeto encontram-se em:
 >
 > **docs/PROJECT_PHILOSOPHY.md**
+>
+> **docs/KNOWN_DECISIONS.md**
 
 ---
 
 # 1. Objetivo
 
-Consolidar o Projeto Tear como uma plataforma profissional para gestão de campanhas com influenciadoras, mantendo a infraestrutura baseada em Google Apps Script na V2 e priorizando estabilidade, organização, modularização e facilidade de evolução.
+Consolidar o Projeto Tear como uma plataforma profissional de gestão de
+influenciadoras utilizando Google Apps Script como infraestrutura da V2,
+priorizando estabilidade, organização, modularização e facilidade de evolução.
 
-A V2 representa uma evolução da arquitetura existente, e não uma reescrita completa do sistema.
+A V2 não representa uma migração tecnológica.
+
+Ela representa a evolução da arquitetura existente.
 
 ---
 
@@ -37,31 +39,68 @@ Toda evolução da V2 deve respeitar os seguintes princípios:
 - baixo acoplamento;
 - alta coesão;
 - testes automatizados;
-- documentação objetiva;
+- documentação mínima porém suficiente;
 - economia de contexto para agentes de IA;
 - nenhuma reescrita completa sem necessidade comprovada.
 
 ---
 
+# 3. Arquitetura
+
+A arquitetura oficial da V2 é composta pelas seguintes camadas:
+
+```
+Portal Parceira
+
+↓
+
+Roteador
+
+↓
+
+Controllers
+
+↓
+
+Services
+
+↓
+
+Repositories
+
+↓
+
+Google Sheets
+```
+
+Responsabilidades:
+
+- Frontend → Interface do usuário.
+- Controller → Casos de uso.
+- Service → Regras de negócio.
+- Repository → Persistência.
+- Infraestrutura → Apps Script / Google Sheets.
+
+---
 
 # 4. Fases da V2
 
 ## Fase 1 — Fundação
 
-### Objetivo
+Objetivo:
 
-Consolidar toda a base arquitetural do projeto.
+Consolidar toda a base arquitetural.
 
-### Entregas
+Entregas:
 
 - Repository Pattern
 - Service Layer
 - Controller Layer
 - Governança
-- Testes automatizados
+- Testes
 - Organização do projeto
 
-### Critério de conclusão
+Critério de conclusão:
 
 Arquitetura consolidada e estável.
 
@@ -69,22 +108,22 @@ Arquitetura consolidada e estável.
 
 ## Fase 2 — Portal da Parceira
 
-### Objetivo
+Objetivo:
 
-Modernizar completamente o Portal da Parceira.
+Modernizar completamente o Portal.
 
-### Entregas
+Entregas:
 
 - Login
 - Dashboard
 - Perfil
-- Briefings
+- Briefing
 - Ativações
 - Upload
 - Histórico
 - Pagamentos
 
-### Critério de conclusão
+Critério de conclusão:
 
 Portal totalmente funcional.
 
@@ -92,11 +131,11 @@ Portal totalmente funcional.
 
 ## Fase 3 — ERP Administrativo
 
-### Objetivo
+Objetivo:
 
-Centralizar toda a operação administrativa.
+Centralizar toda a operação.
 
-### Entregas
+Entregas:
 
 - Gestão de Parceiras
 - Ciclos
@@ -106,27 +145,27 @@ Centralizar toda a operação administrativa.
 - Contratos
 - Relatórios
 
-### Critério de conclusão
+Critério de conclusão:
 
-Toda a operação administrativa executada pelo ERP.
+Operação administrativa executada integralmente pelo ERP.
 
 ---
 
 ## Fase 4 — Operação
 
-### Objetivo
+Objetivo:
 
-Automatizar processos operacionais.
+Automatizar processos.
 
-### Entregas
+Entregas:
 
-- geração automática de ciclos;
+- geração de ciclos;
 - geração de contratos;
 - notificações;
 - fluxos automáticos;
 - validações.
 
-### Critério de conclusão
+Critério de conclusão:
 
 Redução máxima de tarefas manuais.
 
@@ -134,18 +173,18 @@ Redução máxima de tarefas manuais.
 
 ## Fase 5 — Escalabilidade
 
-### Objetivo
+Objetivo:
 
 Preparar a plataforma para crescimento.
 
-### Entregas previstas
+Entregas previstas:
 
 - melhorias de desempenho;
 - observabilidade;
 - monitoramento;
-- preparação para uma futura V3.
+- preparação para futura V3.
 
-### Critério de conclusão
+Critério de conclusão:
 
 Sistema preparado para expansão sem ruptura arquitetural.
 
@@ -155,7 +194,7 @@ Sistema preparado para expansão sem ruptura arquitetural.
 
 Toda entrega deve atender aos seguintes requisitos:
 
-- testes automatizados verdes;
+- testes verdes;
 - arquitetura preservada;
 - documentação atualizada quando necessário;
 - commits pequenos e atômicos;
@@ -171,11 +210,11 @@ Toda implementação deverá seguir a sequência:
 
 1. Ler a documentação obrigatória.
 2. Implementar um bloco lógico.
-3. Executar os testes.
+3. Executar testes.
 4. Corrigir falhas.
 5. Realizar commit.
-6. Atualizar a documentação quando aplicável.
-7. Realizar o push manual.
+6. Atualizar documentação quando aplicável.
+7. Push manual.
 8. Encerrar a sprint.
 
 ---
@@ -187,15 +226,15 @@ Uma sprint é considerada concluída quando:
 - todos os objetivos definidos forem entregues;
 - todos os testes permanecerem verdes;
 - não existirem alterações pendentes;
-- os commits estiverem realizados;
-- o push tiver sido executado;
-- a documentação estiver atualizada quando aplicável.
+- commits estiverem realizados;
+- push realizado;
+- documentação atualizada quando aplicável.
 
 ---
 
 # 8. Próximas Grandes Entregas
 
-A evolução macro da V2 seguirá, preferencialmente, esta ordem:
+A ordem macro de evolução da V2 é:
 
 1. Consolidação de Ativações
 2. Consolidação de Logística
@@ -220,18 +259,18 @@ Faz parte da V2:
 - evolução incremental;
 - organização do código;
 - melhoria da arquitetura;
-- evolução da experiência do usuário;
+- melhorias de UX;
 - novas funcionalidades do negócio.
 
 Não faz parte da V2:
 
 - migração para Supabase;
-- migração para PostgreSQL;
-- migração para Next.js;
-- migração para NestJS;
+- PostgreSQL;
+- Next.js;
+- NestJS;
 - reescrita completa da plataforma.
 
-Esses estudos permanecem separados para uma eventual V3.
+Esses estudos permanecem documentados separadamente para eventual V3.
 
 ---
 
@@ -243,4 +282,4 @@ Ele deve ser atualizado apenas quando houver mudanças relevantes na direção d
 
 Alterações de estado, progresso de sprint ou tarefas concluídas pertencem exclusivamente ao:
 
-**docs/PROJECT_STATUS.md**
+**docs/PROJECT_STATUS.md**git status
