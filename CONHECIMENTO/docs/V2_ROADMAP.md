@@ -129,7 +129,7 @@ Portal totalmente funcional.
 
 ---
 
-## Fase 3 — ERP Administrativo
+## Fase 3 — tear Administrativo
 
 Objetivo:
 
@@ -147,7 +147,7 @@ Entregas:
 
 Critério de conclusão:
 
-Operação administrativa executada integralmente pelo ERP.
+Operação administrativa executada integralmente pelo tear.
 
 ---
 

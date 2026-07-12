@@ -47,7 +47,7 @@ A pesquisa foi executada em quatro etapas.
 Levantamento de repositórios maduros relacionados a:
 
 - Google Apps Script
-- ERP
+- tear
 - Monorepos
 - Documentação
 - Claude Code
@@ -107,11 +107,11 @@ Não serve como arquitetura de produto.
 
 ---
 
-## 4.2 workspace-erp
+## 4.2 workspace-tear
 
 Objetivo
 
-ERP completo baseado em Google Workspace.
+tear completo baseado em Google Workspace.
 
 Aprendizados
 

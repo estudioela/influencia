@@ -51,7 +51,7 @@ Documentação Oficial
 | CHANGELOG_DE_DESENVOLVIMENTO.md | Histórico de alterações | docs/HISTORICO/ | ⬜ |
 | MAPA_SISTEMA.txt | Estrutura do sistema | SYSTEM_MAP.md | ⬜ |
 | PLANO_MIGRACAO_TEAR.md | Estratégia de migração | docs/HISTORICO/ ou Workspace | ⬜ |
-| INFOS SOBRE ERP - JESCRI.md | Regras de negócio | README.md / SYSTEM_MAP.md / KNOWN_DECISIONS.md (avaliar) | ⬜ |
+| INFOS SOBRE tear - tear.md | Regras de negócio | README.md / SYSTEM_MAP.md / KNOWN_DECISIONS.md (avaliar) | ⬜ |
 
 ---
 

@@ -1,7 +1,7 @@
 # PROJECT GOVERNANCE
 
 ## Estrutura oficial do projeto
-- /mae → sistema principal (ERP + Portal, projeto Apps Script único)
+- /mae → sistema principal (tear + Portal, projeto Apps Script único)
 - /sites → projetos auxiliares (sites estáticos)
 - /docs → documentação
 
