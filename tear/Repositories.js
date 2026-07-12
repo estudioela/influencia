@@ -443,8 +443,81 @@ const ABA_LOOKS_EXTERNA = 'LOOKS BRIEFING';
  * `abrirPorUrl` injetável para teste; em produção cai em `SpreadsheetApp.openByUrl`.
  */
 class BriefingRepository {
-  constructor(abrirPorUrl) {
+  constructor(spreadsheetOuAbrirPorUrl, abrirPorUrl) {
+    if (typeof spreadsheetOuAbrirPorUrl === 'function' && abrirPorUrl === undefined) {
+      this.spreadsheet = null;
+      this._abrirPorUrl = spreadsheetOuAbrirPorUrl;
+      return;
+    }
+
+    this.spreadsheet = spreadsheetOuAbrirPorUrl || null;
     this._abrirPorUrl = abrirPorUrl || null;
+  }
+
+  getByInfluenciadora(influenciadora) {
+    if (!influenciadora) {
+      return null;
+    }
+
+    const { cabecalho, linhas } = this._lerDadosPersistencia();
+    const idxInfluenciadora = indiceDaColuna(
+      cabecalho,
+      CAMPOS_BRIEFING.INFLUENCIADORA,
+      this._nomeAbaBriefings()
+    );
+    const linha = linhas.find(linhaAtual =>
+      this._mesmoValor(linhaAtual[idxInfluenciadora], influenciadora)
+    );
+
+    return linha ? new Briefing(linhaParaObjeto(cabecalho, linha)) : null;
+  }
+
+  save(briefingData) {
+    if (!briefingData || typeof briefingData !== 'object') {
+      throw new TypeError('save() espera um objeto de briefing.');
+    }
+
+    const dados = briefingData instanceof Briefing ? briefingData.dados : briefingData;
+    const chave = String(
+      dados[CAMPOS_BRIEFING.INFLUENCIADORA] === null ||
+      dados[CAMPOS_BRIEFING.INFLUENCIADORA] === undefined
+        ? ''
+        : dados[CAMPOS_BRIEFING.INFLUENCIADORA]
+    ).trim();
+
+    if (!chave) {
+      throw new Error(`É obrigatório informar "${CAMPOS_BRIEFING.INFLUENCIADORA}".`);
+    }
+
+    const { aba, cabecalho, linhas } = this._lerDadosPersistencia();
+    const idxInfluenciadora = indiceDaColuna(
+      cabecalho,
+      CAMPOS_BRIEFING.INFLUENCIADORA,
+      this._nomeAbaBriefings()
+    );
+    const posicao = linhas.findIndex(linhaAtual =>
+      this._mesmoValor(linhaAtual[idxInfluenciadora], chave)
+    );
+
+    if (posicao === -1) {
+      aba.appendRow(cabecalho.map(coluna => (coluna in dados ? dados[coluna] : '')));
+      return new Briefing(dados);
+    }
+
+    const linhaAtual = linhas[posicao];
+    const intervalo = aba.getRange(posicao + 2, 1, 1, cabecalho.length);
+    const formulas = intervalo.getFormulas()[0];
+
+    const atualizada = cabecalho.map((coluna, i) =>
+      coluna && Object.prototype.hasOwnProperty.call(dados, coluna)
+        ? dados[coluna]
+        : linhaAtual[i]
+    );
+
+    const paraGravar = atualizada.map((valor, i) => (formulas[i] ? formulas[i] : valor));
+
+    intervalo.setValues([paraGravar]);
+    return new Briefing(linhaParaObjeto(cabecalho, atualizada));
   }
 
   lerLooksExternos(url) {
@@ -473,6 +546,20 @@ class BriefingRepository {
     }
 
     return abaLooks.getDataRange().getValues();
+  }
+
+  _lerDadosPersistencia() {
+    const planilha = this.spreadsheet || SpreadsheetApp.getActive();
+
+    return lerAbaComCabecalho(planilha, this._nomeAbaBriefings());
+  }
+
+  _nomeAbaBriefings() {
+    return PLANILHAS.BRIEFINGS;
+  }
+
+  _mesmoValor(valorCelula, valorBusca) {
+    return String(valorCelula).trim() === String(valorBusca).trim();
   }
 }
 

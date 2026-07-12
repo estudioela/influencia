@@ -34,6 +34,7 @@ const ESTADOS_LOGISTICA = Object.freeze({
 const PLANILHAS = Object.freeze({
   PARCEIROS_INFLUENCIADORAS: 'Parceiros_Influenciadoras',
   PLANOS_COLABORACAO: 'Planos_Colaboracao',
+  BRIEFINGS: 'Briefings',
   CICLOS: 'Ciclos',
   ATIVACOES: 'Ativacoes',
   LOGISTICA: 'Logistica',
