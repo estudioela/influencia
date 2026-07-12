@@ -1,6 +1,6 @@
 function processarMigracaoTear() {
   const idElas = "1Z_Y39SBCb1zwkX02iV7r-rjBTzEwLlhNb-OnpHLmftw"; // [ELÃ] PROJETO TEAR 1.0[cite: 1]
-  const idJescri = "1ZKqrmz80oOaU70gcHeIgr-yK9zeJ_5YkE8b5CKkuRdM"; // [JESCRI] INFLUÊNCIA 360º
+  const idJescri = "1stzgS9TFgedP0nR9Ncla4bX72JCQ8apE2k0RcsbrXl4"; // [ELÃ] PROJETO TEAR 2.0 - CORE
 
   const abaElas = SpreadsheetApp.openById(idElas).getSheetByName("Respostas ao formulário 1");
   const abaJescri = SpreadsheetApp.openById(idJescri).getSheetByName("BASE DE DADOS");
