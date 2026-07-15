@@ -17,3 +17,10 @@
  * - Repository
  * - ACL
  */
+
+this.Parceira = class Parceira {
+  constructor(nome) {
+    this.nome = nome;
+    this.ativa = true;
+  }
+};
