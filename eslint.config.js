@@ -41,6 +41,10 @@ module.exports = [
         BriefingRepository: 'readonly',
         BriefingService: 'readonly',
         BriefingController: 'readonly',
+        // Domínio da Entrega (SPEC-012): VOs referenciados pelo agregado.
+        IdentificadorDeEntrega: 'readonly',
+        LinkDoMaterial: 'readonly',
+        Entrega: 'readonly',
         // Classes da fatia compostas pelo Entrypoint Portal (namespace único GAS).
         ParceiraACL: 'readonly',
         ParceiraRepository: 'readonly',
