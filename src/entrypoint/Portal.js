@@ -11,6 +11,7 @@
 /**
  * Renderiza o Portal. Sem parâmetro: cadastro de Parceira (M1).
  * Com `?pagina=compilar-mes`: compilação da Colaboração Mensal (M2).
+ * Com `?pagina=briefing`: Briefing da Colaboração (M3).
  * @param {GoogleAppsScript.Events.DoGet} [e]
  * @returns {GoogleAppsScript.HTML.HtmlOutput}
  */
@@ -19,6 +20,11 @@ function doGet(e) {
     return HtmlService.createTemplateFromFile('src/ui/compilar-mes')
       .evaluate()
       .setTitle('TEAR — Compilar Mês');
+  }
+  if (e && e.parameter && e.parameter.pagina === 'briefing') {
+    return HtmlService.createTemplateFromFile('src/ui/briefing')
+      .evaluate()
+      .setTitle('TEAR — Briefing');
   }
   return HtmlService.createTemplateFromFile('src/ui/cadastro-parceira')
     .evaluate()
@@ -77,22 +83,56 @@ function cadastrarParceira(dados) {
 }
 
 /**
- * Compõe o Controller de compilação sobre as abas informadas (M2, SPEC-005).
- * A ParceiraACL cumpre a porta do Cadastro (listarAtivasComCondicoes).
  * Publicador de eventos mínimo: registra o fato em log SEM PII (RNF-08) —
  * barramento real para módulos vizinhos é dívida registrada (SPEC-005 D-01).
+ * @returns {{publicar: function(object)}}
+ */
+function publicadorDeLog() {
+  return {
+    publicar: function (evento) {
+      Logger.log('Evento de domínio: ' + evento.nome + ' (' + evento.mesReferencia + ')');
+    },
+  };
+}
+
+/**
+ * Compõe o BriefingService sobre as abas informadas (M3, SPEC-009).
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaColaboracoes aba COLABORACOES.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBriefing aba BRIEFING.
+ * @returns {BriefingService}
+ */
+function montarBriefingService(abaColaboracoes, abaBriefing) {
+  return new BriefingService(
+    new ColaboracaoMensalRepository(new ColaboracaoMensalACL(abaColaboracoes)),
+    new BriefingRepository(new BriefingACL(abaBriefing)),
+    publicadorDeLog()
+  );
+}
+
+/**
+ * Compõe o Controller de compilação sobre as abas informadas (M2, SPEC-005).
+ * A ParceiraACL cumpre a porta do Cadastro (listarAtivasComCondicoes).
+ * O publicador reage a `MesCompilado` recriando os briefings da competência
+ * (SPEC-009 RN-03) — cablagem de consumo feita aqui, na composição, porque
+ * o barramento real de eventos é dívida registrada (SPEC-005 D-01).
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBase aba BASE DE DADOS.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaColaboracoes aba COLABORACOES.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBriefing aba BRIEFING.
  * @returns {ColaboracaoMensalController}
  */
-function montarCompilarMes(abaBase, abaColaboracoes) {
+function montarCompilarMes(abaBase, abaColaboracoes, abaBriefing) {
   var cadastro = new ParceiraACL(abaBase);
   var repositorio = new ColaboracaoMensalRepository(
     new ColaboracaoMensalACL(abaColaboracoes)
   );
+  var briefingService = montarBriefingService(abaColaboracoes, abaBriefing);
+  var log = publicadorDeLog();
   var publicador = {
     publicar: function (evento) {
-      Logger.log('Evento de domínio: ' + evento.nome + ' (' + evento.mesReferencia + ')');
+      log.publicar(evento);
+      if (evento.nome === 'MesCompilado') {
+        briefingService.recriarParaCompetencia(String(evento.mesReferencia));
+      }
     },
   };
   var servico = new CompiladorDoMes(cadastro, repositorio, publicador);
@@ -108,14 +148,55 @@ function montarCompilarMes(abaBase, abaColaboracoes) {
  */
 function compilarMes(dados) {
   try {
-    return montarCompilarMes(abrirBaseDeDados(), abrirAba('COLABORACOES')).compilarMes(
-      dados
-    );
+    return montarCompilarMes(
+      abrirBaseDeDados(),
+      abrirAba('COLABORACOES'),
+      abrirAba('BRIEFING')
+    ).compilarMes(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Compõe o Controller do Briefing (M3, SPEC-009).
+ * @returns {BriefingController}
+ */
+function montarBriefing() {
+  return new BriefingController(
+    montarBriefingService(abrirAba('COLABORACOES'), abrirAba('BRIEFING'))
+  );
+}
+
+/**
+ * Função exposta a google.script.run: preenche e publica o Briefing de uma
+ * Parceira na competência (UC-009.01). Devolve SEMPRE o envelope padrão —
+ * falhas de infraestrutura também viram envelope de falha (§3.3).
+ * @param {{mesReferencia: string, parceiraId: string, blocos: Array}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function preencherBriefing(dados) {
+  try {
+    return montarBriefing().preencherBriefing(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: consulta o Briefing de uma Parceira
+ * na competência (leitura para a UI; SPEC-027/023 consumirão a mesma query).
+ * @param {{mesReferencia: string, parceiraId: string}} dados
+ * @returns {{success: true, data: object|null}|{success: false, error: object}}
+ */
+function obterBriefing(dados) {
+  try {
+    return montarBriefing().obterBriefing(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
   }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { doGet, cadastrarParceira, compilarMes };
+  module.exports = { doGet, cadastrarParceira, compilarMes, preencherBriefing, obterBriefing };
 }

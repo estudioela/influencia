@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <title>TEAR — Briefing</title>
+  </head>
+  <body>
+    <main>
+      <h1>Briefing da Colaboração</h1>
+
+      <form id="busca">
+        <label for="mesReferencia">Competência (AAAA-MM)</label>
+        <input id="mesReferencia" name="mesReferencia" required placeholder="2026-07" />
+        <label for="parceiraId">Parceira</label>
+        <input id="parceiraId" name="parceiraId" required />
+        <button type="submit">Carregar briefing</button>
+      </form>
+
+      <form id="preenchimento" hidden>
+        <div id="blocos"></div>
+        <button type="submit">Publicar briefing</button>
+      </form>
+
+      <p id="mensagem" role="status"></p>
+    </main>
+
+    <script>
+      var busca = document.getElementById('busca');
+      var preenchimento = document.getElementById('preenchimento');
+      var blocosEl = document.getElementById('blocos');
+      var mensagem = document.getElementById('mensagem');
+
+      function avisar(texto) {
+        mensagem.textContent = texto;
+      }
+
+      function campo(rotulo, nome, valor, tipo) {
+        return (
+          '<label>' + rotulo + ' <input name="' + nome + '" type="' + (tipo || 'text') +
+          '" value="' + (valor || '') + '" /></label>'
+        );
+      }
+
+      function renderizar(briefing) {
+        if (!briefing) {
+          preenchimento.hidden = true;
+          avisar('Briefing inexistente para a competência — compile o mês primeiro.');
+          return;
+        }
+        blocosEl.innerHTML = briefing.blocos
+          .map(function (bloco, i) {
+            return (
+              '<fieldset data-rotulo="' + bloco.rotulo + '"><legend>' + bloco.rotulo + '</legend>' +
+              campo('Look/peça', 'look-' + i, bloco.look) +
+              campo('Data de entrega', 'entrega-' + i, bloco.dataEntrega, 'date') +
+              campo('Data de postagem', 'postagem-' + i, bloco.dataPostagem, 'date') +
+              campo('Orientação criativa', 'orientacao-' + i, bloco.orientacao) +
+              '<p>Aprovação interna (derivada): ' + (bloco.dataAprovacaoInterna || '—') + '</p>' +
+              '</fieldset>'
+            );
+          })
+          .join('');
+        preenchimento.hidden = false;
+        avisar('Briefing ' + briefing.estado + ' — ' + briefing.blocos.length + ' bloco(s).');
+      }
+
+      busca.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+        avisar('Carregando…');
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            if (!resposta.success) return avisar(resposta.error.mensagem);
+            renderizar(resposta.data);
+          })
+          .withFailureHandler(function (erro) { avisar(erro.message); })
+          .obterBriefing({
+            mesReferencia: busca.mesReferencia.value.trim(),
+            parceiraId: busca.parceiraId.value.trim(),
+          });
+      });
+
+      preenchimento.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+        var blocos = Array.prototype.map.call(
+          blocosEl.querySelectorAll('fieldset'),
+          function (grupo, i) {
+            return {
+              rotulo: grupo.getAttribute('data-rotulo'),
+              look: grupo.querySelector('[name="look-' + i + '"]').value.trim(),
+              dataEntrega: grupo.querySelector('[name="entrega-' + i + '"]').value,
+              dataPostagem: grupo.querySelector('[name="postagem-' + i + '"]').value,
+              orientacao: grupo.querySelector('[name="orientacao-' + i + '"]').value,
+            };
+          }
+        );
+        avisar('Publicando…');
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            if (!resposta.success) return avisar(resposta.error.mensagem);
+            renderizar(resposta.data);
+            avisar('Briefing publicado.');
+          })
+          .withFailureHandler(function (erro) { avisar(erro.message); })
+          .preencherBriefing({
+            mesReferencia: busca.mesReferencia.value.trim(),
+            parceiraId: busca.parceiraId.value.trim(),
+            blocos: blocos,
+          });
+      });
+    </script>
+  </body>
+</html>
