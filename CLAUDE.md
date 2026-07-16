@@ -24,9 +24,27 @@ Auditoria
 - Quais arquivos possuem cada responsabilidade.
 
 ## Restrições
-- Não publicar produção.
 - Não apagar dados.
 - Não alterar permissões sem autorização.
+- Deploy de produção: ver "Mandato de operação autônoma" abaixo.
+
+## Mandato de operação autônoma (2026-07-16)
+
+Autorização explícita do responsável pelo projeto, registrada nesta data:
+
+- O agente assume responsabilidade operacional (Tech Lead de execução):
+  decide a ordem de SPECs desbloqueadas, conduz integração, QA, arquitetura,
+  performance, documentação, preparação para deploy e homologação sem
+  aguardar confirmação a cada etapa.
+- `git push` e `clasp push`/deploy para produção estão autorizados sem
+  confirmação pontual, a cada unidade lógica de trabalho concluída (testes
+  verdes, lint limpo).
+- O agente PARA e pede decisão humana apenas quando houver: regra de negócio
+  inédita (ex.: decisão de PO pendente, como Q-04), necessidade de
+  credenciais/acessos que não possui, impossibilidade técnica objetiva, ou
+  conflito insolúvel entre requisitos. Fora isso, decide e continua.
+- Esta autorização substitui a restrição anterior "Não publicar produção"
+  enquanto vigente; revogável a qualquer momento pelo responsável do projeto.
 
 ## Comandos padrão
 Comandos permitidos e fluxo Git.
