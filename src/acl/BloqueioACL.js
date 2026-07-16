@@ -121,13 +121,7 @@ this.BloqueioACL = class BloqueioACL {
    * @returns {function(string): number} resolve nome → índice, fail-fast.
    */
   resolvedorDeColuna(cabecalho) {
-    return (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'BLOQUEIOS'.");
-      }
-      return indice;
-    };
+    return criarResolvedorDeColuna(cabecalho, 'BLOQUEIOS');
   }
 
   /**

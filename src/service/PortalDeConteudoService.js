@@ -26,18 +26,6 @@
  *   corrente, UC-027.01).
  */
 
-/**
- * @param {string} codigo código do contrato de erros (SPEC-027 §17).
- * @param {string} mensagem mensagem SEM credencial/PII (mesma disciplina de
- *   SPEC-025 RN-04).
- * @returns {Error} erro com `codigo` anexado para o Controller.
- */
-function erroDePortalConteudo(codigo, mensagem) {
-  const erro = new Error(mensagem);
-  erro.codigo = codigo;
-  return erro;
-}
-
 this.PortalDeConteudoService = class PortalDeConteudoService {
   constructor(acessoPortalService, entregaService, briefingService, relogio) {
     this.acessoPortalService = acessoPortalService;
@@ -56,7 +44,7 @@ this.PortalDeConteudoService = class PortalDeConteudoService {
     try {
       return this.acessoPortalService.renovar({ token: token });
     } catch {
-      throw erroDePortalConteudo('PC-01', 'Sessão inválida ou expirada.');
+      throw erroComCodigo('PC-01', 'Sessão inválida ou expirada.');
     }
   }
 
@@ -113,7 +101,7 @@ this.PortalDeConteudoService = class PortalDeConteudoService {
     );
     const bloco = this.blocoDe(briefing, entrega.rotulo);
     if (!bloco) {
-      throw erroDePortalConteudo(
+      throw erroComCodigo(
         'PC-02',
         "Briefing indisponível para o item '" + entrega.rotulo + "'."
       );
@@ -155,7 +143,7 @@ this.PortalDeConteudoService = class PortalDeConteudoService {
       .listarEntregas(mesReferencia.toString(), parceiraId)
       .find((candidata) => candidata.rotulo === rotulo);
     if (!entrega) {
-      throw erroDePortalConteudo(
+      throw erroComCodigo(
         'PC-02',
         "Entrega '" + rotulo + "' não pertence à Parceira ou não existe."
       );

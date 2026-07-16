@@ -1,47 +1,57 @@
-# Projeto Tear — tear (V2)
+# Projeto Tear V2 — Portal da Parceira
 
-tear + Portal de Influenciadoras, em um único projeto Google Apps Script,
-versionado neste repositório e sincronizado via `clasp`.
+Sistema de gestão de colaborações com influenciadoras (Estúdio Elã), em
+Google Apps Script + Google Sheets, versionado neste repositório e
+sincronizado via `clasp`.
 
-## Arquitetura (V2 consolidada)
+## Arquitetura
 
-O código de produção vive em **`tear/`** — 10 arquivos no escopo global do Apps
-Script, organizados por camada:
+O código de produção vive em **`src/`**, em camadas DDD:
 
 ```
-Roteador → Controllers → Services → Repositories → Infra / Modelos
+Entrypoint (Portal.js) → Controller → Service → Repository → ACL → Domain
 ```
 
-- Só o **Repository** acessa `SpreadsheetApp`.
-- Só o **Controller** (via envelope) converte exceção em `{ success, data | error }`.
-- O **front-end** (`Index/Styles/Templates.html`) nunca toca a planilha; fala com o
-  Roteador via `google.script.run`.
+- Só a **ACL** conhece a coluna física da planilha (resolução sempre por
+  cabeçalho, nunca por índice fixo).
+- Só o **Controller** converte exceção em envelope `{ success, data | error }`
+  (`src/shared/Envelope.js`).
+- O **Domain** é puro — não conhece `SpreadsheetApp`, HTML ou HTTP.
+- O **Entrypoint** (`src/entrypoint/Portal.js`) é o único ponto autorizado a
+  tocar `SpreadsheetApp`/`LockService` e a compor o grafo de objetos.
 
-Detalhe arquitetural completo em **`docs/SYSTEM_MAP.md`**.
-
-A base legada **V1 permanece em `mae/`** apenas como referência; será migrada para a
-V2 na próxima fase (scripts de migração de dados).
+Cada funcionalidade (SPEC) tem sua especificação em `docs/specs/SPEC-NNN.md`;
+decisões arquiteturais em `docs/adrs/`.
 
 ## Documentação oficial (fonte da verdade)
 
 | Documento | Responsabilidade |
 |-----------|------------------|
 | `CLAUDE.md` | Contrato operacional para agentes de IA |
-| `docs/PROJECT_PHILOSOPHY.md` | Princípios permanentes |
-| `docs/SYSTEM_MAP.md` | Arquitetura |
-| `docs/KNOWN_DECISIONS.md` | Decisões permanentes |
-| `docs/PROJECT_STATUS.md` | Estado atual |
-| `docs/CHANGELOG_DE_DESENVOLVIMENTO.md` | Histórico de desenvolvimento |
-| `docs/spec/SCHEMA_V2.md` | Schema das abas da planilha |
+| `docs/_workspace/TASK_ROUTER.md` | Estado atual de cada SPEC e suas dependências |
+| `docs/PRD.md` | Requisitos de produto |
+| `CONTRATO_SOBERANO.md` | Domínio soberano (termos, VOs, agregados) |
+| `docs/adrs/` | Decisões arquiteturais |
+| `PROJECT_GOVERNANCE.md` | Governança de processo |
+
+> **Nota (2026-07-16):** este README descrevia uma arquitetura anterior
+> (`tear/`, Roteador único) e uma lista de documentos (`docs/SYSTEM_MAP.md`,
+> `docs/PROJECT_STATUS.md` etc.) que nunca chegaram a existir neste
+> repositório — resíduo de uma tentativa de V2 anterior à atual. Corrigido
+> na FASE 1 de integração pós-SPECs; ver `docs/_workspace/TASK_ROUTER.md`
+> §6 para o achado completo.
 
 ## Estado
 
-**Fase 1 (Estrutura e UI V2) concluída — pronto para a Migração de Dados.**
-Próxima fase: scripts de migração da V1 para a V2. Ver `docs/PROJECT_STATUS.md`.
+Ver `docs/_workspace/TASK_ROUTER.md` §3 para o status `[x]`/`[>]`/`[ ]` de
+cada SPEC.
 
 ## Desenvolvimento
 
-- **Testes:** `npx jest` (suíte em `test/`).
-- **Sincronização com Apps Script:** `clasp push` (allowlist em `tear/.claspignore`).
-- **Deploy de produção:** ação controlada pelo operador — `clasp deploy -i <deployment>`.
-  Nenhum deploy automático.
+- **Testes:** `npm test` (suíte em `test/`, roda o código GAS real via `vm`).
+- **Lint:** `npm run lint`.
+- **Verificação completa:** `npm run check` (lint + suíte completa).
+- **Sincronização com Apps Script:** `clasp push` (allowlist em
+  `.claspignore`).
+- **Deploy de produção:** ação controlada pelo operador — `clasp deploy -i
+  <deployment>`. Nenhum deploy automático.

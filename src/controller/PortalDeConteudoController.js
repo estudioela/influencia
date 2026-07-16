@@ -24,16 +24,6 @@ this.PortalDeConteudoController = class PortalDeConteudoController {
   }
 
   /**
-   * @param {Error} erro
-   * @returns {{success: false, error: {codigo: (string|undefined), mensagem: string}}}
-   */
-  falhar(erro) {
-    return envelopeFail(
-      erro.codigo ? { codigo: erro.codigo, mensagem: erro.message } : { mensagem: erro.message }
-    );
-  }
-
-  /**
    * UC-027.01: lista as pendências de conteúdo da Parceira autenticada.
    * @param {{token: string}} dados
    * @returns {{success: true, data: object[]}|{success: false, error: object}}
@@ -43,7 +33,7 @@ this.PortalDeConteudoController = class PortalDeConteudoController {
       const itens = this.portalDeConteudoService.listarPendencias(dados);
       return envelopeOk(itens.map((item) => this.projetarItem(item)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -56,7 +46,7 @@ this.PortalDeConteudoController = class PortalDeConteudoController {
     try {
       return envelopeOk(this.projetarBloco(this.portalDeConteudoService.lerBriefingDoItem(dados)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -74,7 +64,7 @@ this.PortalDeConteudoController = class PortalDeConteudoController {
         estado: entrega.estado,
       });
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 

@@ -58,6 +58,7 @@ function montarPortal(abas) {
     [
       'src/shared/Envelope.js',
       'src/shared/Config.js',
+      'src/shared/ErroComCodigo.js',
       'src/domain/Credencial.js',
       'src/domain/TokenDeSessao.js',
       'src/domain/Sessao.js',

@@ -104,7 +104,7 @@ Toda SPEC deve respeitar, sem reabrir:
 ### EPIC 04 — Conteúdo e Ativações
 
 #### `[x]` SPEC-012 · Gestão de Conteúdo e Ativações
-- **Deps SPEC:** SPEC-005
+- **Deps SPEC:** SPEC-005, SPEC-009 (achado da FASE 1: `EntregaService` recebe `BriefingRepository` no construtor — `src/entrypoint/Portal.js` `montarEntregaService` —, dependência real não declarada antes)
 - **Requisitos (PRD):** §5.4, §6.4, §7 (RN-06, RN-07, RN-08), §9 (RF-011…RF-015)
 - **Restrições:** `ADR-001` §2.2 (estados de conteúdo)
 - 🟠 **Aberto:** Q-03 (rótulos crus persistidos de `EmRevisao`/`Publicado`)
@@ -114,7 +114,7 @@ Toda SPEC deve respeitar, sem reabrir:
 ### EPIC 05 — Logística
 
 #### `[x]` SPEC-016 · Gestão Logística
-- **Deps SPEC:** SPEC-005
+- **Deps SPEC:** SPEC-005, SPEC-001/002 (achado da FASE 1: `EnvioService` recebe `ParceiraACL` como porta do Cadastro, D-03 — `src/entrypoint/Portal.js` `montarEnvioService` —, dependência real não declarada antes)
 - **Requisitos (PRD):** §5.5, §6.5, §7 (RN-13, RN-14), §9 (RF-016…RF-019)
 - **Restrições:** `ADR-001` §2.4 (`STATUS REVISÃO` e `STATUS LOGISTICA` — máquinas independentes)
 
@@ -205,3 +205,22 @@ Toda SPEC deve respeitar, sem reabrir:
   por inteiro). Se alguma SPEC precisar de seção específica desses, **parar e
   solicitar a atualização deste roteador**.
 - Numeração oficial da ADR de Linguagem Ubíqua (colisão `ADR-002`) a confirmar.
+
+## 6. Dívida de documentação (achado da FASE 1 pós-SPECs, 2026-07-16)
+
+- **`NEXT_AGENT.md`** (raiz do repo, inclusive em `origin/main`) descreve uma
+  arquitetura V1 (`mae/`, produção via GitHub Pages/`pages-portal`) e uma V2
+  anterior (`tear/`, domínio "Ativação") — nenhuma das duas existe na árvore
+  atual (`CONHECIMENTO/docs/src/test`, confirmado em `origin/main`). É
+  resíduo de uma reorganização estrutural anterior (commits de 2026-07-04:
+  "vendorização"/"limpeza estrutural"; branch `chore/encerramento-fase-1`
+  já tentou remover legado mas não cobriu este arquivo). **Não bloqueia** a
+  V2 atual: o `.clasp.json` desta branch aponta para um Apps Script próprio
+  e separado (2 deployments já rotulados "M1 — Portal Cadastro de
+  Parceira" — claramente desta V2), sem relação com a suposta produção V1.
+  **Não apaguei** (arquivo pré-existente, fora do escopo desta sessão) —
+  registrar para o responsável do projeto decidir: arquivar/deletar
+  `NEXT_AGENT.md`, ou confirmar se `mae/`/V1 ainda está mesmo viva em
+  produção em outro lugar (branch/repo separado) e se há necessidade real
+  de migração de dados de lá (relevante para ADR-010: "migração da
+  planilha antiga").

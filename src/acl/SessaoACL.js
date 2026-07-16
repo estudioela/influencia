@@ -93,13 +93,7 @@ this.SessaoACL = class SessaoACL {
    * @returns {function(string): number} resolve nome → índice, fail-fast.
    */
   resolvedorDeColuna(cabecalho) {
-    return (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'SESSOES'.");
-      }
-      return indice;
-    };
+    return criarResolvedorDeColuna(cabecalho, 'SESSOES');
   }
 
   /**

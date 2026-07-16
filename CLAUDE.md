@@ -53,21 +53,28 @@ Comandos permitidos e fluxo Git.
 
 Antes de iniciar qualquer tarefa:
 
-1. docs/PROJECT_PHILOSOPHY.md
-2. docs/KNOWN_DECISIONS.md
-3. docs/SYSTEM_MAP.md
-4. docs/PROJECT_STATUS.md
-5. docs/CHANGELOG_DE_DESENVOLVIMENTO.md
-6. Documento da Sprint atual
+1. `docs/_workspace/TASK_ROUTER.md` — fonte única de estado (o que está
+   `[x]`/`[>]`/`[ ]`, dependências entre SPECs, dívidas registradas).
+2. `docs/PRD.md` (seções indicadas pelo TASK_ROUTER para a SPEC em questão).
+3. `CONTRATO_SOBERANO.md` (domínio soberano — nunca reabrir).
+4. `docs/specs/SPEC-NNN.md` da SPEC em questão.
+5. `docs/adrs/` — ADRs relevantes (listados no TASK_ROUTER §1/§2).
+
+> **Correção de 2026-07-16:** esta seção listava `docs/PROJECT_PHILOSOPHY.md`,
+> `docs/KNOWN_DECISIONS.md`, `docs/SYSTEM_MAP.md`, `docs/PROJECT_STATUS.md` e
+> `docs/CHANGELOG_DE_DESENVOLVIMENTO.md` — nenhum desses arquivos jamais
+> existiu neste repositório (achado da FASE 1 pós-SPECs, auditoria de
+> integração). O projeto usa `TASK_ROUTER.md` como fonte única de estado
+> desde a SPEC-025; a lista acima reflete o que é lido de fato hoje.
 
 ## Fonte de decisão
 
 Quando houver conflito:
 
-- Filosofia operacional define comportamento.
-- SYSTEM_MAP define arquitetura.
-- SYSTEM_TRUTH define estado atual.
-- KNOWN_DECISIONS define decisões históricas.
+- `TASK_ROUTER.md` define estado atual e dependências entre SPECs.
+- `CONTRATO_SOBERANO.md` define domínio soberano (nunca reabrir).
+- ADRs definem decisões arquiteturais históricas (nunca reabrir sem novo ADR).
+- `docs/specs/SPEC-NNN.md` define o comportamento esperado da SPEC.
 
 ## Economia de contexto
 

@@ -34,6 +34,25 @@ function gasGlobals(overrides) {
 }
 
 /**
+ * Arquivos de src/shared/ SEMPRE são carregados primeiro, na frente de
+ * qualquer lista pedida pelo teste. Espelha o runtime real do Apps Script
+ * (GAS concatena todo arquivo num único namespace global — não existe
+ * "esquecer de importar" um utilitário de shared/ em produção) e evita que
+ * cada teste precise listar manualmente todo novo módulo compartilhado
+ * (ex.: src/shared/ColunaFisica.js, extraído das ACLs na FASE 1 pós-SPECs).
+ * Arquivos puramente declarativos (funções/consts) — recarregar é inócuo.
+ * @returns {string[]} caminhos relativos, a partir de src/shared/.
+ */
+function arquivosCompartilhados() {
+  const dir = path.resolve(ROOT, 'src/shared');
+  return fs
+    .readdirSync(dir)
+    .filter((nome) => nome.endsWith('.js'))
+    .sort()
+    .map((nome) => path.join('src/shared', nome));
+}
+
+/**
  * Carrega arquivos GAS num contexto vm compartilhado.
  * @param {string[]} files caminhos relativos à raiz do repo.
  * @param {object} [overrides] mocks de globais GAS.
@@ -43,7 +62,9 @@ function loadGas(files, overrides) {
   const sandbox = gasGlobals(overrides);
   sandbox.module = undefined; // força o caminho "Apps Script" (sem module.exports)
   vm.createContext(sandbox);
-  for (const rel of files) {
+  const compartilhados = arquivosCompartilhados();
+  const restantes = files.filter((rel) => !compartilhados.includes(rel));
+  for (const rel of compartilhados.concat(restantes)) {
     const abs = path.resolve(ROOT, rel);
     const code = fs.readFileSync(abs, 'utf8');
     vm.runInContext(code, sandbox, { filename: abs });

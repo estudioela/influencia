@@ -72,17 +72,7 @@ this.BriefingACL = class BriefingACL {
    * @returns {Date|null} null quando a célula está vazia.
    */
   dataParaCanonica(cru, colunaNome) {
-    if (cru == null || cru === '') {
-      return null;
-    }
-    const data =
-      typeof cru.getTime === 'function' ? new Date(cru.getTime()) : new Date(cru);
-    if (isNaN(data.getTime())) {
-      throw new Error(
-        "Valor de data inválido em 'BRIEFING'." + colunaNome + ": '" + cru + "'."
-      );
-    }
-    return data;
+    return celulaParaData(cru, colunaNome, 'BRIEFING');
   }
 
   /**
@@ -210,13 +200,7 @@ this.BriefingACL = class BriefingACL {
    * @returns {function(string): number} resolve nome → índice, fail-fast.
    */
   resolvedorDeColuna(cabecalho) {
-    return (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'BRIEFING'.");
-      }
-      return indice;
-    };
+    return criarResolvedorDeColuna(cabecalho, 'BRIEFING');
   }
 
   /**
@@ -260,8 +244,6 @@ this.BriefingACL = class BriefingACL {
    * @param {Array[]} linhas
    */
   reescrever(cabecalho, linhas) {
-    const matriz = [cabecalho].concat(linhas);
-    this.sheet.clearContents();
-    this.sheet.getRange(1, 1, matriz.length, cabecalho.length).setValues(matriz);
+    reescreverAba(this.sheet, cabecalho, linhas);
   }
 };

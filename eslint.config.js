@@ -22,9 +22,19 @@ module.exports = [
         // Globais de primeira-parte (GAS tem namespace único entre arquivos).
         envelopeOk: 'readonly',
         envelopeFail: 'readonly',
+        falharComCodigo: 'readonly',
         include: 'readonly',
         getConfig: 'readonly',
         CONFIG_KEYS: 'readonly',
+        // Fábrica de erro com código de contrato (shared/ErroComCodigo.js),
+        // usada pelos Services de Acesso/Conteúdo/Perfil no Portal.
+        erroComCodigo: 'readonly',
+        // Utilitários físicos de aba compartilhados pelas ACLs (shared/
+        // ColunaFisica.js — FASE 1 pós-SPECs: eliminação da duplicação de
+        // resolvedorDeColuna/dataParaCanonica/reescrever entre as ACLs).
+        criarResolvedorDeColuna: 'readonly',
+        celulaParaData: 'readonly',
+        reescreverAba: 'readonly',
         // Entidade de domínio referenciada pelo Service (Vertical Slice Parceira).
         Parceira: 'readonly',
         // VOs de domínio referenciados pelo agregado ColaboracaoMensal (SPEC-005).

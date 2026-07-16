@@ -34,19 +34,6 @@ this.AcessoController = class AcessoController {
   }
 
   /**
-   * @param {Error} erro
-   * @returns {{success: false, error: {codigo: (string|undefined), mensagem: string}}}
-   *   `codigo` presente apenas quando o erro pertence ao contrato §17.
-   */
-  falhar(erro) {
-    return envelopeFail(
-      erro.codigo
-        ? { codigo: erro.codigo, mensagem: erro.message }
-        : { mensagem: erro.message }
-    );
-  }
-
-  /**
    * UC-025.01: autentica a Parceira (entrada no Portal).
    * @param {{identificador: string, segredo: string}} dados
    * @returns {{success: true, data: object}|{success: false, error: object}}
@@ -55,7 +42,7 @@ this.AcessoController = class AcessoController {
     try {
       return envelopeOk(this.projetar(this.acessoPortalService.entrar(dados)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -68,7 +55,7 @@ this.AcessoController = class AcessoController {
     try {
       return envelopeOk(this.projetar(this.acessoPortalService.renovar(dados)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -82,7 +69,7 @@ this.AcessoController = class AcessoController {
       this.acessoPortalService.sair(dados);
       return envelopeOk({});
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 };

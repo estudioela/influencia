@@ -103,13 +103,7 @@ this.ColaboracaoMensalACL = class ColaboracaoMensalACL {
   listarTodas() {
     const valores = this.sheet.getDataRange().getValues();
     const cabecalho = valores[0];
-    const coluna = (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'COLABORACOES'.");
-      }
-      return indice;
-    };
+    const coluna = criarResolvedorDeColuna(cabecalho, 'COLABORACOES');
     return valores
       .slice(1)
       .filter((linha) => String(linha[coluna('INFLU_KEY')]).trim() !== '')

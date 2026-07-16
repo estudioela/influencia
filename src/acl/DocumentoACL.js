@@ -127,13 +127,7 @@ this.DocumentoACL = class DocumentoACL {
    * @returns {function(string): number} resolve nome → índice, fail-fast.
    */
   resolvedorDeColuna(cabecalho) {
-    return (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'DOCUMENTOS'.");
-      }
-      return indice;
-    };
+    return criarResolvedorDeColuna(cabecalho, 'DOCUMENTOS');
   }
 
   /**
@@ -142,8 +136,6 @@ this.DocumentoACL = class DocumentoACL {
    * @param {Array[]} linhas
    */
   reescrever(cabecalho, linhas) {
-    const matriz = [cabecalho].concat(linhas);
-    this.sheet.clearContents();
-    this.sheet.getRange(1, 1, matriz.length, cabecalho.length).setValues(matriz);
+    reescreverAba(this.sheet, cabecalho, linhas);
   }
 };

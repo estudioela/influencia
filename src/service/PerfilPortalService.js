@@ -30,17 +30,6 @@
  * @param {object} adaptadorDeCep porta de CEP: resolver(cep) → {rua,bairro,cidade,uf} ou lança.
  */
 
-/**
- * @param {string} codigo código do contrato de erros (SPEC-032 §17).
- * @param {string} mensagem mensagem SEM PII (mesma disciplina de SPEC-025 RN-04).
- * @returns {Error} erro com `codigo` anexado para o Controller.
- */
-function erroDePerfilPortal(codigo, mensagem) {
-  const erro = new Error(mensagem);
-  erro.codigo = codigo;
-  return erro;
-}
-
 this.PerfilPortalService = class PerfilPortalService {
   constructor(acessoPortalService, parceiraACL, adaptadorDeCep) {
     this.acessoPortalService = acessoPortalService;
@@ -58,7 +47,7 @@ this.PerfilPortalService = class PerfilPortalService {
     try {
       return this.acessoPortalService.renovar({ token: token });
     } catch {
-      throw erroDePerfilPortal('PP-01', 'Sessão inválida ou expirada.');
+      throw erroComCodigo('PP-01', 'Sessão inválida ou expirada.');
     }
   }
 
@@ -118,7 +107,7 @@ this.PerfilPortalService = class PerfilPortalService {
     const seguro = dados || {};
     const invalido = Object.keys(seguro).find((chave) => permitidos.indexOf(chave) === -1);
     if (invalido) {
-      throw erroDePerfilPortal(
+      throw erroComCodigo(
         'PP-02',
         "Campo não permitido na edição de perfil: '" + invalido + "'."
       );

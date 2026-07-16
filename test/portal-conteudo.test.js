@@ -123,6 +123,7 @@ function montarPortal(abas) {
     [
       'src/shared/Envelope.js',
       'src/shared/Config.js',
+      'src/shared/ErroComCodigo.js',
       'src/domain/Parceira.js',
       'src/domain/MesReferencia.js',
       'src/domain/CondicaoComercialSnapshot.js',

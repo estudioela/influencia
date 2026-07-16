@@ -18,17 +18,6 @@
  * @param {{publicar: function(object)}} publicador porta de eventos (§12).
  */
 
-/**
- * @param {string} codigo código do contrato de erros (SPEC-025 §17).
- * @param {string} mensagem mensagem SEM credencial/PII (RN-04).
- * @returns {Error} erro com `codigo` anexado para o Controller.
- */
-function erroDeAcesso(codigo, mensagem) {
-  const erro = new Error(mensagem);
-  erro.codigo = codigo;
-  return erro;
-}
-
 this.AcessoPortalService = class AcessoPortalService {
   constructor(
     autenticador,
@@ -57,14 +46,14 @@ this.AcessoPortalService = class AcessoPortalService {
     try {
       credencial = new Credencial(dados && dados.identificador, dados && dados.segredo);
     } catch {
-      throw erroDeAcesso('AC-01', 'Credencial inválida.');
+      throw erroComCodigo('AC-01', 'Credencial inválida.');
     }
     const agora = this.relogio.hoje();
     const identificador = credencial.identificador;
 
     const janela = this.bloqueioRepository.obterJanela(identificador);
     if (janela && janela.ativaEm(agora)) {
-      throw erroDeAcesso('AC-02', 'Acesso bloqueado. Tente novamente mais tarde.');
+      throw erroComCodigo('AC-02', 'Acesso bloqueado. Tente novamente mais tarde.');
     }
     if (janela) {
       // Janela vencida: Bloqueada → NaoAutenticada (§9); zera as tentativas.
@@ -88,10 +77,10 @@ this.AcessoPortalService = class AcessoPortalService {
             fim: resultado.bloqueio.fim.toISOString(),
           },
         });
-        throw erroDeAcesso('AC-02', 'Acesso bloqueado. Tente novamente mais tarde.');
+        throw erroComCodigo('AC-02', 'Acesso bloqueado. Tente novamente mais tarde.');
       }
       this.bloqueioRepository.salvarFalhas(identificador, resultado.falhas);
-      throw erroDeAcesso('AC-01', 'Credencial inválida.');
+      throw erroComCodigo('AC-01', 'Credencial inválida.');
     }
 
     this.bloqueioRepository.limpar(identificador);
@@ -114,16 +103,16 @@ this.AcessoPortalService = class AcessoPortalService {
   renovar(dados) {
     const token = String((dados && dados.token) == null ? '' : dados.token).trim();
     if (!token) {
-      throw erroDeAcesso('AC-03', 'Sessão expirada. Autentique-se novamente.');
+      throw erroComCodigo('AC-03', 'Sessão expirada. Autentique-se novamente.');
     }
     const agora = this.relogio.hoje();
     const sessao = this.sessaoRepository.obterPorToken(token);
     if (!sessao) {
-      throw erroDeAcesso('AC-03', 'Sessão expirada. Autentique-se novamente.');
+      throw erroComCodigo('AC-03', 'Sessão expirada. Autentique-se novamente.');
     }
     if (sessao.expiradaEm(agora)) {
       this.sessaoRepository.remover(token);
-      throw erroDeAcesso('AC-03', 'Sessão expirada. Autentique-se novamente.');
+      throw erroComCodigo('AC-03', 'Sessão expirada. Autentique-se novamente.');
     }
     sessao.renovar(agora);
     this.sessaoRepository.salvar(sessao);

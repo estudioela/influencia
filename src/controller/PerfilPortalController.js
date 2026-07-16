@@ -28,7 +28,7 @@ this.PerfilPortalController = class PerfilPortalController {
     try {
       return envelopeOk(this.projetarPerfil(this.perfilPortalService.verPerfil(dados)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -43,7 +43,7 @@ this.PerfilPortalController = class PerfilPortalController {
     try {
       return envelopeOk(this.projetarPerfil(this.perfilPortalService.editarPerfil(dados)));
     } catch (erro) {
-      return this.falhar(erro);
+      return falharComCodigo(erro);
     }
   }
 
@@ -71,16 +71,4 @@ this.PerfilPortalController = class PerfilPortalController {
     };
   }
 
-  /**
-   * Converte erro de domínio/serviço em envelope de falha, preservando o
-   * código do contrato (PP-01/02, §17) quando presente — mesmo padrão de
-   * AcessoController/PortalDeConteudoController.
-   * @param {Error} erro
-   * @returns {{success: false, error: object}}
-   */
-  falhar(erro) {
-    return envelopeFail(
-      erro.codigo ? { codigo: erro.codigo, mensagem: erro.message } : { mensagem: erro.message }
-    );
-  }
 };

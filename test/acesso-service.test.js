@@ -1,6 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 const ARQUIVOS = [
+  'src/shared/ErroComCodigo.js',
   'src/domain/Credencial.js',
   'src/domain/TokenDeSessao.js',
   'src/domain/JanelaDeBloqueio.js',
