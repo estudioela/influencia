@@ -81,7 +81,7 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 02 — Colaboração Mensal
 
-#### `[>]` SPEC-005 · Colaboração Mensal
+#### `[x]` SPEC-005 · Colaboração Mensal
 - **Deps SPEC:** SPEC-002
 - **Requisitos (PRD):** §5.2, §6.2, §7 (RN-04, RN-05, RN-06), §8 ("Ciclo Mensal" ≡ Colaboração Mensal)
 - **Restrições:** `CONTRATO_SOBERANO` §5, §6, §8 · `ADR-001` §2, §3 (MesReferencia `AAAA-MM`) · `ADR — Linguagem Ubíqua` §4
@@ -93,7 +93,7 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 03 — Briefing
 
-#### `[ ]` SPEC-009 · Briefing de Campanha
+#### `[x]` SPEC-009 · Briefing de Campanha
 - **Deps SPEC:** SPEC-005
 - **Requisitos (PRD):** §5.3, §6.3, §7 (RN-04, RN-06), §9 (RF-008, RF-009, RF-010)
 - **Restrições:** `ADR-001` §2 (cálculo da data de aprovação = RN-04)
@@ -102,7 +102,7 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 04 — Conteúdo e Ativações
 
-#### `[ ]` SPEC-012 · Gestão de Conteúdo e Ativações
+#### `[x]` SPEC-012 · Gestão de Conteúdo e Ativações
 - **Deps SPEC:** SPEC-005
 - **Requisitos (PRD):** §5.4, §6.4, §7 (RN-06, RN-07, RN-08), §9 (RF-011…RF-015)
 - **Restrições:** `ADR-001` §2.2 (estados de conteúdo)
@@ -112,7 +112,7 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 05 — Logística
 
-#### `[ ]` SPEC-016 · Gestão Logística
+#### `[x]` SPEC-016 · Gestão Logística
 - **Deps SPEC:** SPEC-005
 - **Requisitos (PRD):** §5.5, §6.5, §7 (RN-13, RN-14), §9 (RF-016…RF-019)
 - **Restrições:** `ADR-001` §2.4 (`STATUS REVISÃO` e `STATUS LOGISTICA` — máquinas independentes)
@@ -131,10 +131,12 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 07 — Documentos
 
-#### `[ ]` SPEC-023 · Geração de Documentos
+#### `[x]` SPEC-023 · Geração de Documentos
 - **Deps SPEC:** SPEC-002, SPEC-009
 - **Requisitos (PRD):** §5.7, §6.7, §7 (RN-15), §9 (RF-024, RF-025)
 - **Restrições:** `CONTRATO_SOBERANO` §6.1 · `ADR — Linguagem Ubíqua` §4 (Snapshot Comercial da Colaboração)
+- ✅ **Implementada (2026-07-16):** slice completo (`Documento`/`CamposDeMesclagem` → `ParceiraACL.obterParaDocumentos`/`DocumentoACL` → `DocumentoRepository` → `DocumentoService` → `DocumentoController` → Portal). Aba física nova `DOCUMENTOS` persiste só referência opaca (sem PII). Sinalização = coluna `SIM/NÃO` da `BASE DE DADOS` (PRD §5.7).
+- **Dívidas registradas na implementação:** motor documental real por ADR futuro (D-01 — adaptador interino de texto); rótulos crus da aba `DOCUMENTOS` sem ADR (mesma pendência SPEC-016); autorização por papel aguarda SPEC-025; geração em lote (RF-024 "[job]") não implementada — comando individual por Parceira; sem UI de Portal (SPEC não define; §12 "leitura futura").
 
 ---
 

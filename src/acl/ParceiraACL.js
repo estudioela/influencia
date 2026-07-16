@@ -75,14 +75,7 @@ this.ParceiraACL = class ParceiraACL {
    */
   listarAtivasComCondicoes() {
     const valores = this.sheet.getDataRange().getValues();
-    const cabecalho = valores[0];
-    const coluna = (nome) => {
-      const indice = cabecalho.indexOf(nome);
-      if (indice === -1) {
-        throw new Error("Coluna '" + nome + "' ausente em 'BASE DE DADOS'.");
-      }
-      return indice;
-    };
+    const coluna = this.resolvedorDeColuna(valores[0]);
     return valores
       .slice(1)
       .filter((linha) => String(linha[coluna('INFLU_KEY')]).trim() !== '')
@@ -93,6 +86,124 @@ this.ParceiraACL = class ParceiraACL {
         parceiraId: String(linha[coluna('INFLU_KEY')]).trim(),
         condicoes: this.condicoesDaLinha(linha, coluna),
       }));
+  }
+
+  /**
+   * Porta de contato de envio para a Logística (SPEC-016 UC-016.01, D-03):
+   * projeção mínima com endereço e chave PIX da Parceira, para a mensagem
+   * de confirmação de envio manual. Não expõe a linha completa nem
+   * qualquer outro dado da BASE DE DADOS; ParceiraACL segue sendo o único
+   * ponto que toca esta aba (Freeze §4).
+   * @param {string} parceiraId INFLU_KEY da Parceira.
+   * @returns {{endereco: string, pix: string}|null} null se a Parceira não existir.
+   */
+  obterContatoDeEnvio(parceiraId) {
+    const valores = this.sheet.getDataRange().getValues();
+    const coluna = this.resolvedorDeColuna(valores[0]);
+    const colInfluKey = coluna('INFLU_KEY');
+    const colEndereco = coluna('INFLUENCIADORA_ENDERECO');
+    const colPix = coluna('CHAVE_PIX');
+    const linha = valores
+      .slice(1)
+      .find((l) => String(l[colInfluKey]).trim() === String(parceiraId).trim());
+    if (!linha) {
+      return null;
+    }
+    return {
+      endereco: String(linha[colEndereco] == null ? '' : linha[colEndereco]).trim(),
+      pix: String(linha[colPix] == null ? '' : linha[colPix]).trim(),
+    };
+  }
+
+  /**
+   * Porta do Cadastro para a Geração de Documentos (SPEC-023 §14.1):
+   * projeção da linha da Parceira com o estado do vínculo, a sinalização
+   * e os campos de mesclagem (§6.1). Segue o padrão de obterContatoDeEnvio
+   * (SPEC-016 D-03): ParceiraACL permanece o ÚNICO ponto que toca a
+   * BASE DE DADOS (Freeze §4). Os campos contêm PII (CNPJ, endereço)
+   * porque o destino é o documento do destinatário (RNF-01) — nunca
+   * registrá-los em log/evento.
+   * @param {string} parceiraId INFLU_KEY da Parceira.
+   * @returns {{estado: ('Ativa'|'Inativa'), sinalizada: boolean,
+   *   campos: {razaoSocial: string, cnpj: string, endereco: string,
+   *     quantidades: Object<string, string>, valorNumero: (number|null),
+   *     valorExtenso: string, canaisUsoImagem: string,
+   *     prazoUsoImagem: string, cidadeAssinatura: string,
+   *     dataAssinatura: string}}|null} null se a Parceira não existir.
+   */
+  obterParaDocumentos(parceiraId) {
+    const valores = this.sheet.getDataRange().getValues();
+    const coluna = this.resolvedorDeColuna(valores[0]);
+    const linha = valores
+      .slice(1)
+      .find((l) => String(l[coluna('INFLU_KEY')]).trim() === String(parceiraId).trim());
+    if (!linha) {
+      return null;
+    }
+    const texto = (nome) =>
+      String(linha[coluna(nome)] == null ? '' : linha[coluna(nome)]).trim();
+    const rotulos = {
+      Reels: 'REELS_TEXTO',
+      Carrossel: 'CARROSSEL_TEXTO',
+      Stories: 'STORIES_TEXTO',
+      Looks: 'LOOKS_QTD_TEXTO',
+    };
+    const quantidades = {};
+    Object.keys(rotulos).forEach((formato) => {
+      const valor = texto(rotulos[formato]);
+      if (valor !== '') {
+        quantidades[formato] = valor;
+      }
+    });
+    return {
+      estado: this.statusParaCanonico(linha[coluna('STATUS')]),
+      sinalizada: this.sinalizacaoParaCanonico(linha[coluna('SIM/NÃO')]),
+      campos: {
+        razaoSocial: texto('INFLUENCIADORA_RAZAO_SOCIAL'),
+        cnpj: texto('INFLUENCIADORA_CNPJ'),
+        endereco: texto('INFLUENCIADORA_ENDERECO'),
+        quantidades: quantidades,
+        valorNumero:
+          texto('VALOR_TOTAL') === ''
+            ? null
+            : this.valorMensalDe(linha[coluna('VALOR_TOTAL')]),
+        valorExtenso: texto('VALOR_TOTAL_EXTENSO'),
+        canaisUsoImagem: texto('CANAIS_USO_IMAGEM'),
+        prazoUsoImagem: texto('PRAZO_USO_IMAGEM'),
+        cidadeAssinatura: texto('CIDADE_ASSINATURA'),
+        dataAssinatura: texto('DATA_ASSINATURA'),
+      },
+    };
+  }
+
+  /**
+   * Coage a sinalização física crua ('SIM/NÃO') → canônico do domínio
+   * (SPEC-023 RN-02). Normalização ADR-001 §2: trim + casefold; vazio é
+   * "não sinalizada"; valor desconhecido → erro barulhento.
+   * @param {string} cru valor lido da coluna SIM/NÃO.
+   * @returns {boolean}
+   */
+  sinalizacaoParaCanonico(cru) {
+    const normalizado = String(cru == null ? '' : cru).trim().toLowerCase();
+    if (normalizado === 'sim') return true;
+    if (normalizado === 'não' || normalizado === 'nao' || normalizado === '') return false;
+    throw new Error(
+      "Sinalização desconhecida em 'BASE DE DADOS'.SIM/NÃO: '" + cru + "'."
+    );
+  }
+
+  /**
+   * @param {Array} cabecalho
+   * @returns {function(string): number} resolve nome → índice, fail-fast.
+   */
+  resolvedorDeColuna(cabecalho) {
+    return (nome) => {
+      const indice = cabecalho.indexOf(nome);
+      if (indice === -1) {
+        throw new Error("Coluna '" + nome + "' ausente em 'BASE DE DADOS'.");
+      }
+      return indice;
+    };
   }
 
   /**

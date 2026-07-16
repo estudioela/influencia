@@ -134,6 +134,45 @@ function fakeEntregasAba() {
   };
 }
 
+// Aba ENVIOS fake (M5): MesCompilado também materializa os Envios da
+// competência (SPEC-016 RN-01), então o smoke do Portal precisa da aba
+// desde M5.
+function fakeEnviosAba() {
+  let rows = [
+    [
+      'INFLU_KEY',
+      'ANO_REFERENCIA',
+      'MES_REFERENCIA',
+      'STATUS_REVISAO',
+      'STATUS_LOGISTICA',
+      'RASTREIO',
+      'DATA_ENVIO',
+      'DATA_ARQUIVAMENTO',
+    ],
+  ];
+  return {
+    get _rows() {
+      return rows;
+    },
+    getDataRange: () => ({ getValues: () => rows.map((r) => r.slice()) }),
+    clearContents() {
+      rows = [];
+    },
+    getRange(linha, _coluna, numLinhas, numColunas) {
+      return {
+        setValues(valores) {
+          if (valores.length !== numLinhas || valores[0].length !== numColunas) {
+            throw new Error('fake: range incompatível.');
+          }
+          valores.forEach((v, i) => {
+            rows[linha - 1 + i] = v.slice();
+          });
+        },
+      };
+    },
+  };
+}
+
 function montarPortal(abas, propriedade) {
   return loadGas(
     [
@@ -149,22 +188,29 @@ function montarPortal(abas, propriedade) {
       'src/domain/IdentificadorDeEntrega.js',
       'src/domain/LinkDoMaterial.js',
       'src/domain/Entrega.js',
+      'src/domain/CodigoRastreio.js',
+      'src/domain/EnderecoDeEntrega.js',
+      'src/domain/Envio.js',
       'src/acl/ParceiraACL.js',
       'src/acl/ColaboracaoMensalACL.js',
       'src/acl/BriefingACL.js',
       'src/acl/EntregaACL.js',
+      'src/acl/EnvioACL.js',
       'src/repository/ParceiraRepository.js',
       'src/repository/ColaboracaoMensalRepository.js',
       'src/repository/BriefingRepository.js',
       'src/repository/EntregaRepository.js',
+      'src/repository/EnvioRepository.js',
       'src/service/CadastrarParceiraService.js',
       'src/service/CompiladorDoMes.js',
       'src/service/BriefingService.js',
       'src/service/EntregaService.js',
+      'src/service/EnvioService.js',
       'src/controller/ParceiraController.js',
       'src/controller/ColaboracaoMensalController.js',
       'src/controller/BriefingController.js',
       'src/controller/EntregaController.js',
+      'src/controller/EnvioController.js',
       'src/entrypoint/Portal.js',
     ],
     {
@@ -183,12 +229,14 @@ describe('Entrypoint · Portal.compilarMes (smoke)', () => {
     const colaboracoes = fakeColaboracoes();
     const briefing = fakeBriefingAba();
     const entregas = fakeEntregasAba();
+    const envios = fakeEnviosAba();
     const gas = montarPortal(
       {
         'BASE DE DADOS': fakeBaseDeDados(),
         COLABORACOES: colaboracoes,
         BRIEFING: briefing,
         ENTREGAS: entregas,
+        ENVIOS: envios,
       },
       'fake-spreadsheet-id'
     );
@@ -219,6 +267,11 @@ describe('Entrypoint · Portal.compilarMes (smoke)', () => {
     // contratada — Maria: Reels×2 + Stories×4 = 6 linhas.
     expect(entregas._rows).toHaveLength(7);
     expect(entregas._rows.slice(1).every((linha) => linha[4] === 'AGUARDANDO_MATERIAL')).toBe(true);
+    // M5 (SPEC-016 RN-01): MesCompilado materializa um Envio por Parceira
+    // Ativa — Maria: 1 linha.
+    expect(envios._rows).toHaveLength(2);
+    expect(envios._rows[1][3]).toBe('AGUARDANDO_CONFIRMACAO');
+    expect(envios._rows[1][4]).toBe('PENDENTE');
 
     const segunda = gas.compilarMes({ mesReferencia: '2026-07' });
     expect(segunda.success).toBe(true);
@@ -226,6 +279,7 @@ describe('Entrypoint · Portal.compilarMes (smoke)', () => {
     expect(colaboracoes._rows).toHaveLength(2);
     expect(briefing._rows).toHaveLength(7);
     expect(entregas._rows).toHaveLength(7);
+    expect(envios._rows).toHaveLength(2);
   });
 
   test('aba COLABORACOES ausente vira envelope de falha (nunca exceção crua)', () => {

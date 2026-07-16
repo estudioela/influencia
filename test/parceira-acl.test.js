@@ -145,3 +145,116 @@ describe('ParceiraACL — listarAtivasComCondicoes (SPEC-005 §14.1, Contrato §
     expect(() => acl.listarAtivasComCondicoes()).toThrow(/REELS_TEXTO.*dois/);
   });
 });
+
+describe('ParceiraACL — obterContatoDeEnvio (SPEC-016 UC-016.01, D-03)', () => {
+  const CABECALHO = ['INFLU_KEY', 'STATUS', 'INFLUENCIADORA_ENDERECO', 'CHAVE_PIX'];
+
+  function comLinhas(linhas) {
+    const sheet = fakeSheet(CABECALHO);
+    linhas.forEach((l) => sheet.appendRow(l));
+    return novaAcl(sheet).acl;
+  }
+
+  test('devolve somente endereço e PIX da Parceira — projeção mínima, sem a linha completa', () => {
+    const acl = comLinhas([['Maria', 'ON', 'Rua das Flores, 123', 'pix@maria']]);
+
+    const contato = acl.obterContatoDeEnvio('Maria');
+
+    expect(contato).toEqual({ endereco: 'Rua das Flores, 123', pix: 'pix@maria' });
+    expect(Object.keys(contato).sort()).toEqual(['endereco', 'pix']);
+  });
+
+  test('Parceira inexistente devolve null', () => {
+    const acl = comLinhas([['Maria', 'ON', 'Rua das Flores, 123', 'pix@maria']]);
+
+    expect(acl.obterContatoDeEnvio('Ana')).toBeNull();
+  });
+
+  test('coluna ausente falha barulhento (mesma disciplina das demais leituras)', () => {
+    const acl = novaAcl(fakeSheet(['INFLU_KEY', 'STATUS'])).acl;
+
+    expect(() => acl.obterContatoDeEnvio('Maria')).toThrow(/ausente/i);
+  });
+});
+
+describe('ParceiraACL — obterParaDocumentos (SPEC-023 §14.1)', () => {
+  const CABECALHO = [
+    'INFLU_KEY',
+    'STATUS',
+    'INFLUENCIADORA_RAZAO_SOCIAL',
+    'INFLUENCIADORA_CNPJ',
+    'INFLUENCIADORA_ENDERECO',
+    'VALOR_TOTAL',
+    'VALOR_TOTAL_EXTENSO',
+    'REELS_TEXTO',
+    'CARROSSEL_TEXTO',
+    'STORIES_TEXTO',
+    'LOOKS_QTD_TEXTO',
+    'CANAIS_USO_IMAGEM',
+    'PRAZO_USO_IMAGEM',
+    'CIDADE_ASSINATURA',
+    'DATA_ASSINATURA',
+    'SIM/NÃO',
+  ];
+
+  function linhaMaria(sobrescritas) {
+    const base = {
+      INFLU_KEY: 'Maria',
+      STATUS: 'ON',
+      INFLUENCIADORA_RAZAO_SOCIAL: 'Maria Conteúdo LTDA',
+      INFLUENCIADORA_CNPJ: '12.345.678/0001-99',
+      INFLUENCIADORA_ENDERECO: 'Rua das Flores, 123 — São Paulo/SP',
+      VALOR_TOTAL: 3500,
+      VALOR_TOTAL_EXTENSO: 'três mil e quinhentos reais',
+      REELS_TEXTO: '2 reels',
+      CARROSSEL_TEXTO: '',
+      STORIES_TEXTO: '4 stories',
+      LOOKS_QTD_TEXTO: '',
+      CANAIS_USO_IMAGEM: 'Instagram e site da marca',
+      PRAZO_USO_IMAGEM: '12 meses',
+      CIDADE_ASSINATURA: 'São Paulo',
+      DATA_ASSINATURA: '2026-07-16',
+      'SIM/NÃO': 'SIM',
+    };
+    Object.assign(base, sobrescritas || {});
+    return CABECALHO.map((coluna) => base[coluna]);
+  }
+
+  function comLinha(sobrescritas) {
+    const sheet = fakeSheet(CABECALHO);
+    sheet.appendRow(linhaMaria(sobrescritas));
+    return novaAcl(sheet).acl;
+  }
+
+  test('projeta estado, sinalização e os campos de mesclagem por cabeçalho', () => {
+    const dados = comLinha().obterParaDocumentos('Maria');
+
+    expect(dados.estado).toBe('Ativa');
+    expect(dados.sinalizada).toBe(true);
+    expect(dados.campos.razaoSocial).toBe('Maria Conteúdo LTDA');
+    expect(dados.campos.cnpj).toBe('12.345.678/0001-99');
+    expect(dados.campos.valorNumero).toBe(3500);
+    expect(dados.campos.valorExtenso).toBe('três mil e quinhentos reais');
+    expect(dados.campos.quantidades).toEqual({
+      Reels: '2 reels',
+      Stories: '4 stories',
+    });
+    expect(dados.campos.cidadeAssinatura).toBe('São Paulo');
+  });
+
+  test('Parceira inexistente devolve null (DC-01 é decidido no service)', () => {
+    expect(comLinha().obterParaDocumentos('Ana')).toBeNull();
+  });
+
+  test("sinalização: 'NÃO' e vazio → false; valor desconhecido falha barulhento", () => {
+    expect(comLinha({ 'SIM/NÃO': 'NÃO' }).obterParaDocumentos('Maria').sinalizada).toBe(
+      false
+    );
+    expect(comLinha({ 'SIM/NÃO': '' }).obterParaDocumentos('Maria').sinalizada).toBe(
+      false
+    );
+    expect(() => comLinha({ 'SIM/NÃO': 'talvez' }).obterParaDocumentos('Maria')).toThrow(
+      /talvez/
+    );
+  });
+});

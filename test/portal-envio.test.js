@@ -1,24 +1,25 @@
 const { loadGas } = require('./helpers/gasHarness');
 
-// Slice ponta a ponta do M4 (SPEC-012): compilarMes → MesCompilado →
-// Entregas materializadas na aba ENTREGAS (RN-01) → preencherBriefing →
-// BriefingPublicado → aprovação interna espelhada (§14.1) → enviarMaterial
-// → aprovar → publicar (arquivamento RN-04) → listarEntregas lê a
+// Slice ponta a ponta do M5 (SPEC-016): compilarMes → MesCompilado →
+// Envios materializados na aba ENVIOS (RN-01) → confirmarEndereco (D-03,
+// lê ENDERECO/PIX só da BASE DE DADOS) → registrarRastreio (RN-02) →
+// atualizarStatus (RNF-01, adaptador manual degradável) → listarEnvios lê a
 // projeção. Pilha real (Portal → Controller → Service → Repository →
-// EntregaACL) sobre fakes de planilha.
+// EnvioACL/ParceiraACL) sobre fakes de planilha.
 function fakeBaseDeDados() {
   const rows = [
     [
       'INFLU_KEY',
       'STATUS',
       'CHAVE_PIX',
+      'INFLUENCIADORA_ENDERECO',
       'VALOR_TOTAL',
       'REELS_TEXTO',
       'CARROSSEL_TEXTO',
       'STORIES_TEXTO',
       'LOOKS_QTD',
     ],
-    ['Maria', 'ON', 'pix@maria', 3500, '1', '', '2', ''],
+    ['Maria', 'ON', 'pix@maria', 'Rua das Flores, 123 — São Paulo/SP', 3500, '1', '', '2', ''],
   ];
   return {
     getDataRange: () => ({ getValues: () => rows.map((r) => r.slice()) }),
@@ -90,8 +91,6 @@ function fakeEntregasAba() {
   ]);
 }
 
-// Aba ENVIOS fake (M5): compilar também materializa os Envios da
-// competência (SPEC-016 RN-01), então o slice do M4 precisa da aba desde M5.
 function fakeEnviosAba() {
   return fakeAbaGravavel([
     'INFLU_KEY',
@@ -157,98 +156,93 @@ function montarPortal(abas) {
 }
 
 function portalCompilado() {
-  const entregasAba = fakeEntregasAba();
+  const enviosAba = fakeEnviosAba();
   const gas = montarPortal({
     'BASE DE DADOS': fakeBaseDeDados(),
     COLABORACOES: fakeColaboracoes(),
     BRIEFING: fakeBriefingAba(),
-    ENTREGAS: entregasAba,
-    ENVIOS: fakeEnviosAba(),
+    ENTREGAS: fakeEntregasAba(),
+    ENVIOS: enviosAba,
   });
   expect(gas.compilarMes({ mesReferencia: '2026-07' }).success).toBe(true);
-  return { gas, entregasAba };
+  return { gas, enviosAba };
 }
 
-describe('Entrypoint · Portal — slice da Entrega (SPEC-012 §20)', () => {
-  test('materializa no compilar (RN-01), espelha aprovação (§14.1) e atravessa enviar → aprovar → publicar', () => {
-    const { gas, entregasAba } = portalCompilado();
+describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
+  test('materializa no compilar (RN-01) e atravessa confirmar endereço → registrar rastreio → atualizar status', () => {
+    const { gas, enviosAba } = portalCompilado();
 
-    // RN-01: Reels×1 + Stories×2 = 3 Entregas, uma por unidade contratada.
-    const materializadas = gas.listarEntregas({ mesReferencia: '2026-07' });
-    expect(materializadas.success).toBe(true);
-    expect(materializadas.data.map((e) => e.rotulo)).toEqual([
-      'Reels',
-      'Stories 1',
-      'Stories 2',
-    ]);
-    expect(materializadas.data.every((e) => e.estado === 'AguardandoMaterial')).toBe(true);
+    // RN-01: uma Parceira ativa (Maria) → um Envio, AguardandoConfirmacao/Pendente.
+    const materializados = gas.listarEnvios({ mesReferencia: '2026-07' });
+    expect(materializados.success).toBe(true);
+    expect(materializados.data).toHaveLength(1);
+    expect(materializados.data[0]).toMatchObject({
+      parceiraId: 'Maria',
+      revisao: 'AguardandoConfirmacao',
+      jornada: 'Pendente',
+    });
 
-    // §14.1: BriefingPublicado espelha a aprovação interna derivada (RN-01
-    // do M3: postagem quarta 22/07 → 15/07) na Entrega de mesmo rótulo.
-    const publicado = gas.preencherBriefing({
+    // UC-016.01/D-03: confirma o endereço e devolve a mensagem manual com
+    // endereço e PIX lidos exclusivamente da BASE DE DADOS via ParceiraACL.
+    const confirmado = gas.confirmarEndereco({ mesReferencia: '2026-07', parceiraId: 'Maria' });
+    expect(confirmado.success).toBe(true);
+    expect(confirmado.data.revisao).toBe('Confirmado');
+    expect(confirmado.data.mensagem).toContain('Rua das Flores, 123');
+    expect(confirmado.data.mensagem).toContain('pix@maria');
+    // A projeção do Envio nunca carrega PII, mesmo com a mensagem presente.
+    expect(confirmado.data.endereco).toBeUndefined();
+
+    // UC-016.02/RN-02: registra o rastreio, preenchendo a data de envio.
+    const registrado = gas.registrarRastreio({
       mesReferencia: '2026-07',
       parceiraId: 'Maria',
-      blocos: [
-        {
-          rotulo: 'Reels',
-          look: 'Look 12',
-          dataEntrega: '2026-07-10',
-          dataPostagem: '2026-07-22',
-        },
-        { rotulo: 'Stories 1', look: 'Look 3', dataEntrega: '2026-07-10', dataPostagem: '2026-07-24' },
-        { rotulo: 'Stories 2', look: 'Look 4', dataEntrega: '2026-07-10', dataPostagem: '2026-07-26' },
-      ],
+      codigo: 'BR123456789XX',
     });
-    expect(publicado.success).toBe(true);
-    const espelhadas = gas.listarEntregas({ mesReferencia: '2026-07', parceiraId: 'Maria' });
-    expect(espelhadas.data[0].dataAprovacaoInterna).toBe('2026-07-15');
+    expect(registrado.success).toBe(true);
+    expect(registrado.data.jornada).toBe('Expedido');
+    expect(registrado.data.rastreio).toBe('BR123456789XX');
+    expect(registrado.data.dataEnvio).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
-    // UC-012.02/03: enviar → EmRevisao; aprovar → Aprovado; publicar →
-    // Publicado com arquivamento automático do relógio (RN-04).
-    const comando = { mesReferencia: '2026-07', parceiraId: 'Maria', rotulo: 'Reels' };
-    const enviada = gas.enviarMaterial(
-      Object.assign({ link: 'https://drive.google.com/x' }, comando)
-    );
-    expect(enviada.success).toBe(true);
-    expect(enviada.data.estado).toBe('EmRevisao');
-    expect(enviada.data.material).toBe('https://drive.google.com/x');
-
-    expect(gas.aprovarEntrega(comando).data.estado).toBe('Aprovado');
-
-    const publicada = gas.publicarEntrega(comando);
-    expect(publicada.success).toBe(true);
-    expect(publicada.data.estado).toBe('Publicado');
-    expect(publicada.data.dataArquivamento).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // UC-016.03/RNF-01: o adaptador manual (D-02, dívida) nunca indica
+    // entrega sozinho — a operação segue sem erro, jornada inalterada.
+    const statusAtualizado = gas.atualizarStatus({
+      mesReferencia: '2026-07',
+      parceiraId: 'Maria',
+    });
+    expect(statusAtualizado.success).toBe(true);
+    expect(statusAtualizado.data.jornada).toBe('Expedido');
 
     // Persistência real na aba: estado cru gravado pela ACL.
-    const linhaReels = entregasAba._rows.find((linha) => linha[3] === 'Reels');
-    expect(linhaReels[4]).toBe('PUBLICADO');
+    const linhaMaria = enviosAba._rows.find((linha) => linha[0] === 'Maria');
+    expect(linhaMaria[3]).toBe('CONFIRMADO');
+    expect(linhaMaria[4]).toBe('EXPEDIDO');
+    expect(linhaMaria[5]).toBe('BR123456789XX');
   });
 
-  test('CT-01: Entrega inexistente é recusada em envelope de falha', () => {
+  test('LG-01: Envio inexistente é recusado em envelope de falha', () => {
     const { gas } = portalCompilado();
 
-    const resposta = gas.enviarMaterial({
+    const resposta = gas.registrarRastreio({
       mesReferencia: '2026-07',
-      parceiraId: 'Maria',
-      rotulo: 'Carrossel',
-      link: 'https://drive.google.com/x',
+      parceiraId: 'Ana',
+      codigo: 'BR123',
     });
 
     expect(resposta.success).toBe(false);
-    expect(resposta.error.mensagem).toMatch(/CT-01/);
+    expect(resposta.error.mensagem).toMatch(/LG-01/);
   });
 
-  test('aba ENTREGAS ausente vira envelope de falha (nunca exceção crua)', () => {
+  test('aba ENVIOS ausente vira envelope de falha (nunca exceção crua)', () => {
     const gas = montarPortal({
       'BASE DE DADOS': fakeBaseDeDados(),
       COLABORACOES: fakeColaboracoes(),
       BRIEFING: fakeBriefingAba(),
+      ENTREGAS: fakeEntregasAba(),
     });
 
-    const resposta = gas.listarEntregas({ mesReferencia: '2026-07' });
+    const resposta = gas.listarEnvios({ mesReferencia: '2026-07' });
 
     expect(resposta.success).toBe(false);
-    expect(resposta.error.mensagem).toMatch(/ENTREGAS/);
+    expect(resposta.error.mensagem).toMatch(/ENVIOS/);
   });
 });

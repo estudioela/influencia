@@ -41,6 +41,15 @@ module.exports = [
         BriefingRepository: 'readonly',
         BriefingService: 'readonly',
         BriefingController: 'readonly',
+        // Domínio do Envio (SPEC-016): VOs, camadas e Controller referenciados
+        // pelo agregado e pela composição do Entrypoint.
+        CodigoRastreio: 'readonly',
+        EnderecoDeEntrega: 'readonly',
+        Envio: 'readonly',
+        EnvioACL: 'readonly',
+        EnvioRepository: 'readonly',
+        EnvioService: 'readonly',
+        EnvioController: 'readonly',
         // Domínio da Entrega (SPEC-012): VOs referenciados pelo agregado.
         IdentificadorDeEntrega: 'readonly',
         LinkDoMaterial: 'readonly',
@@ -49,6 +58,15 @@ module.exports = [
         EntregaRepository: 'readonly',
         EntregaService: 'readonly',
         EntregaController: 'readonly',
+        // Domínio da Geração de Documentos (SPEC-023): VOs, entidade,
+        // camadas e Controller referenciados pelo Service e pela composição.
+        CamposDeMesclagem: 'readonly',
+        Documento: 'readonly',
+        DocumentoACL: 'readonly',
+        DocumentoRepository: 'readonly',
+        GeradorDeDocumentosTexto: 'readonly',
+        DocumentoService: 'readonly',
+        DocumentoController: 'readonly',
         // Classes da fatia compostas pelo Entrypoint Portal (namespace único GAS).
         ParceiraACL: 'readonly',
         ParceiraRepository: 'readonly',

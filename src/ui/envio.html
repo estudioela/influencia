@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <title>TEAR — Envios</title>
+  </head>
+  <body>
+    <main>
+      <h1>Envios da Competência</h1>
+
+      <form id="busca">
+        <label for="mesReferencia">Competência (AAAA-MM)</label>
+        <input id="mesReferencia" name="mesReferencia" required placeholder="2026-07" />
+        <label for="parceiraId">Parceira (opcional)</label>
+        <input id="parceiraId" name="parceiraId" />
+        <button type="submit">Listar envios</button>
+      </form>
+
+      <section id="envios"></section>
+
+      <p id="mensagem" role="status"></p>
+
+      <section id="confirmacao" hidden>
+        <h2>Endereço para envio manual</h2>
+        <pre id="confirmacaoTexto"></pre>
+      </section>
+    </main>
+
+    <script>
+      var busca = document.getElementById('busca');
+      var enviosEl = document.getElementById('envios');
+      var mensagem = document.getElementById('mensagem');
+      var confirmacaoEl = document.getElementById('confirmacao');
+      var confirmacaoTextoEl = document.getElementById('confirmacaoTexto');
+
+      function avisar(texto) {
+        mensagem.textContent = texto;
+      }
+
+      function mostrarConfirmacao(texto) {
+        confirmacaoTextoEl.textContent = texto;
+        confirmacaoEl.hidden = false;
+      }
+
+      function filtroAtual() {
+        var parceiraId = busca.parceiraId.value.trim();
+        var filtro = { mesReferencia: busca.mesReferencia.value.trim() };
+        if (parceiraId !== '') filtro.parceiraId = parceiraId;
+        return filtro;
+      }
+
+      function chamar(nomeDaFuncao, dados, mensagemDeSucesso) {
+        avisar('Processando…');
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            if (!resposta.success) return avisar(resposta.error.mensagem);
+            avisar(mensagemDeSucesso);
+            listar();
+          })
+          .withFailureHandler(function (erro) { avisar(erro.message); })
+          [nomeDaFuncao](dados);
+      }
+
+      function confirmarEnderecoAcao(comando) {
+        avisar('Processando…');
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            if (!resposta.success) return avisar(resposta.error.mensagem);
+            mostrarConfirmacao(resposta.data.mensagem);
+            avisar('Endereço confirmado.');
+            listar();
+          })
+          .withFailureHandler(function (erro) { avisar(erro.message); })
+          .confirmarEndereco(comando);
+      }
+
+      function acoes(envio, i) {
+        var html = '';
+        if (envio.revisao === 'AguardandoConfirmacao') {
+          html += '<button type="button" data-acao="confirmar" data-indice="' + i + '">Confirmar endereço</button>';
+        }
+        if (envio.jornada === 'Pendente' || envio.jornada === 'Expedido') {
+          html +=
+            '<label>Código de rastreio <input name="rastreio-' + i + '" type="text" required /></label>' +
+            '<button type="button" data-acao="registrar" data-indice="' + i + '">Registrar rastreio</button>';
+        }
+        if (envio.jornada === 'Expedido') {
+          html += '<button type="button" data-acao="atualizar" data-indice="' + i + '">Atualizar status</button>';
+        }
+        if (envio.jornada === 'Entregue') {
+          html += '<p>Entregue em: ' + envio.dataArquivamento + '</p>';
+        }
+        if (envio.jornada === 'Cancelado') {
+          html += '<p>Cancelado</p>';
+        }
+        return html;
+      }
+
+      function renderizar(envios) {
+        if (envios.length === 0) {
+          enviosEl.innerHTML = '';
+          avisar('Nenhum Envio na competência.');
+          return;
+        }
+        enviosEl.innerHTML = envios
+          .map(function (envio, i) {
+            return (
+              '<fieldset data-parceira="' + envio.parceiraId + '">' +
+              '<legend>' + envio.parceiraId + ' — ' + envio.mesReferencia + '</legend>' +
+              '<p>Revisão: ' + envio.revisao + '</p>' +
+              '<p>Jornada: ' + envio.jornada + '</p>' +
+              '<p>Rastreio: ' + (envio.rastreio || '—') + '</p>' +
+              '<p>Envio: ' + (envio.dataEnvio || '—') + '</p>' +
+              '<p>Arquivamento: ' + (envio.dataArquivamento || '—') + '</p>' +
+              acoes(envio, i) +
+              '</fieldset>'
+            );
+          })
+          .join('');
+        avisar(envios.length + ' envio(s).');
+      }
+
+      function listar() {
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            if (!resposta.success) return avisar(resposta.error.mensagem);
+            renderizar(resposta.data);
+          })
+          .withFailureHandler(function (erro) { avisar(erro.message); })
+          .listarEnvios(filtroAtual());
+      }
+
+      busca.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+        avisar('Carregando…');
+        listar();
+      });
+
+      enviosEl.addEventListener('click', function (evento) {
+        var acao = evento.target.getAttribute && evento.target.getAttribute('data-acao');
+        if (!acao) return;
+        var grupo = evento.target.closest('fieldset');
+        var comando = {
+          mesReferencia: busca.mesReferencia.value.trim(),
+          parceiraId: grupo.getAttribute('data-parceira'),
+        };
+        if (acao === 'confirmar') {
+          return confirmarEnderecoAcao(comando);
+        }
+        if (acao === 'registrar') {
+          var indice = evento.target.getAttribute('data-indice');
+          comando.codigo = grupo.querySelector('[name="rastreio-' + indice + '"]').value.trim();
+          return chamar('registrarRastreio', comando, 'Rastreio registrado — Envio expedido.');
+        }
+        chamar('atualizarStatus', comando, 'Status atualizado.');
+      });
+    </script>
+  </body>
+</html>

@@ -31,6 +31,11 @@ function doGet(e) {
       .evaluate()
       .setTitle('TEAR — Entregas');
   }
+  if (e && e.parameter && e.parameter.pagina === 'envio') {
+    return HtmlService.createTemplateFromFile('src/ui/envio')
+      .evaluate()
+      .setTitle('TEAR — Envios');
+  }
   return HtmlService.createTemplateFromFile('src/ui/cadastro-parceira')
     .evaluate()
     .setTitle('TEAR — Cadastro de Parceira');
@@ -114,6 +119,40 @@ function relogioDoSistema() {
 }
 
 /**
+ * Adaptador de rastreio manual — porta de rastreio do M5 (SPEC-016 D-02).
+ * Provedor/contrato real da transportadora é dívida registrada; até lá,
+ * nunca indica entrega automaticamente (a atualização de status é sempre
+ * degradável — RNF-01/CB-01 — e o registro de entrega segue manual).
+ * @returns {{consultar: function(string): {entregue: boolean}}}
+ */
+function adaptadorDeRastreioManual() {
+  return {
+    consultar: function () {
+      return { entregue: false };
+    },
+  };
+}
+
+/**
+ * Compõe o EnvioService sobre as abas informadas (M5, SPEC-016). A
+ * ParceiraACL cumpre a porta do Cadastro (obterContatoDeEnvio, D-03).
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBase aba BASE DE DADOS.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaColaboracoes aba COLABORACOES.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaEnvios aba ENVIOS.
+ * @returns {EnvioService}
+ */
+function montarEnvioService(abaBase, abaColaboracoes, abaEnvios) {
+  return new EnvioService(
+    new ColaboracaoMensalRepository(new ColaboracaoMensalACL(abaColaboracoes)),
+    new ParceiraACL(abaBase),
+    new EnvioRepository(new EnvioACL(abaEnvios)),
+    adaptadorDeRastreioManual(),
+    publicadorDeLog(),
+    relogioDoSistema()
+  );
+}
+
+/**
  * Compõe o BriefingService sobre as abas informadas (M3, SPEC-009).
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaColaboracoes aba COLABORACOES.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBriefing aba BRIEFING.
@@ -150,22 +189,24 @@ function montarEntregaService(abaColaboracoes, abaBriefing, abaEntregas) {
  * Compõe o Controller de compilação sobre as abas informadas (M2, SPEC-005).
  * A ParceiraACL cumpre a porta do Cadastro (listarAtivasComCondicoes).
  * O publicador reage a `MesCompilado` recriando os briefings da competência
- * (SPEC-009 RN-03) e materializando as Entregas (SPEC-012 RN-01) —
- * cablagem de consumo feita aqui, na composição, porque o barramento real
- * de eventos é dívida registrada (SPEC-005 D-01).
+ * (SPEC-009 RN-03), materializando as Entregas (SPEC-012 RN-01) e os
+ * Envios (SPEC-016 RN-01) — cablagem de consumo feita aqui, na composição,
+ * porque o barramento real de eventos é dívida registrada (SPEC-005 D-01).
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBase aba BASE DE DADOS.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaColaboracoes aba COLABORACOES.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaBriefing aba BRIEFING.
  * @param {GoogleAppsScript.Spreadsheet.Sheet} abaEntregas aba ENTREGAS.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} abaEnvios aba ENVIOS.
  * @returns {ColaboracaoMensalController}
  */
-function montarCompilarMes(abaBase, abaColaboracoes, abaBriefing, abaEntregas) {
+function montarCompilarMes(abaBase, abaColaboracoes, abaBriefing, abaEntregas, abaEnvios) {
   var cadastro = new ParceiraACL(abaBase);
   var repositorio = new ColaboracaoMensalRepository(
     new ColaboracaoMensalACL(abaColaboracoes)
   );
   var briefingService = montarBriefingService(abaColaboracoes, abaBriefing);
   var entregaService = montarEntregaService(abaColaboracoes, abaBriefing, abaEntregas);
+  var envioService = montarEnvioService(abaBase, abaColaboracoes, abaEnvios);
   var log = publicadorDeLog();
   var publicador = {
     publicar: function (evento) {
@@ -173,6 +214,7 @@ function montarCompilarMes(abaBase, abaColaboracoes, abaBriefing, abaEntregas) {
       if (evento.nome === 'MesCompilado') {
         briefingService.recriarParaCompetencia(String(evento.mesReferencia));
         entregaService.materializarParaCompetencia(String(evento.mesReferencia));
+        envioService.materializarParaCompetencia(String(evento.mesReferencia));
       }
     },
   };
@@ -193,7 +235,8 @@ function compilarMes(dados) {
       abrirBaseDeDados(),
       abrirAba('COLABORACOES'),
       abrirAba('BRIEFING'),
-      abrirAba('ENTREGAS')
+      abrirAba('ENTREGAS'),
+      abrirAba('ENVIOS')
     ).compilarMes(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -333,6 +376,123 @@ function publicarEntrega(dados) {
   }
 }
 
+/**
+ * Compõe o Controller do Envio (M5, SPEC-016).
+ * @returns {EnvioController}
+ */
+function montarEnvio() {
+  return new EnvioController(
+    montarEnvioService(abrirBaseDeDados(), abrirAba('COLABORACOES'), abrirAba('ENVIOS'))
+  );
+}
+
+/**
+ * Função exposta a google.script.run: confirma o endereço de um Envio e
+ * devolve a mensagem de confirmação manual com endereço/PIX (UC-016.01,
+ * D-03) — devolve SEMPRE o envelope padrão (§3.3).
+ * @param {{mesReferencia: string, parceiraId: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function confirmarEndereco(dados) {
+  try {
+    return montarEnvio().confirmarEndereco(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: registra o rastreio de um Envio,
+ * preenchendo a data de envio automaticamente se vazia (UC-016.02; RN-02).
+ * @param {{mesReferencia: string, parceiraId: string, codigo: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function registrarRastreio(dados) {
+  try {
+    return montarEnvio().registrarRastreio(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: consulta o adaptador de rastreio e
+ * arquiva o Envio se a transportadora indicar entrega (UC-016.03;
+ * RNF-01/CB-01 — falha do adaptador é degradável).
+ * @param {{mesReferencia: string, parceiraId: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function atualizarStatus(dados) {
+  try {
+    return montarEnvio().atualizarStatus(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: lista os Envios da competência,
+ * opcionalmente filtrados por Parceira (query do Portal).
+ * @param {{mesReferencia: string, parceiraId: (string|undefined)}} dados
+ * @returns {{success: true, data: object[]}|{success: false, error: object}}
+ */
+function listarEnvios(dados) {
+  try {
+    return montarEnvio().listarEnvios(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Compõe o Controller da Geração de Documentos (M7, SPEC-023). A
+ * ParceiraACL cumpre a porta do Cadastro (obterParaDocumentos, §14.1); o
+ * BriefingRepository fornece o briefing da colaboração (SPEC-009 §14.1).
+ * O GeradorDeDocumentosTexto cumpre a porta documental — motor real é
+ * dívida registrada (SPEC-023 D-01, ADR futuro).
+ * @returns {DocumentoController}
+ */
+function montarDocumentos() {
+  var servico = new DocumentoService(
+    new ParceiraACL(abrirBaseDeDados()),
+    new BriefingRepository(new BriefingACL(abrirAba('BRIEFING'))),
+    new DocumentoRepository(new DocumentoACL(abrirAba('DOCUMENTOS'))),
+    new GeradorDeDocumentosTexto(),
+    publicadorDeLog()
+  );
+  return new DocumentoController(servico);
+}
+
+/**
+ * Função exposta a google.script.run: gera o Contrato individual de uma
+ * Parceira Ativa (UC-023.01; RN-01). Devolve SEMPRE o envelope padrão —
+ * falhas de infraestrutura também viram envelope de falha (§3.3).
+ * @param {{parceiraId: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function gerarContrato(dados) {
+  try {
+    return montarDocumentos().gerarContrato(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: gera o Briefing formal de uma
+ * Parceira sinalizada na competência (UC-023.02; RN-02). Devolve SEMPRE o
+ * envelope padrão (§3.3).
+ * @param {{parceiraId: string, mesReferencia: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function gerarBriefingFormal(dados) {
+  try {
+    return montarDocumentos().gerarBriefingFormal(dados);
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     doGet,
@@ -344,5 +504,11 @@ if (typeof module !== 'undefined' && module.exports) {
     enviarMaterial,
     aprovarEntrega,
     publicarEntrega,
+    confirmarEndereco,
+    registrarRastreio,
+    atualizarStatus,
+    listarEnvios,
+    gerarContrato,
+    gerarBriefingFormal,
   };
 }
