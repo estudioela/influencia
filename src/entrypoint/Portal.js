@@ -493,9 +493,132 @@ function gerarBriefingFormal(dados) {
   }
 }
 
+/**
+ * Gerador de token opaco — porta de token do M8 (SPEC-025 RNF-03).
+ * Único ponto autorizado a chamar Utilities.getUuid() na composição.
+ * @returns {{gerar: function(): string}}
+ */
+function geradorDeTokenUuid() {
+  return {
+    gerar: function () {
+      return Utilities.getUuid();
+    },
+  };
+}
+
+/**
+ * Publicador dos eventos de acesso (SPEC-025 §12): registra APENAS o nome
+ * do evento — identificador, token e PII nunca vão a log (RN-04, Contrato
+ * §5). Barramento real segue dívida registrada (SPEC-005 D-01).
+ * @returns {{publicar: function(object)}}
+ */
+function publicadorDeAcesso() {
+  return {
+    publicar: function (evento) {
+      Logger.log('Evento de domínio: ' + evento.nome);
+    },
+  };
+}
+
+/**
+ * Compõe o Controller do Acesso ao Portal (M8, SPEC-025). A verificação de
+ * credencial fica atrás da porta do Autenticador: hoje, o adaptador legado
+ * RN-16 (cupom + 5 primeiros dígitos do CNPJ) — PROVISÓRIO (🟠 P5/Q-07);
+ * trocar o modelo de autenticação = trocar só o adaptador aqui.
+ * @returns {AcessoController}
+ */
+function montarAcesso() {
+  var verificador = new VerificadorDeCredencialLegado(
+    new ParceiraACL(abrirBaseDeDados())
+  );
+  var servico = new AcessoPortalService(
+    new Autenticador(verificador),
+    new SessaoRepository(new SessaoACL(abrirAba('SESSOES'))),
+    new BloqueioRepository(new BloqueioACL(abrirAba('BLOQUEIOS'))),
+    geradorDeTokenUuid(),
+    relogioDoSistema(),
+    publicadorDeAcesso()
+  );
+  return new AcessoController(servico);
+}
+
+/**
+ * Executa uma operação de acesso sob trava global (LockService). O M8 é a
+ * primeira superfície multiusuária do sistema: a regravação das abas
+ * SESSOES/BLOQUEIOS e a contagem de tentativas (RN-02) exigem exclusão
+ * mútua — sem trava, requisições concorrentes se sobrescrevem e o limite
+ * de 5 falhas seria contornável em paralelo. Único ponto autorizado a
+ * tocar LockService (camada entrypoint).
+ * @param {function(): *} operacao
+ * @returns {*} o resultado da operação.
+ */
+function comTravaDeAcesso(operacao) {
+  var trava = LockService.getScriptLock();
+  trava.waitLock(10000);
+  try {
+    return operacao();
+  } finally {
+    trava.releaseLock();
+  }
+}
+
+/**
+ * Função exposta a google.script.run: autentica a Parceira no Portal
+ * (UC-025.01) — sucesso cria Sessão de 6h deslizante (RN-03); falhas
+ * acumulam até bloqueio de 15 min (RN-02). Devolve SEMPRE o envelope
+ * padrão (§3.3); erros carregam AC-01/AC-02 (§17).
+ * @param {{identificador: string, segredo: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function entrarNoPortal(dados) {
+  try {
+    return comTravaDeAcesso(function () {
+      return montarAcesso().entrar(dados);
+    });
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: renova a Sessão da Parceira a cada
+ * interação (UC-025.02, expiração deslizante). Sessão inexistente/vencida
+ * devolve AC-03 (§17) — reautenticar (CB-02).
+ * @param {{token: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function renovarSessaoDoPortal(dados) {
+  try {
+    return comTravaDeAcesso(function () {
+      return montarAcesso().renovar(dados);
+    });
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
+/**
+ * Função exposta a google.script.run: encerra a Sessão da Parceira
+ * (logout — SPEC-025 §9). Idempotente.
+ * @param {{token: string}} dados
+ * @returns {{success: true, data: object}|{success: false, error: object}}
+ */
+function sairDoPortal(dados) {
+  try {
+    return comTravaDeAcesso(function () {
+      return montarAcesso().sair(dados);
+    });
+  } catch (erro) {
+    return envelopeFail({ mensagem: erro.message });
+  }
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     doGet,
+    entrarNoPortal,
+    renovarSessaoDoPortal,
+    sairDoPortal,
     cadastrarParceira,
     compilarMes,
     preencherBriefing,

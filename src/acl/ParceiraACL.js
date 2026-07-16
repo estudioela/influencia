@@ -177,6 +177,38 @@ this.ParceiraACL = class ParceiraACL {
   }
 
   /**
+   * Porta do Cadastro para o Acesso ao Portal (SPEC-025 §14.1): projeção
+   * mínima para o adaptador legado de credencial (RN-16 — cupom + prefixo
+   * do CNPJ; provisório, 🟠 P5/Q-07). Localiza a Parceira pelo CUPOM
+   * (normalização ADR-001 §2: trim + casefold) e devolve identidade + CNPJ.
+   * O CNPJ é PII: destino exclusivo é a comparação de credencial no
+   * adaptador — NUNCA em log/evento (Contrato §5; SPEC-025 RN-04).
+   * ParceiraACL segue o ÚNICO ponto que toca a BASE DE DADOS (Freeze §4).
+   * @param {string} identificador cupom apresentado na credencial.
+   * @returns {{parceiraId: string, cnpj: string}|null} null se não existir.
+   */
+  obterAcessoLegado(identificador) {
+    const valores = this.sheet.getDataRange().getValues();
+    const coluna = this.resolvedorDeColuna(valores[0]);
+    const alvo = String(identificador == null ? '' : identificador).trim().toLowerCase();
+    if (alvo === '') {
+      return null;
+    }
+    const linha = valores
+      .slice(1)
+      .find(
+        (l) => String(l[coluna('CUPOM')]).trim().toLowerCase() === alvo
+      );
+    if (!linha) {
+      return null;
+    }
+    return {
+      parceiraId: String(linha[coluna('INFLU_KEY')]).trim(),
+      cnpj: String(linha[coluna('INFLUENCIADORA_CNPJ')] == null ? '' : linha[coluna('INFLUENCIADORA_CNPJ')]).trim(),
+    };
+  }
+
+  /**
    * Coage a sinalização física crua ('SIM/NÃO') → canônico do domínio
    * (SPEC-023 RN-02). Normalização ADR-001 §2: trim + casefold; vazio é
    * "não sinalizada"; valor desconhecido → erro barulhento.

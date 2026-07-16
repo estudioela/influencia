@@ -67,6 +67,23 @@ module.exports = [
         GeradorDeDocumentosTexto: 'readonly',
         DocumentoService: 'readonly',
         DocumentoController: 'readonly',
+        // Serviços globais do Apps Script usados pela composição do Acesso.
+        Utilities: 'readonly',
+        LockService: 'readonly',
+        // Domínio do Acesso ao Portal (SPEC-025): VOs, agregado, porta e
+        // camadas referenciados pelo Service e pela composição.
+        Credencial: 'readonly',
+        TokenDeSessao: 'readonly',
+        JanelaDeBloqueio: 'readonly',
+        Sessao: 'readonly',
+        Autenticador: 'readonly',
+        SessaoACL: 'readonly',
+        BloqueioACL: 'readonly',
+        VerificadorDeCredencialLegado: 'readonly',
+        SessaoRepository: 'readonly',
+        BloqueioRepository: 'readonly',
+        AcessoPortalService: 'readonly',
+        AcessoController: 'readonly',
         // Classes da fatia compostas pelo Entrypoint Portal (namespace único GAS).
         ParceiraACL: 'readonly',
         ParceiraRepository: 'readonly',

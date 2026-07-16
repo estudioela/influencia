@@ -142,10 +142,12 @@ Toda SPEC deve respeitar, sem reabrir:
 
 ### EPIC 08 — Portal da Influenciadora
 
-#### `[ ]` SPEC-025 · Acesso ao Portal
+#### `[x]` SPEC-025 · Acesso ao Portal
 - **Deps SPEC:** SPEC-001
 - **Requisitos (PRD):** §6.8, §7 (RN-16, RN-17, RN-18), §9 (RF-026, RF-027), §10 (segurança)
-- 🟠 **Aberto:** P5 / Q-07 (modelo de autenticação) · P6 / Q-08 (papéis) · Q-09 (LGPD deve estar resolvida **antes** do Portal)
+- ✅ **Implementada (2026-07-16):** slice completo (`Credencial`/`TokenDeSessao`/`JanelaDeBloqueio`/`Sessao`/`Autenticador` → `ParceiraACL.obterAcessoLegado`/`SessaoACL`/`BloqueioACL` → `SessaoRepository`/`BloqueioRepository` → `AcessoPortalService` → `AcessoController` → Portal `entrarNoPortal`/`renovarSessaoDoPortal`/`sairDoPortal`). Abas físicas novas `SESSOES` e `BLOQUEIOS`. Bloqueio 5 falhas → 15 min (RN-02); sessão 6h deslizante (RN-03); erros AC-01/02/03 (§17); credencial/PII fora de log (RN-04); operações de acesso serializadas por trava global (LockService, só no Entrypoint) — primeira superfície multiusuária do sistema.
+- **Dívidas registradas na implementação:** verificação de credencial atrás da porta do Autenticador via **adaptador legado provisório** (`VerificadorDeCredencialLegado`, RN-16: cupom + 5 primeiros dígitos do CNPJ, por decisão do PO em 2026-07-16) — trocar o modelo (Q-07) = trocar só o adaptador; sem UI de Portal (SPEC §1 não define UI); acesso não filtra estado do vínculo (Ativa/Inativa) — regra não consta da SPEC.
+- 🟠 **Aberto:** P5 / Q-07 (modelo de autenticação definitivo) · P6 / Q-08 (papéis) · Q-09 (LGPD deve estar resolvida **antes** de o Portal expor dados — SPEC-027/030/032)
 
 #### `[ ]` SPEC-027 · Conteúdo no Portal
 - **Deps SPEC:** SPEC-009, SPEC-012, SPEC-025
