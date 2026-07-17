@@ -460,11 +460,12 @@ function montarEntrega() {
  * Função exposta a google.script.run: lista as Entregas da competência,
  * opcionalmente filtradas por Parceira (UC-012.01). Devolve SEMPRE o
  * envelope padrão — falhas de infraestrutura também viram envelope (§3.3).
- * @param {{mesReferencia: string, parceiraId: (string|undefined)}} dados
+ * @param {{mesReferencia: string, parceiraId: (string|undefined), token: string}} dados
  * @returns {{success: true, data: object[]}|{success: false, error: object}}
  */
 function listarEntregas(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return montarEntrega().listarEntregas(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -491,11 +492,12 @@ function enviarMaterial(dados) {
 /**
  * Função exposta a google.script.run: aprova uma Entrega em revisão
  * (UC-012.03).
- * @param {{mesReferencia: string, parceiraId: string, rotulo: string}} dados
+ * @param {{mesReferencia: string, parceiraId: string, rotulo: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function aprovarEntrega(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarEntrega().aprovarEntrega(dados);
     });
@@ -507,11 +509,12 @@ function aprovarEntrega(dados) {
 /**
  * Função exposta a google.script.run: publica uma Entrega aprovada,
  * arquivando com a data do relógio do sistema (UC-012.03; RN-04).
- * @param {{mesReferencia: string, parceiraId: string, rotulo: string}} dados
+ * @param {{mesReferencia: string, parceiraId: string, rotulo: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function publicarEntrega(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarEntrega().publicarEntrega(dados);
     });
@@ -534,11 +537,12 @@ function montarEnvio() {
  * Função exposta a google.script.run: confirma o endereço de um Envio e
  * devolve a mensagem de confirmação manual com endereço/PIX (UC-016.01,
  * D-03) — devolve SEMPRE o envelope padrão (§3.3).
- * @param {{mesReferencia: string, parceiraId: string}} dados
+ * @param {{mesReferencia: string, parceiraId: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function confirmarEndereco(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarEnvio().confirmarEndereco(dados);
     });
@@ -550,11 +554,12 @@ function confirmarEndereco(dados) {
 /**
  * Função exposta a google.script.run: registra o rastreio de um Envio,
  * preenchendo a data de envio automaticamente se vazia (UC-016.02; RN-02).
- * @param {{mesReferencia: string, parceiraId: string, codigo: string}} dados
+ * @param {{mesReferencia: string, parceiraId: string, codigo: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function registrarRastreio(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarEnvio().registrarRastreio(dados);
     });
@@ -567,11 +572,12 @@ function registrarRastreio(dados) {
  * Função exposta a google.script.run: consulta o adaptador de rastreio e
  * arquiva o Envio se a transportadora indicar entrega (UC-016.03;
  * RNF-01/CB-01 — falha do adaptador é degradável).
- * @param {{mesReferencia: string, parceiraId: string}} dados
+ * @param {{mesReferencia: string, parceiraId: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function atualizarStatus(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarEnvio().atualizarStatus(dados);
     });
@@ -583,11 +589,12 @@ function atualizarStatus(dados) {
 /**
  * Função exposta a google.script.run: lista os Envios da competência,
  * opcionalmente filtrados por Parceira (query do Portal).
- * @param {{mesReferencia: string, parceiraId: (string|undefined)}} dados
+ * @param {{mesReferencia: string, parceiraId: (string|undefined), token: string}} dados
  * @returns {{success: true, data: object[]}|{success: false, error: object}}
  */
 function listarEnvios(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return montarEnvio().listarEnvios(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -607,11 +614,12 @@ function montarPagamentos() {
 /**
  * Função exposta a google.script.run: lança uma Obrigação Financeira avulsa
  * (UC-020.02; RN-04/CB-01 — competência opcional).
- * @param {{parceiraId: string, valor: number, mesReferencia: (string|undefined)}} dados
+ * @param {{parceiraId: string, valor: number, mesReferencia: (string|undefined), token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function lancarPagamentoAvulso(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarPagamentos().lancarAvulso(dados);
     });
@@ -624,11 +632,12 @@ function lancarPagamentoAvulso(dados) {
  * Função exposta a google.script.run: gera a mensagem de cobrança e libera
  * uma Obrigação Financeira (UC-020.03, 1ª parte) — Mensal exige conteúdo já
  * `Aprovado` na competência (Q-04, PG-05 se recusada).
- * @param {{id: string}} dados
+ * @param {{id: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function liberarPagamento(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarPagamentos().liberar(dados);
     });
@@ -641,11 +650,12 @@ function liberarPagamento(dados) {
  * Função exposta a google.script.run: confirma o pagamento de uma Obrigação
  * Financeira liberada, arquivando com a data do relógio do sistema
  * (UC-020.03, 2ª parte; RN-03).
- * @param {{id: string}} dados
+ * @param {{id: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function confirmarPagamento(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarPagamentos().pagar(dados);
     });
@@ -657,11 +667,12 @@ function confirmarPagamento(dados) {
 /**
  * Função exposta a google.script.run: lista as Obrigações Financeiras da
  * competência, opcionalmente filtradas por Parceira.
- * @param {{mesReferencia: string, parceiraId: (string|undefined)}} dados
+ * @param {{mesReferencia: string, parceiraId: (string|undefined), token: string}} dados
  * @returns {{success: true, data: object[]}|{success: false, error: object}}
  */
 function listarPagamentos(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return montarPagamentos().listarPagamentos(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -691,11 +702,12 @@ function montarDocumentos() {
  * Função exposta a google.script.run: gera o Contrato individual de uma
  * Parceira Ativa (UC-023.01; RN-01). Devolve SEMPRE o envelope padrão —
  * falhas de infraestrutura também viram envelope de falha (§3.3).
- * @param {{parceiraId: string}} dados
+ * @param {{parceiraId: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function gerarContrato(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return montarDocumentos().gerarContrato(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -706,11 +718,12 @@ function gerarContrato(dados) {
  * Função exposta a google.script.run: gera o Briefing formal de uma
  * Parceira sinalizada na competência (UC-023.02; RN-02). Devolve SEMPRE o
  * envelope padrão (§3.3).
- * @param {{parceiraId: string, mesReferencia: string}} dados
+ * @param {{parceiraId: string, mesReferencia: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function gerarBriefingFormal(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return montarDocumentos().gerarBriefingFormal(dados);
   } catch (erro) {
     return envelopeFail({ mensagem: erro.message });
@@ -809,11 +822,12 @@ function montarArquivamento() {
  * Função exposta a google.script.run: sela uma competência (UC-034.02) —
  * RN-07 (elegibilidade, resolve D-01): recusa (AR-02) se a competência não
  * foi compilada ou tem pendência operacional em Entrega/Envio/Pagamento.
- * @param {{mesReferencia: string}} dados
+ * @param {{mesReferencia: string, token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function selarCompetencia(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarArquivamento().selarCompetencia(dados);
     });
@@ -827,10 +841,12 @@ function selarCompetencia(dados) {
  * (UC-034.01) — varre todas as competências ainda não seladas e sela as
  * elegíveis (RN-07); demais reportadas com o motivo, sem interromper o
  * lote (CB-03: nada elegível é no-op).
+ * @param {{token: string}} dados
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
-function arquivarLote() {
+function arquivarLote(dados) {
   try {
+    exigirPapelAdministrador(dados);
     return comTravaDeAcesso(function () {
       return montarArquivamento().arquivarLote();
     });
@@ -1120,6 +1136,22 @@ function verHistoricoDoPortal(dados) {
  * (Marca fora de escopo, SPEC-035 nota de revisão 2).
  * @returns {UsuarioService}
  */
+/**
+ * Guarda de RBAC (dívida Q-08 registrada em SPEC-012/020/023/025/034,
+ * resolvida pelo modelo de papéis de SPEC-035 §8.3): exige sessão ACTIVE
+ * com papel ADMINISTRADOR antes de liberar uma operação de equipe. Único
+ * papel de equipe hoje — cobre também a coluna "Operador" das tabelas de
+ * Papéis e Permissões dessas SPECs, que não existe como papel distinto no
+ * modelo de identidade implementado (precedente "MVP operador único",
+ * SPEC-025 §13). Reaproveita `UsuarioService.exigirPapel` — nenhuma lógica
+ * de autorização duplicada.
+ * @param {{token: string}} dados
+ * @throws {Error} ERR_AUTH_INVALID_TOKEN | ERR_AUTH_UNAUTHORIZED_ROLE
+ */
+function exigirPapelAdministrador(dados) {
+  montarUsuarioService().exigirPapel(dados && dados.token, 'ADMINISTRADOR');
+}
+
 function montarUsuarioService() {
   var abaBase = abrirBaseDeDados();
   return new UsuarioService(

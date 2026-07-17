@@ -1,4 +1,5 @@
 const { loadGas } = require('./helpers/gasHarness');
+const { ADMIN_TOKEN, ADMIN_SUB, ARQUIVOS_IDENTIDADE } = require('./helpers/rbacFixture');
 
 // Slice ponta a ponta do M8 · Financeiro e Histórico no Portal (SPEC-030),
 // no mesmo molde de test/portal-conteudo.test.js (SPEC-027) e
@@ -134,6 +135,21 @@ function fakeBloqueiosAba() {
   return fakeAbaGravavel(['IDENTIFICADOR', 'TENTATIVAS', 'BLOQUEIO_INICIO']);
 }
 
+function fakeIdentidadesAba() {
+  return fakeAbaGravavel([
+    'SUB_PROVIDER',
+    'EMAIL_PERFIL',
+    'PAPEL_ATOR',
+    'ESTADO_CONTA',
+    'DATA_CRIACAO',
+    'ULTIMO_ACESSO',
+  ]);
+}
+
+function fakeAdministradoresAba() {
+  return fakeAbaGravavel(['SUB_PROVIDER', 'NOME_COMPLETO', 'AREA_RESPONSABILIDADE']);
+}
+
 function montarPortal(abas) {
   let uuid = 0;
   return loadGas(
@@ -196,6 +212,7 @@ function montarPortal(abas) {
       'src/controller/AcessoController.js',
       'src/controller/PortalFinanceiroController.js',
       'src/entrypoint/Portal.js',
+      ...ARQUIVOS_IDENTIDADE,
     ],
     {
       PropertiesService: {
@@ -215,6 +232,8 @@ function montarPortal(abas) {
 }
 
 function portalPronto() {
+  const sessoesAba = fakeSessoesAba();
+  const identidadesAba = fakeIdentidadesAba();
   const gas = montarPortal({
     'BASE DE DADOS': fakeBaseDeDados(),
     COLABORACOES: fakeColaboracoes(),
@@ -222,13 +241,32 @@ function portalPronto() {
     ENTREGAS: fakeEntregasAba(),
     ENVIOS: fakeEnviosAba(),
     PAGAMENTOS: fakePagamentosAba(),
-    SESSOES: fakeSessoesAba(),
+    SESSOES: sessoesAba,
     BLOQUEIOS: fakeBloqueiosAba(),
+    SIS_IDENTIDADES: identidadesAba,
+    BASE_ADMINISTRADORES: fakeAdministradoresAba(),
   });
 
   const login = gas.entrarNoPortal({ identificador: 'CUPOMMARIA', segredo: '12345' });
   expect(login.success).toBe(true);
   const token = login.data.token;
+
+  // Seed direto de uma Sessão + Usuario ADMINISTRADOR ACTIVE (RBAC, dívida
+  // Q-08 fechada por SPEC-035 §8.3) — evita repetir aqui o fluxo completo
+  // de login Google, já coberto em test/portal-usuario.test.js.
+  identidadesAba._rows.push([
+    ADMIN_SUB,
+    'admin@estudioela.com',
+    'ADMINISTRADOR',
+    'ACTIVE',
+    new Date().toISOString(),
+    '',
+  ]);
+  sessoesAba._rows.push([
+    ADMIN_TOKEN,
+    ADMIN_SUB,
+    new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+  ]);
 
   // Materializa 3 Entregas (Reels×1 + Stories×2, RN-01 SPEC-012) e a
   // Obrigação Mensal EmAberto (RN-01 SPEC-020) da competência 2026-07.
@@ -241,24 +279,36 @@ function portalPronto() {
     expect(
       gas.enviarMaterial(Object.assign({ link: 'https://drive/x' }, comando)).success
     ).toBe(true);
-    expect(gas.aprovarEntrega(comando).success).toBe(true);
+    expect(gas.aprovarEntrega(Object.assign({ token: ADMIN_TOKEN }, comando)).success).toBe(true);
   });
   expect(
-    gas.publicarEntrega({ mesReferencia: '2026-07', parceiraId: 'Maria', rotulo: 'Reels' })
-      .success
+    gas.publicarEntrega({
+      mesReferencia: '2026-07',
+      parceiraId: 'Maria',
+      rotulo: 'Reels',
+      token: ADMIN_TOKEN,
+    }).success
   ).toBe(true);
 
   // Libera e paga a Obrigação Mensal (Q-04 satisfeito acima) → Pago.
-  const obrigacoes = gas.listarPagamentos({ mesReferencia: '2026-07', parceiraId: 'Maria' });
+  const obrigacoes = gas.listarPagamentos({
+    mesReferencia: '2026-07',
+    parceiraId: 'Maria',
+    token: ADMIN_TOKEN,
+  });
   const mensal = obrigacoes.data.find((o) => o.tipo === 'Mensal');
-  expect(gas.liberarPagamento({ id: mensal.id }).success).toBe(true);
-  expect(gas.confirmarPagamento({ id: mensal.id }).success).toBe(true);
+  expect(gas.liberarPagamento({ id: mensal.id, token: ADMIN_TOKEN }).success).toBe(true);
+  expect(gas.confirmarPagamento({ id: mensal.id, token: ADMIN_TOKEN }).success).toBe(true);
 
   // Obrigação Avulsa da mesma competência, deixada EmAberto (RN-04/CB-01):
   // conta em "previsto", nunca em "pago" (RN-02/CB-02).
   expect(
-    gas.lancarPagamentoAvulso({ parceiraId: 'Maria', valor: 500, mesReferencia: '2026-07' })
-      .success
+    gas.lancarPagamentoAvulso({
+      parceiraId: 'Maria',
+      valor: 500,
+      mesReferencia: '2026-07',
+      token: ADMIN_TOKEN,
+    }).success
   ).toBe(true);
 
   return { gas, token };

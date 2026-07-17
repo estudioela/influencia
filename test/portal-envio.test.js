@@ -1,4 +1,5 @@
 const { loadGas } = require('./helpers/gasHarness');
+const { ADMIN_TOKEN, ARQUIVOS_IDENTIDADE, abasIdentidade } = require('./helpers/rbacFixture');
 
 // Slice ponta a ponta do M5 (SPEC-016): compilarMes → MesCompilado →
 // Envios materializados na aba ENVIOS (RN-01) → confirmarEndereco (D-03,
@@ -105,6 +106,7 @@ function fakeEnviosAba() {
 }
 
 function montarPortal(abas) {
+  const identidadeAbas = abasIdentidade();
   return loadGas(
     [
       'src/shared/Envelope.js',
@@ -148,13 +150,16 @@ function montarPortal(abas) {
       'src/controller/EnvioController.js',
       'src/controller/PagamentoController.js',
       'src/entrypoint/Portal.js',
+      ...ARQUIVOS_IDENTIDADE,
     ],
     {
       PropertiesService: {
         getScriptProperties: () => ({ getProperty: () => 'fake-spreadsheet-id' }),
       },
       SpreadsheetApp: {
-        openById: () => ({ getSheetByName: (nome) => abas[nome] || null }),
+        openById: () => ({
+          getSheetByName: (nome) => abas[nome] || identidadeAbas[nome] || null,
+        }),
       },
       // SPEC-020: geradorDeTokenUuid() cumpre a identidade das Obrigações.
       Utilities: {
@@ -198,7 +203,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
     const { gas, enviosAba } = portalCompilado();
 
     // RN-01: uma Parceira ativa (Maria) → um Envio, AguardandoConfirmacao/Pendente.
-    const materializados = gas.listarEnvios({ mesReferencia: '2026-07' });
+    const materializados = gas.listarEnvios({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
     expect(materializados.success).toBe(true);
     expect(materializados.data).toHaveLength(1);
     expect(materializados.data[0]).toMatchObject({
@@ -209,7 +214,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
 
     // UC-016.01/D-03: confirma o endereço e devolve a mensagem manual com
     // endereço e PIX lidos exclusivamente da BASE DE DADOS via ParceiraACL.
-    const confirmado = gas.confirmarEndereco({ mesReferencia: '2026-07', parceiraId: 'Maria' });
+    const confirmado = gas.confirmarEndereco({ mesReferencia: '2026-07', parceiraId: 'Maria', token: ADMIN_TOKEN });
     expect(confirmado.success).toBe(true);
     expect(confirmado.data.revisao).toBe('Confirmado');
     expect(confirmado.data.mensagem).toContain('Rua das Flores, 123');
@@ -222,6 +227,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
       mesReferencia: '2026-07',
       parceiraId: 'Maria',
       codigo: 'BR123456789XX',
+      token: ADMIN_TOKEN,
     });
     expect(registrado.success).toBe(true);
     expect(registrado.data.jornada).toBe('Expedido');
@@ -233,6 +239,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
     const statusAtualizado = gas.atualizarStatus({
       mesReferencia: '2026-07',
       parceiraId: 'Maria',
+      token: ADMIN_TOKEN,
     });
     expect(statusAtualizado.success).toBe(true);
     expect(statusAtualizado.data.jornada).toBe('Expedido');
@@ -251,6 +258,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
       mesReferencia: '2026-07',
       parceiraId: 'Ana',
       codigo: 'BR123',
+      token: ADMIN_TOKEN,
     });
 
     expect(resposta.success).toBe(false);
@@ -265,7 +273,7 @@ describe('Entrypoint · Portal — slice do Envio (SPEC-016)', () => {
       ENTREGAS: fakeEntregasAba(),
     });
 
-    const resposta = gas.listarEnvios({ mesReferencia: '2026-07' });
+    const resposta = gas.listarEnvios({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error.mensagem).toMatch(/ENVIOS/);

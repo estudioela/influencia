@@ -96,8 +96,11 @@ Toda SPEC deve respeitar, sem reabrir:
   Demais campos vazios não descartam o registro; `STATUS` ausente/
   desconhecido nasce `Inativa` (mesmo default de RN-01 SPEC-001) em vez de
   descartar. 15 testes novos; suíte completa 464/464 verde; lint limpo.
-- **Dívida registrada:** autorização por papel (§13, IM-03) — mesma dívida
-  de SPEC-012/020/023/025 (Q-08 pendente).
+- 🟠 **Dívida registrada, ainda aberta:** autorização por papel (§13,
+  IM-03) — `importarBaseLegada` segue sem guarda de papel. Achado durante o
+  fechamento de §11 (RBAC): fora do escopo dessa unidade de trabalho (não
+  fazia parte das 5 SPECs auditadas — 012/016/020/023/034); mecanismo é o
+  mesmo (`exigirPapelAdministrador`), só falta aplicar.
 
 #### `[x]` SPEC-002 · Gestão de Influenciadoras
 - **Deps SPEC:** SPEC-001
@@ -173,8 +176,8 @@ Toda SPEC deve respeitar, sem reabrir:
   competência em `Aprovado`/`Publicado` (SPEC-012 §9); publicação não é
   requisito. Obrigação `Avulso` não passa pelo gate (liberação manual).
   Detalhe em `SPEC-020.md` §9/§21.
-- **Dívida registrada:** autorização por papel (§13, PG-04) — mesma dívida
-  de SPEC-012/023/025 (Q-08 pendente).
+- ✅ **Resolvida (2026-07-17):** autorização por papel (§13, PG-04) — ver §11
+  (RBAC aplicado às rotas administrativas).
 
 ---
 
@@ -185,7 +188,8 @@ Toda SPEC deve respeitar, sem reabrir:
 - **Requisitos (PRD):** §5.7, §6.7, §7 (RN-15), §9 (RF-024, RF-025)
 - **Restrições:** `CONTRATO_SOBERANO` §6.1 · `ADR — Linguagem Ubíqua` §4 (Snapshot Comercial da Colaboração)
 - ✅ **Implementada (2026-07-16):** slice completo (`Documento`/`CamposDeMesclagem` → `ParceiraACL.obterParaDocumentos`/`DocumentoACL` → `DocumentoRepository` → `DocumentoService` → `DocumentoController` → Portal). Aba física nova `DOCUMENTOS` persiste só referência opaca (sem PII). Sinalização = coluna `SIM/NÃO` da `BASE DE DADOS` (PRD §5.7).
-- **Dívidas registradas na implementação:** motor documental real por ADR futuro (D-01 — adaptador interino de texto); rótulos crus da aba `DOCUMENTOS` sem ADR (mesma pendência SPEC-016); autorização por papel aguarda SPEC-025; geração em lote (RF-024 "[job]") não implementada — comando individual por Parceira; sem UI de Portal (SPEC não define; §12 "leitura futura").
+- **Dívidas registradas na implementação:** motor documental real por ADR futuro (D-01 — adaptador interino de texto); rótulos crus da aba `DOCUMENTOS` sem ADR (mesma pendência SPEC-016); geração em lote (RF-024 "[job]") não implementada — comando individual por Parceira; sem UI de Portal (SPEC não define; §12 "leitura futura").
+- ✅ **Resolvida (2026-07-17):** autorização por papel (§13) — ver §11 (RBAC aplicado às rotas administrativas).
 
 ---
 
@@ -247,7 +251,12 @@ Toda SPEC deve respeitar, sem reabrir:
 - **Requisitos:** `.gemini/spec-035-identidade/SPEC-035.md` (documento próprio, fora de `docs/specs/` — origem: revisão arquitetural + resolução de pendências em 2026-07-17)
 - ✅ **Implementada (2026-07-17):** substitui o modelo de credencial legado (RN-16, cupom+CNPJ) por federação Google Identity para os papéis `Administrador` e `Influenciadora`. Resolve Q-07 e Q-08 (parcial) de SPEC-025 — ver nota na entrada de SPEC-025 acima e SPEC-035 §9.2-A. Reaproveita integralmente `Sessao`/`TokenDeSessao`/`SessaoRepository`/`SessaoACL`/`AcessoPortalService`/`AcessoController.renovar()`/`.sair()` (SPEC-025) — nenhuma stack de sessão paralela; verificado ponta a ponta (sessão emitida via Google renovada/encerrada pelo `AcessoController` já existente, mesma aba `SESSOES`). Novo: `Usuario` (domínio — máquina de estados PENDING/ACTIVE/INACTIVE/REJECTED, RN-04/RN-07 bootstrap do primeiro Administrador), `ValidadorDeTokenGoogle` (adaptador — valida `aud`/`iss`/`exp`/`iat` via endpoint `tokeninfo`, sem reaproveitar `Autenticador`/`JanelaDeBloqueio`: bloqueio por tentativas não se aplica a token assinado criptograficamente, §9.2-A), `UsuarioACL`/`AdministradorACL`/`UsuarioRepository` (`SIS_IDENTIDADES`, `BASE_ADMINISTRADORES`), extensão de `ParceiraACL` (`buscarCandidataPorEmail`/`vincularSubProvider`/`obterPorSubProvider`, §5.1-A/§10.2.4 — `INFLU_KEY` preservada como chave soberana, `SUB_PROVIDER` é atributo dependente), `UsuarioService` (login/onboarding/vinculação/moderação/RBAC/suspensão-reativação) → `UsuarioController` → Portal (`entrarComGoogle`/`confirmarVinculacaoDeIdentidade`/`completarCadastroDeUsuario`/`listarUsuariosPendentes`/`aprovarUsuario`/`rejeitarUsuario`/`inativarUsuario`/`reativarUsuario`). 79 testes novos (domínio/adaptador/ACL/repository/service/controller/entrypoint, incluindo jornada completa candidata→vinculação→bloqueio PENDING→aprovação→login ACTIVE); suíte completa 599/599 verde; lint limpo.
 - **Escopo desta unidade de trabalho:** papéis `Administrador` e `Influenciadora` apenas. O ator `Marca` (tenant externo, `BASE_MARCAS`) está definido na SPEC mas **não implementado** — não é inferível do PRD vigente (que descreve operação para uma única marca), é decisão de escopo de produto que só o responsável do projeto pode tomar (SPEC-035, nota de revisão 2). `completarCadastroDeUsuario` recusa explicitamente `papel: 'MARCA'` (`ERR_AUTH_PAPEL_NAO_DISPONIVEL`).
-- **Dívidas registradas:** Q-09 (LGPD) segue aberta, herdada de SPEC-025/027/030/032 — não bloqueia esta implementação, mesmo precedente já aplicado às SPECs anteriores. `exigirPapel`/RBAC hoje só protege rotas do papel Administrador (mesma dívida de Q-08 já registrada em SPEC-012/020/023/025: nenhum Controller do sistema checava papel antes desta SPEC).
+- **Dívidas registradas:** Q-09 (LGPD) segue aberta, herdada de SPEC-025/027/030/032 — não bloqueia esta implementação, mesmo precedente já aplicado às SPECs anteriores.
+- ✅ **Resolvida (2026-07-17, ver §11):** `exigirPapel`/RBAC agora protege as
+  rotas administrativas de SPEC-012/016/020/023/034 (nenhum Controller do
+  sistema checava papel antes desta SPEC). Gap remanescente:
+  `importarBaseLegada` (SPEC-003 §13) ainda sem guarda — fora do escopo
+  desta unidade, registrado na entrada de SPEC-003.
 - **UI:** não implementada nesta unidade de trabalho — mesmo padrão de SPEC-030 (só as camadas Service/Controller/Entrypoint); `src/ui/login.html` (SPEC-025) segue como scaffolding do modelo de credencial legado até a UI de login federado ser priorizada (FASE 3 pós-SPECs).
 
 ---
@@ -284,9 +293,12 @@ Toda SPEC deve respeitar, sem reabrir:
   arquivada/congelada é a cópia imutável, sem aba de histórico física
   separada). 12 testes novos (ACL/Repository/Service/Controller/Entrypoint);
   suíte completa 520/520 verde; lint limpo.
-- **Dívida registrada:** autorização por papel (§13 — Administrador vs.
-  Operador) — mesma dívida de SPEC-012/020/023/025 (Q-08 pendente); nenhum
-  Controller do sistema checa papel hoje.
+- ✅ **Resolvida (2026-07-17):** autorização por papel (§13 — Administrador
+  vs. Operador) — ver §11 (RBAC aplicado às rotas administrativas). A
+  distinção Operador não existe como papel implementado (precedente "MVP
+  operador único", SPEC-025 §13); ambas as colunas mapeiam para o papel
+  `ADMINISTRADOR` único, o que preserva o resultado da tabela (nenhum papel
+  de equipe além do Administrador pode selar competência).
 
 ---
 
@@ -456,3 +468,56 @@ cobertura de regras de negócio de 6 SPECs entregues). Achados e status:
   ("reconcilia materializações ausentes quando a competência já estava
   compilada (F1/F2)") e `test/entrega-service.test.js` ("pula Entregas já
   Publicado em vez de lançar, e espelha as demais do lote").
+
+## 11. RBAC aplicado às rotas administrativas (fechamento Q-08, 2026-07-17)
+
+Dívida registrada em SPEC-003/012/016/020/023/034 ("nenhum Controller do
+sistema checava papel") e parcialmente resolvida por SPEC-035 (papéis
+`ADMINISTRADOR`/`MARCA`/`INFLUENCIADORA` implementados, mas só as rotas do
+próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
+(Entrega/Envio/Pagamento/Documento/Arquivamento):
+
+- **Mecanismo:** nova guarda `exigirPapelAdministrador(dados)` em
+  `src/entrypoint/Portal.js`, reaproveitando `UsuarioService.exigirPapel`
+  (SPEC-035 §8.3) — nenhuma lógica de autorização duplicada. Aplicada na
+  camada de Entrypoint (mesmo padrão do achado F4/SPEC-012: envolver a
+  função exposta a `google.script.run`, sem alterar Controller/Service),
+  exigindo `dados.token` de uma Sessão `ACTIVE` com papel `ADMINISTRADOR`.
+- **Papel `Operador`:** as tabelas de §13 dessas SPECs distinguem
+  Administrador/Operador, mas esse segundo papel nunca foi implementado —
+  precedente já registrado em SPEC-025 §13 ("MVP operador único"),
+  formalizado por SPEC-035 como papel único de equipe. As duas colunas
+  mapeiam para `ADMINISTRADOR`; o resultado da tabela é preservado (nenhum
+  papel além do Administrador acessa as operações restritas).
+- **Rotas protegidas (15):** `aprovarEntrega`/`publicarEntrega`/
+  `listarEntregas` (SPEC-012); `confirmarEndereco`/`registrarRastreio`/
+  `atualizarStatus`/`listarEnvios` (SPEC-016); `lancarPagamentoAvulso`/
+  `liberarPagamento`/`confirmarPagamento`/`listarPagamentos` (SPEC-020);
+  `gerarContrato`/`gerarBriefingFormal` (SPEC-023); `selarCompetencia`/
+  `arquivarLote` (SPEC-034 — `arquivarLote` ganhou o parâmetro `dados` que
+  não tinha). Rotas já corretamente restritas por outro mecanismo não
+  foram tocadas: `enviarMaterial` (Parceira-only, sem equivalente
+  administrativo) e todas as fachadas de Portal (`*DoPortal`, já isoladas
+  por `parceiraId` da própria Sessão, RN-01/INV-01 SPEC-027).
+- **Achado, não corrigido (fora do escopo desta unidade):**
+  `importarBaseLegada` (SPEC-003 §13, IM-03) também exige papel
+  Administrador e segue sem guarda — mesmo mecanismo resolveria, ver
+  entrada de SPEC-003.
+- **Achado, não corrigido:** `enviarMaterial` (raw, `src/entrypoint/
+  Portal.js`, distinto de `enviarMaterialDoPortal`) não tem nenhum
+  chamador em UI (`grep` em `src/ui/*.html` não encontra uso) e, por não
+  ter conceito de sessão, não consegue hoje distinguir "é a própria
+  Parceira" de qualquer outro chamador — violando tecnicamente a própria
+  tabela de SPEC-012 (Administrador/Operador ❌). Não bloqueante (sem
+  caller real), registrado para decisão futura (remover, ou dar-lhe a
+  mesma guarda de sessão/parceiraId dos módulos de Portal).
+- **Testes:** nenhum teste novo dedicado à guarda (mudança de escopo desta
+  unidade, por decisão do responsável do projeto); os 5 smoke tests de
+  Entrypoint que exercitam as rotas agora guardadas
+  (`test/portal-arquivamento.test.js`, `portal-envio.test.js`,
+  `portal-financeiro.test.js`, `portal-documentos.test.js`,
+  `portal-entrega.test.js`) foram atualizados para autenticar como
+  Administrador via nova fixture `test/helpers/rbacFixture.js` (Sessão +
+  `Usuario` ACTIVE seedados direto, sem repetir o fluxo de login Google já
+  coberto por `test/portal-usuario.test.js`). Suíte completa 599/599
+  verde; lint limpo.

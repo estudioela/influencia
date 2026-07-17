@@ -1,4 +1,5 @@
 const { loadGas } = require('./helpers/gasHarness');
+const { ADMIN_TOKEN, ARQUIVOS_IDENTIDADE, abasIdentidade } = require('./helpers/rbacFixture');
 
 // Smoke test do Entrypoint "Portal": prova que `selarCompetencia`/
 // `arquivarLote` (SPEC-034) compõem a pilha real — Controller ->
@@ -128,6 +129,7 @@ function fakeBaseDeDados() {
 }
 
 function montarPortal(abas) {
+  const identidadeAbas = abasIdentidade();
   return loadGas(
     [
       'src/shared/Envelope.js',
@@ -173,13 +175,16 @@ function montarPortal(abas) {
       'src/controller/PagamentoController.js',
       'src/controller/ArquivamentoController.js',
       'src/entrypoint/Portal.js',
+      ...ARQUIVOS_IDENTIDADE,
     ],
     {
       PropertiesService: {
         getScriptProperties: () => ({ getProperty: () => 'fake-spreadsheet-id' }),
       },
       SpreadsheetApp: {
-        openById: () => ({ getSheetByName: (nome) => abas[nome] || null }),
+        openById: () => ({
+          getSheetByName: (nome) => abas[nome] || identidadeAbas[nome] || null,
+        }),
       },
       Utilities: {
         getUuid: (() => {
@@ -206,7 +211,7 @@ describe('Entrypoint · Portal.selarCompetencia (smoke, SPEC-034 UC-034.02)', ()
     };
     const gas = montarPortal(abas);
 
-    const resposta = gas.selarCompetencia({ mesReferencia: '2026-07' });
+    const resposta = gas.selarCompetencia({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
 
     expect(resposta).toEqual({
       success: true,
@@ -226,7 +231,7 @@ describe('Entrypoint · Portal.selarCompetencia (smoke, SPEC-034 UC-034.02)', ()
     };
     const gas = montarPortal(abas);
 
-    const resposta = gas.selarCompetencia({ mesReferencia: '2026-07' });
+    const resposta = gas.selarCompetencia({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error.mensagem).toMatch(/AR-02/);
@@ -244,7 +249,7 @@ describe('Entrypoint · Portal.selarCompetencia (smoke, SPEC-034 UC-034.02)', ()
     };
     const gas = montarPortal(abas);
 
-    const resposta = gas.selarCompetencia({ mesReferencia: '2099-01' });
+    const resposta = gas.selarCompetencia({ mesReferencia: '2099-01', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error.mensagem).toMatch(/AR-02/);
@@ -263,7 +268,7 @@ describe('Entrypoint · Portal.arquivarLote (smoke, SPEC-034 UC-034.01)', () => 
     };
     const gas = montarPortal(abas);
 
-    const resposta = gas.arquivarLote();
+    const resposta = gas.arquivarLote({ token: ADMIN_TOKEN });
 
     expect(resposta).toEqual({
       success: true,

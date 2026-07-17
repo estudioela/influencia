@@ -1,4 +1,5 @@
 const { loadGas } = require('./helpers/gasHarness');
+const { ADMIN_TOKEN, ARQUIVOS_IDENTIDADE, abasIdentidade } = require('./helpers/rbacFixture');
 
 // Slice ponta a ponta do M4 (SPEC-012): compilarMes → MesCompilado →
 // Entregas materializadas na aba ENTREGAS (RN-01) → preencherBriefing →
@@ -106,6 +107,7 @@ function fakeEnviosAba() {
 }
 
 function montarPortal(abas) {
+  const identidadeAbas = abasIdentidade();
   return loadGas(
     [
       'src/shared/Envelope.js',
@@ -149,13 +151,16 @@ function montarPortal(abas) {
       'src/controller/EnvioController.js',
       'src/controller/PagamentoController.js',
       'src/entrypoint/Portal.js',
+      ...ARQUIVOS_IDENTIDADE,
     ],
     {
       PropertiesService: {
         getScriptProperties: () => ({ getProperty: () => 'fake-spreadsheet-id' }),
       },
       SpreadsheetApp: {
-        openById: () => ({ getSheetByName: (nome) => abas[nome] || null }),
+        openById: () => ({
+          getSheetByName: (nome) => abas[nome] || identidadeAbas[nome] || null,
+        }),
       },
       // SPEC-020: geradorDeTokenUuid() cumpre a identidade das Obrigações.
       Utilities: {
@@ -199,7 +204,7 @@ describe('Entrypoint · Portal — slice da Entrega (SPEC-012 §20)', () => {
     const { gas, entregasAba } = portalCompilado();
 
     // RN-01: Reels×1 + Stories×2 = 3 Entregas, uma por unidade contratada.
-    const materializadas = gas.listarEntregas({ mesReferencia: '2026-07' });
+    const materializadas = gas.listarEntregas({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
     expect(materializadas.success).toBe(true);
     expect(materializadas.data.map((e) => e.rotulo)).toEqual([
       'Reels',
@@ -225,12 +230,12 @@ describe('Entrypoint · Portal — slice da Entrega (SPEC-012 §20)', () => {
       ],
     });
     expect(publicado.success).toBe(true);
-    const espelhadas = gas.listarEntregas({ mesReferencia: '2026-07', parceiraId: 'Maria' });
+    const espelhadas = gas.listarEntregas({ mesReferencia: '2026-07', parceiraId: 'Maria', token: ADMIN_TOKEN });
     expect(espelhadas.data[0].dataAprovacaoInterna).toBe('2026-07-15');
 
     // UC-012.02/03: enviar → EmRevisao; aprovar → Aprovado; publicar →
     // Publicado com arquivamento automático do relógio (RN-04).
-    const comando = { mesReferencia: '2026-07', parceiraId: 'Maria', rotulo: 'Reels' };
+    const comando = { mesReferencia: '2026-07', parceiraId: 'Maria', rotulo: 'Reels', token: ADMIN_TOKEN };
     const enviada = gas.enviarMaterial(
       Object.assign({ link: 'https://drive.google.com/x' }, comando)
     );
@@ -271,7 +276,7 @@ describe('Entrypoint · Portal — slice da Entrega (SPEC-012 §20)', () => {
       BRIEFING: fakeBriefingAba(),
     });
 
-    const resposta = gas.listarEntregas({ mesReferencia: '2026-07' });
+    const resposta = gas.listarEntregas({ mesReferencia: '2026-07', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error.mensagem).toMatch(/ENTREGAS/);

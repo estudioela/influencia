@@ -1,4 +1,5 @@
 const { loadGas } = require('./helpers/gasHarness');
+const { ADMIN_TOKEN, ARQUIVOS_IDENTIDADE, abasIdentidade } = require('./helpers/rbacFixture');
 
 // Slice do M7 (SPEC-023): Portal → Controller → Service → Repository →
 // DocumentoACL/ParceiraACL sobre fakes de planilha. O cenário de sucesso
@@ -94,6 +95,7 @@ function fakeBriefingAba() {
 }
 
 function montarPortal(abas) {
+  const identidadeAbas = abasIdentidade();
   return loadGas(
     [
       'src/shared/Envelope.js',
@@ -113,13 +115,22 @@ function montarPortal(abas) {
       'src/service/DocumentoService.js',
       'src/controller/DocumentoController.js',
       'src/entrypoint/Portal.js',
+      ...ARQUIVOS_IDENTIDADE,
     ],
     {
       PropertiesService: {
         getScriptProperties: () => ({ getProperty: () => 'fake-spreadsheet-id' }),
       },
       SpreadsheetApp: {
-        openById: () => ({ getSheetByName: (nome) => abas[nome] || null }),
+        openById: () => ({
+          getSheetByName: (nome) => abas[nome] || identidadeAbas[nome] || null,
+        }),
+      },
+      Utilities: {
+        getUuid: (() => {
+          let contador = 0;
+          return () => 'uuid-' + ++contador;
+        })(),
       },
     }
   );
@@ -134,7 +145,7 @@ describe('Entrypoint · Portal — slice de Documentos (SPEC-023)', () => {
       DOCUMENTOS: documentosAba,
     });
 
-    const resposta = gas.gerarContrato({ parceiraId: 'Maria' });
+    const resposta = gas.gerarContrato({ parceiraId: 'Maria', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(true);
     expect(resposta.data).toMatchObject({
@@ -158,7 +169,7 @@ describe('Entrypoint · Portal — slice de Documentos (SPEC-023)', () => {
       BRIEFING: fakeBriefingAba(),
     });
 
-    const resposta = gas.gerarContrato({ parceiraId: 'Maria' });
+    const resposta = gas.gerarContrato({ parceiraId: 'Maria', token: ADMIN_TOKEN });
 
     expect(resposta.success).toBe(false);
     expect(resposta.error.mensagem).toMatch(/DOCUMENTOS/);
