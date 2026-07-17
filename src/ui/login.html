@@ -233,6 +233,8 @@
               return;
             }
             aguardarGis(function () {
+              console.log('window.location.origin:', window.location.origin);
+              console.log('resposta.data.googleClientId:', resposta.data.googleClientId);
               google.accounts.id.initialize({
                 client_id: resposta.data.googleClientId,
                 callback: aoReceberCredencial,
