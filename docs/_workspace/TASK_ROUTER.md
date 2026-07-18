@@ -421,6 +421,26 @@ Toda SPEC deve respeitar, sem reabrir:
   deploymentId) e verificada com o mesmo diff (pull da v19 × repo:
   idênticos). **Produção ao fim de 2026-07-18: versão 19 = HEAD do
   repositório.**
+- **Login OAuth validado até o callback; causa raiz do último bloqueio
+  corrigida (2026-07-18, sessão Tech Lead, continuação):** o operador
+  confirmou o fluxo funcionando até o retorno do Google — o erro passou a
+  ser "Você não tem permissão para chamar UrlFetchApp.fetch" na troca do
+  código (`AdaptadorOAuthGoogle.js:62`), o que PROVA que client_id/
+  redirect URIs/state estão corretos. Causa raiz (auditada, sem hipótese):
+  o manifesto **nunca declarou `oauthScopes`** e a autorização da conta
+  USER_DEPLOYING era anterior ao ADR-013 (era M1, só planilha);
+  documentação oficial confirma que Web App como USER_DEPLOYING *"may not
+  request authorization"* — falha em vez de re-pedir consentimento.
+  Correção: `oauthScopes` explícitos no `appsscript.json`
+  (`spreadsheets` + `script.external_request` — conjunto completo
+  verificado por grep de todos os serviços GAS usados e pela referência
+  oficial de cada um; `ScriptApp.getService().getUrl()` não exige escopo).
+  Publicado como **versão 20** no mesmo deployment, diff verificado.
+  **Passo humano final:** a conta que publica precisa consentir os
+  escopos UMA vez — abrir o projeto em script.google.com, rodar qualquer
+  função no editor e aceitar a tela de autorização (caminho garantido; a
+  doc diz que o /exec pode não pedir) — e então repetir o login no
+  `/exec`.
 
 ---
 

@@ -31,7 +31,7 @@
 
 | Documento lógico | Caminho | Estado |
 |---|---|---|
-| `WORKFLOW.md` | `~/Downloads/WORKFLOW.md` | fora do repo (consolidar) |
+| `WORKFLOW.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; dependências entre SPECs já absorvidas por este roteador, ver SPEC-003 D-01) |
 | `PRD.md` | `docs/PRD.md` | no repo |
 | `CONTRATO_SOBERANO.md` | `CONTRATO_SOBERANO.md` (raiz) | no repo |
 | `ADR-001` (enums/MesReferencia/promoção) | `docs/adrs/ADR-001-FECHAMENTO-DE-CONTRATO-E-ENUMS.md` | no repo |
@@ -39,15 +39,22 @@
 | `ADR-002 — Frontend Foundation` | `docs/adrs/ADR-002-frontend-foundation.md` | no repo |
 | `ADR-010 — Banco oficial do Portal (planilha V2 "Portal Ela")` | `docs/adrs/ADR-010-banco-oficial-do-portal.md` | no repo |
 | `ADR-013 — Autenticação do Portal via OAuth 2.0 Authorization Code Flow` | `docs/adrs/ADR-013-autenticacao-oauth-authorization-code.md` | no repo |
-| `DECISOES_BLOQUEANTES.md` | `~/Downloads/DECISOES_BLOQUEANTES.md — Projeto TEAR (Novo Sistema).md` | fora do repo (consolidar) |
+| `DECISOES_BLOQUEANTES.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; o estado de cada pergunta P3–P8/Q-NN está rastreado por SPEC neste roteador — resolvidas: Q-03/04/07/08/10; abertas: Q-05/06/09) |
 | `SPEC.md` (formato/Entrega 01) | `docs/specs/SPEC-001.md` | no repo |
 | `PLANILHA_TEAR_2.0_MAPA.md` | `PLANILHA_TEAR_2.0_MAPA.md` (raiz) | no repo |
-| `03 — Fronteiras do Domínio` | `~/Downloads/03 — FRONTEIRAS DO DOMÍNIO.md` | fora do repo |
-| `04 — Capacidades do Sistema` | `~/Downloads/04 — CAPACIDADES DO SISTEMA.md` | fora do repo |
-| `06 — Modelo Conceitual dos Dados` | `~/Downloads/06 — MODELO CONCEITUAL DOS DADOS.md` | fora do repo |
+| `03 — Fronteiras do Domínio` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`) |
+| `04 — Capacidades do Sistema` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`) |
+| `06 — Modelo Conceitual dos Dados` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`) |
 
-> **Dívida registrada:** documentos "fora do repo" ainda vivem só em `~/Downloads`.
-> Consolidá-los no repositório é ação separada (não realizada aqui).
+> **Dívida ENCERRADA como perda (2026-07-18, sessão Tech Lead):** os cinco
+> documentos "fora do repo" **desapareceram de `~/Downloads`** antes de serem
+> consolidados (verificado por listagem completa do diretório e busca em todo
+> o repo, `CONHECIMENTO/` e `knowledge/`). Nenhuma SPEC ativa depende deles:
+> as dependências (WORKFLOW) e as decisões do PO (DECISOES_BLOQUEANTES)
+> foram absorvidas por este roteador enquanto os arquivos existiam; §5 já
+> previa parar caso alguma SPEC precisasse de seção específica de 03/04/06 —
+> o que nunca ocorreu. Não procurar esses arquivos de novo; se algum
+> reaparecer (backup do PO), aí sim consolidar em `docs/`.
 
 ---
 
@@ -350,6 +357,70 @@ Toda SPEC deve respeitar, sem reabrir:
   logado com uma conta Google e clicar "Entrar com Google" para validar
   o login ponta a ponta — nenhum agente sem navegador consegue completar
   esse passo específico.
+- **Continuidade (2026-07-18, sessão sem acesso a navegador — 2ª tentativa,
+  foco exclusivo em destravar o login):** achado novo e corrigido:
+  `src/ui/login.html` nunca lia `error=` da URL de retorno do Google (só
+  `code`) — se o usuário cancelasse o consentimento (`access_denied`) ou o
+  Google devolvesse qualquer outro erro no redirect, a tela ficava muda,
+  sem mensagem nenhuma. Corrigido (mostra aviso e volta ao botão de login);
+  suíte 625/625 verde; lint limpo. **Publicado em produção:** versão 18
+  ("V 5.4 — trata error= no callback OAuth"), mesmo deploymentId de sempre
+  (`clasp deploy -i <id> -V 18`, não cria URL nova — redirect URIs já
+  registradas continuam válidas).
+  Tentativa de diagnóstico headless da hipótese `script.external_request`
+  via Apps Script Execution API (`clasp run`, manifest `executionApi`
+  temporário, removido depois): **bloqueada por um pré-requisito de conta
+  diferente** — `clasp run` falha com "Script function not found. Please
+  make sure script is deployed as API executable" mesmo com deployment
+  válido, o que é o sintoma padrão de a "Google Apps Script API" estar
+  desligada em `script.google.com/home/usersettings` para a conta usada
+  pelo `clasp login`. Ou seja: mesmo a via alternativa (sem navegador, via
+  API) para checar Script Properties/`UrlFetchApp` exige antes um toggle
+  manual nessa página, também só acionável logado no navegador. A hipótese
+  de reautorização de escopo segue **não confirmada nem descartada**
+  (pesquisa de documentação oficial do Google confirma que, SE for o caso,
+  não existe caminho por CLI/API — só clique manual). Auditoria de código
+  independente (2ª leitura completa do fluxo) não achou nenhum outro bug;
+  achado de maior probabilidade prática continua sendo erro humano de
+  digitação em `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (já ocorreu 2x
+  nesta mesma implantação, tabela de erros conhecidos em
+  `DEPLOY_CHECKLIST.md`), não a hipótese de permissão.
+  **Ação humana necessária (bloqueio real, ver relatório da sessão):**
+  (1) na conta que fez o deploy, abrir
+  `https://script.google.com/home/usersettings` e confirmar que "Google
+  Apps Script API" está ligada — desbloqueia diagnóstico futuro via
+  `clasp run` sem depender de navegador a cada vez; (2) abrir a URL do
+  deployment de produção (`clasp deployments`, ID `AKfycbwUhR1P7…`, `/exec`)
+  logado como essa mesma conta e clicar "Entrar com Google" — se aparecer
+  tela de consentimento pedindo escopos novos, aceitar (resolve a hipótese
+  de permissão, se for o caso); se aparecer qualquer outro erro, ele
+  finalmente será o primeiro erro real observado nesta versão do código e
+  pode ser corrigido dirigido pela mensagem exibida (agora sempre visível,
+  com a correção desta sessão).
+- **Incidente de drift de produção (2026-07-18, sessão Tech Lead):** a
+  auditoria de sincronia remoto×local (pull da versão publicada + diff
+  contra o repo) revelou que produção estava servindo a **versão 15** —
+  criada SEM descrição (provavelmente via editor web, fora desta esteira)
+  a partir de um snapshot anterior às correções de 2026-07-18: ainda
+  continha a rota de diagnóstico `diag-adr013` (que deveria ter sido
+  removida), NÃO continha a guarda RBAC de `importarBaseLegada` (IM-03)
+  nem a ordenação F6. Corrigido na mesma sessão: `clasp push` do HEAD →
+  versão 16 ("V 5.3") → `clasp update-deployment` no MESMO deployment
+  (URL `/exec` e redirect URIs preservadas) → `clasp pull
+  --versionNumber 16` + diff confirmou conteúdo idêntico ao repo.
+  **Regra operacional derivada:** nunca criar versão/implantação pelo
+  editor web; toda publicação sai do repositório via `clasp push` +
+  `create-version` + `update-deployment`, e toda sessão de deploy termina
+  com o diff de verificação (pull da versão publicada × repo).
+  **Reconciliação com a sessão paralela:** enquanto esta sessão publicava
+  a v16, a sessão de destravamento do login publicou a **versão 18**
+  ("V 5.4", `error=` no callback — nota acima) no mesmo deployment; a
+  guarda de `enviarMaterial` (ver §11) foi então publicada **sobre a
+  v18** como **versão 19** ("V 5.5"), pelo mesmo procedimento
+  (`clasp push` + `create-version` + `update-deployment` no mesmo
+  deploymentId) e verificada com o mesmo diff (pull da v19 × repo:
+  idênticos). **Produção ao fim de 2026-07-18: versão 19 = HEAD do
+  repositório.**
 
 ---
 
@@ -600,14 +671,24 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   (SPEC-003 §13, IM-03) também exigia papel Administrador e seguia sem
   guarda — fechado com o mesmo mecanismo (`exigirPapelAdministrador`,
   parâmetro `dados` novo), ver entrada de SPEC-003.
-- **Achado, não corrigido:** `enviarMaterial` (raw, `src/entrypoint/
-  Portal.js`, distinto de `enviarMaterialDoPortal`) não tem nenhum
-  chamador em UI (`grep` em `src/ui/*.html` não encontra uso) e, por não
-  ter conceito de sessão, não consegue hoje distinguir "é a própria
-  Parceira" de qualquer outro chamador — violando tecnicamente a própria
-  tabela de SPEC-012 (Administrador/Operador ❌). Não bloqueante (sem
-  caller real), registrado para decisão futura (remover, ou dar-lhe a
-  mesma guarda de sessão/parceiraId dos módulos de Portal).
+- ✅ **Resolvido (2026-07-18, sessão Tech Lead):** `enviarMaterial` (raw,
+  `src/entrypoint/Portal.js`, distinto de `enviarMaterialDoPortal`). A
+  premissa do achado original ("sem chamador em UI") estava **errada/
+  desatualizada**: `src/ui/entrega.html` (tela interna de operação, Sprint
+  Portal MVP Online) chama `enviarMaterial` para a equipe registrar
+  material recebido fora do Portal em nome da Parceira — e a tela já
+  injeta `dados.token` em toda chamada (`chamar()`). Correção aplicada:
+  guarda `exigirPapelAdministrador(dados)`, mesmo mecanismo das demais 16
+  rotas administrativas (total agora: 17). Teste RBAC novo em
+  `test/portal-entrega.test.js`; CT-01 e o seed de
+  `portal-financeiro.test.js` atualizados para autenticar. Suíte
+  626/626 verde; lint limpo. **Dívida documental registrada:** a tabela
+  §13 de SPEC-012 marca Administrador/Operador ❌ para envio de material,
+  mas a operação real (equipe registra material recebido por WhatsApp)
+  exige essa rota — a tabela da SPEC precisa ser emendada pelo PO para
+  refletir a decisão operacional já embarcada na UI; até lá, a rota fica
+  admin-only (estritamente mais restrita que o estado anterior, que era
+  aberta a qualquer conta Google sem sessão).
 - **Testes:** nenhum teste novo dedicado à guarda (mudança de escopo desta
   unidade, por decisão do responsável do projeto); os 5 smoke tests de
   Entrypoint que exercitam as rotas agora guardadas
