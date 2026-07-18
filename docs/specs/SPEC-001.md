@@ -8,7 +8,7 @@
 
 A primeira funcionalidade do TEAR V2 é **Cadastro e Base de Influenciadoras**.
 
-Ela é prioritária porque a abertura de ciclo mensal usa exclusivamente influenciadoras com status `ON`, e os demais módulos dependem de seus dados cadastrais, comerciais, bancários e de endereço. O PRD também define este módulo como a origem dos dados usados por ciclo mensal, pagamentos, logística, contratos, briefing e Portal.
+Ela é prioritária porque a abertura da Colaboração Mensal usa exclusivamente influenciadoras com status `ON`, e os demais módulos dependem de seus dados cadastrais, comerciais, bancários e de endereço. O PRD também define este módulo como a origem dos dados usados pela Colaboração Mensal, pagamentos, logística, contratos, briefing e Portal.
 
 ## 2. Objetivo da entrega
 
@@ -60,9 +60,9 @@ A equipe deve conseguir consultar a base de influenciadoras ativas e inativas pa
 |---|---|
 | RN-01 | Toda influenciadora proveniente do formulário de cadastro nasce com `STATUS = OFF`. A ativação para `ON` é decisão manual da equipe. |
 | RN-02 | O endereço completo é resolvido a partir do CEP no cadastro e em edições posteriores de CEP, número ou complemento. |
-| RN-03 | Somente influenciadoras com `STATUS = ON` participam de novo ciclo mensal e geração de contrato. Esta entrega deve preservar o status para que os módulos futuros apliquem a regra. |
+| RN-03 | Somente influenciadoras com `STATUS = ON` participam de nova Colaboração Mensal e geração de contrato. Esta entrega deve preservar o status para que os módulos futuros apliquem a regra. |
 
-Não existe no PRD regra para o que ocorre quando uma influenciadora é inativada com pendências abertas de um ciclo já iniciado. Como ciclo mensal não faz parte desta entrega, esse comportamento não será definido nem implementado agora.
+Não existe no PRD regra para o que ocorre quando uma influenciadora é inativada com pendências abertas de uma Colaboração Mensal já iniciada. Como a Colaboração Mensal não faz parte desta entrega, esse comportamento não será definido nem implementado agora.
 
 ## 5. Escopo delimitado
 
@@ -77,7 +77,7 @@ Não existe no PRD regra para o que ocorre quando uma influenciadora é inativad
 
 ### Fora do escopo
 
-- ciclo mensal, briefing, ativações, upload de conteúdo e histórico;
+- Colaboração Mensal, briefing, ativações, upload de conteúdo e histórico;
 - pagamentos, logística, rastreio e geração de mensagens;
 - contratos e geração de documentos;
 - portal da influenciadora, login por cupom e senha, bloqueio por tentativas e sessão;
@@ -159,7 +159,7 @@ Essa ordem é obrigatória porque a manutenção administrativa e os módulos fu
 - [ ] A equipe consegue editar valor, quantidades contratadas, prazo, canais de uso de imagem e referência à planilha externa de looks.
 - [ ] A equipe consegue alterar manualmente o status entre `ON` e `OFF`.
 - [ ] A alteração para `OFF` não exclui o registro cadastral ou contratual.
-- [ ] Uma influenciadora em `OFF` permanece fora do conjunto elegível para ciclo mensal e geração de contrato quando esses módulos forem implementados, conforme RN-03.
+- [ ] Uma influenciadora em `OFF` permanece fora do conjunto elegível para a Colaboração Mensal e geração de contrato quando esses módulos forem implementados, conforme RN-03.
 
 ### Integridade e independência do V1
 
@@ -201,7 +201,7 @@ Essa ordem é obrigatória porque a manutenção administrativa e os módulos fu
 ## 12. Riscos
 
 - A indisponibilidade da integração de CEP pode deixar o endereço incompleto; isso não pode bloquear o cadastro ou a edição.
-- A inexistência de regra no PRD para inativação durante ciclo em aberto exige que módulos futuros não assumam comportamento não especificado.
+- A inexistência de regra no PRD para inativação durante uma Colaboração Mensal em aberto exige que módulos futuros não assumam comportamento não especificado.
 - A ausência de regras de LGPD, retenção e expurgo de CNPJ, PIX e endereço é um risco de conformidade a ser tratado fora desta entrega.
 - A ausência de estratégia de migração mantém os dados V1 fora do TEAR V2 até que exista especificação própria para importação e validação.
 - Decisões arquiteturais pendentes podem bloquear o início da implementação, mas não justificam alterar as regras de negócio desta SPEC.
@@ -209,7 +209,7 @@ Essa ordem é obrigatória porque a manutenção administrativa e os módulos fu
 ## 13. Referências do PRD
 
 - Seções 5.1 e 6.1: fluxo e módulo de Cadastro & Base de Influenciadoras.
-- RN-01, RN-02 e RN-03: status inicial, endereço por CEP e elegibilidade para ciclo/contrato.
+- RN-01, RN-02 e RN-03: status inicial, endereço por CEP e elegibilidade para Colaboração Mensal/contrato.
 - RF-001, RF-002, RF-003 e RF-004: cadastro, ativação/inativação, endereço e dados contratuais.
 - Requisitos não funcionais: disponibilidade degradável da integração de CEP.
 - Seções 11 e 12: restrições e comportamentos fora do escopo.
