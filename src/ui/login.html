@@ -240,6 +240,16 @@
         google.script.url.getLocation(function (localizacao) {
           var codigo = localizacao.parameter.code;
           var state = localizacao.parameter.state;
+          var erroDoProvedor = localizacao.parameter.error;
+          if (erroDoProvedor) {
+            mostrarSomente(painelLogin);
+            avisar(
+              erroDoProvedor === 'access_denied'
+                ? 'Login cancelado. Clique em "Entrar com Google" para tentar novamente.'
+                : 'Não foi possível entrar com o Google. Tente novamente.'
+            );
+            return;
+          }
           if (!codigo) {
             return; // primeiro acesso: só o botão de login.
           }
