@@ -19,6 +19,10 @@ var CONFIG_KEYS = {
   // client_id OAuth2 do TEAR no provedor de identidade (SPEC-035 §14.1,
   // validação de audience). Provisionado pelo operador.
   GOOGLE_CLIENT_ID: 'GOOGLE_CLIENT_ID',
+  // client_secret OAuth2 do TEAR (ADR-013) — usado EXCLUSIVAMENTE pelo
+  // AdaptadorOAuthGoogle na troca do authorization code. SEGREDO: nunca
+  // logar, nunca devolver ao cliente. Provisionado pelo operador.
+  GOOGLE_CLIENT_SECRET: 'GOOGLE_CLIENT_SECRET',
 };
 
 /**
