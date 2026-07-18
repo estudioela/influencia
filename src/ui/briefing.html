@@ -3,11 +3,16 @@
   <head>
     <base target="_top" />
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <?!= include('src/ui/portal-head') ?>
     <title>TEAR — Briefing</title>
   </head>
   <body>
     <main>
+      <nav><a href="#" id="voltarAdmin">← Painel da equipe</a><button type="button" id="sair">Sair</button></nav>
       <h1>Briefing da Colaboração</h1>
+
+      <p class="sub">Consulte os blocos da competência e publique todas as orientações em uma única ação.</p>
 
       <form id="busca">
         <label for="mesReferencia">Competência (AAAA-MM)</label>
@@ -22,7 +27,7 @@
         <button type="submit">Publicar briefing</button>
       </form>
 
-      <p id="mensagem" role="status"></p>
+      <p id="mensagem" role="status" aria-live="polite"></p>
     </main>
 
     <script>
@@ -30,6 +35,14 @@
       var preenchimento = document.getElementById('preenchimento');
       var blocosEl = document.getElementById('blocos');
       var mensagem = document.getElementById('mensagem');
+      var token = sessionStorage.getItem('tearPortalToken');
+      var botaoSair = document.getElementById('sair');
+
+      function navegarPara(pagina) {
+        var base = window.top.location.href.split('?')[0];
+        window.top.location.href = base + '?pagina=' + pagina;
+      }
+      if (!token) navegarPara('portal-login');
 
       function avisar(texto) {
         mensagem.textContent = texto;
@@ -75,6 +88,7 @@
           })
           .withFailureHandler(function (erro) { avisar(erro.message); })
           .obterBriefing({
+            token: token,
             mesReferencia: busca.mesReferencia.value.trim(),
             parceiraId: busca.parceiraId.value.trim(),
           });
@@ -103,10 +117,23 @@
           })
           .withFailureHandler(function (erro) { avisar(erro.message); })
           .preencherBriefing({
+            token: token,
             mesReferencia: busca.mesReferencia.value.trim(),
             parceiraId: busca.parceiraId.value.trim(),
             blocos: blocos,
           });
+      });
+
+      document.getElementById('voltarAdmin').addEventListener('click', function (evento) {
+        evento.preventDefault();
+        navegarPara('admin');
+      });
+      botaoSair.addEventListener('click', function () {
+        google.script.run.withSuccessHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).withFailureHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).sairDoPortal({ token: token });
       });
     </script>
   </body>

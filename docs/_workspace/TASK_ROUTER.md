@@ -290,6 +290,34 @@ Toda SPEC deve respeitar, sem reabrir:
   inalteradas. Arquitetura experimental "frontend separado + doPost"
   descartada (condição 6 da revisão). Detalhe: ADR-013 e
   `docs/_workspace/spec035_identidade/PLANO_ADR-013_OAUTH_CODE_FLOW.md`.
+- **Deploy e provisionamento de produção (2026-07-18, sessão de
+  homologação):** versão 13 ("ADR-013 OAuth code flow") criada via `clasp
+  push`/`create-version` e publicada no deployment de produção (rotulado
+  "V 5.0"); conferido por `clasp pull --versionNumber 13` + diff que o
+  conteúdo remoto é idêntico ao repositório. As 4 Script Properties foram
+  provisionadas pelo operador nesta sessão, com DOIS erros de
+  provisionamento encontrados e corrigidos por diagnóstico guiado:
+  (1) o Client Secret havia sido colado na property `GOOGLE_CLIENT_ID`
+  (formato `GOCSPX-…`), causando `401 invalid_client`; (2) em seguida o
+  `GOOGLE_CLIENT_ID` foi preenchido com um valor de EXEMPLO
+  (`123456789012-abc123…`), não com o ID real — evidência extraída por rota
+  de diagnóstico temporária (`?pagina=diag-adr013`, já removida do código e
+  do HEAD remoto) que gravou o `client_id` efetivamente enviado na aba
+  `DIAG_ADR013` da planilha PROD (aba temporária — **remover
+  manualmente**). Valor correto = campo "ID do cliente" da credencial OAuth
+  "Portal TEAR" (projeto GCP "projeto tear" do operador; o projeto Apps
+  Script permanece em "GCP: Padrão" — a associação GCP do script é
+  irrelevante para o fluxo, que só usa as properties). Redirect URIs
+  `/exec` (produção) e `/dev` registradas na credencial. Os IDs das
+  planilhas PROD/legado não são versionados (governança §3.5/§3.6) —
+  localizados via Drive ("[PROD] TEAR - Base Operacional", estrutura
+  validada contra o checklist §1; legado "[ELÃ] TEAR" = ID do ADR-010).
+  **Estado ao fim da sessão:** último erro observado foi `400
+  redirect_uri_mismatch`, ANTES do registro das URIs na credencial;
+  reteste do login pós-registro ainda pendente. Próximos passos: (1)
+  validar login ponta a ponta no `/exec`; (2) onboarding/bootstrap do
+  primeiro Administrador (SPEC-035); (3) carga da base legada
+  (`importarBaseLegada`); (4) remover a aba `DIAG_ADR013` da planilha PROD.
 
 ---
 

@@ -8,20 +8,11 @@
     <base target="_top" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 32rem; }
-      label { display: block; margin-bottom: 0.25rem; }
-      input, button { font: inherit; padding: 0.4rem 0.6rem; }
-      button { margin-left: 0.5rem; }
-      .ok { color: #14632a; }
-      .erro { color: #8c1d18; }
-      .info { color: #444; }
-      .oculto { display: none; }
-      ul { padding-left: 1.2rem; }
-    </style>
+    <?!= include('src/ui/portal-head') ?>
   </head>
   <body>
     <main>
+      <nav><a href="#" id="voltarAdmin">← Painel da equipe</a><button type="button" id="sair">Sair</button></nav>
       <h1>TEAR — Compilar Mês</h1>
       <p class="sub">
         Compila a <strong>Colaboração Mensal</strong> de cada Parceira ativa,
@@ -29,9 +20,9 @@
       </p>
 
       <form id="form-compilar" autocomplete="off">
-        <label for="mes">Competência (MesReferencia)</label>
+        <label for="mes">Competência</label>
         <input id="mes" name="mes" type="month" required min="2020-01" />
-        <button id="enviar" type="submit">Compilar Mês</button>
+        <button id="enviar" type="submit">Compilar mês</button>
       </form>
 
       <p id="resultado" role="status" aria-live="polite" class="oculto"></p>
@@ -45,6 +36,13 @@
         var botao = document.getElementById('enviar');
         var resultado = document.getElementById('resultado');
         var lista = document.getElementById('colaboracoes');
+        var token = sessionStorage.getItem('tearPortalToken');
+
+        function navegarPara(pagina) {
+          var base = window.top.location.href.split('?')[0];
+          window.top.location.href = base + '?pagina=' + pagina;
+        }
+        if (!token) navegarPara('portal-login');
 
         function mostrar(texto, tipo) {
           resultado.textContent = texto;
@@ -91,7 +89,19 @@
           google.script.run
             .withSuccessHandler(aoResponder)
             .withFailureHandler(aoFalhar)
-            .compilarMes({ mesReferencia: campoMes.value });
+            .compilarMes({ mesReferencia: campoMes.value, token: token });
+        });
+
+        document.getElementById('voltarAdmin').addEventListener('click', function (evento) {
+          evento.preventDefault();
+          navegarPara('admin');
+        });
+        document.getElementById('sair').addEventListener('click', function () {
+          google.script.run.withSuccessHandler(function () {
+            sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+          }).withFailureHandler(function () {
+            sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+          }).sairDoPortal({ token: token });
         });
       })();
     </script>

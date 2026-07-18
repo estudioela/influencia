@@ -91,17 +91,25 @@ das duas chaves `GOOGLE_*` acima:
 
 ## 3. Checklist de pré-deploy
 
-- [ ] **Script Properties provisionadas.** `SPREADSHEET_ID` existe no
-      projeto Apps Script de destino e aponta para "Portal Ela" (planilha
-      nova), não para o ID legado. `GOOGLE_CLIENT_ID` e
-      `GOOGLE_CLIENT_SECRET` (ADR-013) existem, vindos da credencial "Web
-      application" do GCP Console (ver §2, inclusive a subseção "GCP
-      Console (ADR-013)" — redirect URIs). Verificar: Editor →
-      Configurações do projeto → Propriedades do script.
-- [ ] **Todas as 9 abas físicas + cabeçalhos exatos existem na planilha
-      alvo** (tabela da seção 1). Responsabilidade do operador (migração de
-      dados, ADR-010), não do código. Verificar: abrir cada aba e comparar
-      linha 1 com a lista acima, célula a célula.
+- [x] **Script Properties provisionadas (2026-07-18, sessão de
+      homologação).** As 4 chaves existem: `SPREADSHEET_ID` →
+      "[PROD] TEAR - Base Operacional" (`1TYcrB4XvsSmupvdQVFSC2aEI0RkNt2sK51QQiwcEejA`);
+      `SPREADSHEET_ID_LEGADO` → "[ELÃ] TEAR" (ID do ADR-010);
+      `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` da credencial OAuth "Portal
+      TEAR" (projeto GCP "projeto tear"). Dois erros de digitação corrigidos
+      no caminho (secret colado em `GOOGLE_CLIENT_ID`; depois valor de
+      exemplo em vez do ID real) — detalhe em `TASK_ROUTER.md` §3 SPEC-035.
+      Redirect URIs `/exec` e `/dev` registradas na mesma credencial.
+      **Ainda não confirmado:** reteste do login após o registro das URIs
+      (último erro visto foi `400 redirect_uri_mismatch`, anterior ao
+      cadastro) — primeira ação da próxima sessão.
+- [x] **Todas as 11 abas físicas + cabeçalhos exatos existem na planilha
+      alvo** (tabela da seção 1). Confirmado por leitura do conteúdo da
+      planilha "[PROD] TEAR - Base Operacional" via Drive (2026-07-18):
+      as 11 abas e cabeçalhos batem exatamente com esta tabela, incluindo
+      `SUB_PROVIDER`/`SIS_IDENTIDADES`/`BASE_ADMINISTRADORES`. Planilha
+      nasceu vazia (sem dados) — carga via `importarBaseLegada` ainda
+      pendente.
 - [x] **`access` em `appsscript.json` — alterado de `MYSELF` para `ANYONE`
       (2026-07-17, Sprint Portal MVP Online).** Histórico: mantido em
       `MYSELF` desde 2026-07-16 (tentativa de abrir para

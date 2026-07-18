@@ -44,6 +44,16 @@ function doGet(e) {
       .evaluate()
       .setTitle('TEAR — Envios');
   }
+  if (e && e.parameter && e.parameter.pagina === 'pagamentos') {
+    return HtmlService.createTemplateFromFile('src/ui/pagamentos')
+      .evaluate()
+      .setTitle('TEAR — Pagamentos');
+  }
+  if (e && e.parameter && e.parameter.pagina === 'documentos') {
+    return HtmlService.createTemplateFromFile('src/ui/documentos')
+      .evaluate()
+      .setTitle('TEAR — Documentos');
+  }
   if (e && e.parameter && e.parameter.pagina === 'portal-login') {
     return HtmlService.createTemplateFromFile('src/ui/login')
       .evaluate()

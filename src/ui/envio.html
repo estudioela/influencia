@@ -3,11 +3,16 @@
   <head>
     <base target="_top" />
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <?!= include('src/ui/portal-head') ?>
     <title>TEAR — Envios</title>
   </head>
   <body>
     <main>
+      <nav><a href="#" id="voltarAdmin">← Painel da equipe</a><button type="button" id="sair">Sair</button></nav>
       <h1>Envios da Competência</h1>
+
+      <p class="sub">Confirme o endereço, registre o rastreio e acompanhe cada envio.</p>
 
       <form id="busca">
         <label for="mesReferencia">Competência (AAAA-MM)</label>
@@ -19,7 +24,7 @@
 
       <section id="envios"></section>
 
-      <p id="mensagem" role="status"></p>
+      <p id="mensagem" role="status" aria-live="polite"></p>
 
       <section id="confirmacao" hidden>
         <h2>Endereço para envio manual</h2>
@@ -33,6 +38,13 @@
       var mensagem = document.getElementById('mensagem');
       var confirmacaoEl = document.getElementById('confirmacao');
       var confirmacaoTextoEl = document.getElementById('confirmacaoTexto');
+      var token = sessionStorage.getItem('tearPortalToken');
+
+      function navegarPara(pagina) {
+        var base = window.top.location.href.split('?')[0];
+        window.top.location.href = base + '?pagina=' + pagina;
+      }
+      if (!token) navegarPara('portal-login');
 
       function avisar(texto) {
         mensagem.textContent = texto;
@@ -45,12 +57,13 @@
 
       function filtroAtual() {
         var parceiraId = busca.parceiraId.value.trim();
-        var filtro = { mesReferencia: busca.mesReferencia.value.trim() };
+        var filtro = { mesReferencia: busca.mesReferencia.value.trim(), token: token };
         if (parceiraId !== '') filtro.parceiraId = parceiraId;
         return filtro;
       }
 
       function chamar(nomeDaFuncao, dados, mensagemDeSucesso) {
+        dados.token = token;
         avisar('Processando…');
         google.script.run
           .withSuccessHandler(function (resposta) {
@@ -63,6 +76,7 @@
       }
 
       function confirmarEnderecoAcao(comando) {
+        comando.token = token;
         avisar('Processando…');
         google.script.run
           .withSuccessHandler(function (resposta) {
@@ -154,6 +168,17 @@
           return chamar('registrarRastreio', comando, 'Rastreio registrado — Envio expedido.');
         }
         chamar('atualizarStatus', comando, 'Status atualizado.');
+      });
+
+      document.getElementById('voltarAdmin').addEventListener('click', function (evento) {
+        evento.preventDefault(); navegarPara('admin');
+      });
+      document.getElementById('sair').addEventListener('click', function () {
+        google.script.run.withSuccessHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).withFailureHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).sairDoPortal({ token: token });
       });
     </script>
   </body>

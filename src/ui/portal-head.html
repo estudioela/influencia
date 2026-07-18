@@ -1,139 +1,150 @@
-<!-- Head estrutural compartilhado do Portal MVP (login, dashboard, admin,
-     financeiro, perfil, pendências). Apenas tipografia, fundo, container,
-     espaçamentos, botões, inputs e cards neutros — não é o Design System
-     definitivo (dívida de M2, mesmo racional de cadastro-parceira-head.html). -->
 <style>
-  :root { color-scheme: light dark; }
+  :root {
+    color-scheme: light;
+    --tear-ink: #183329;
+    --tear-muted: #627269;
+    --tear-surface: #ffffff;
+    --tear-canvas: #f5f7f3;
+    --tear-line: #dce5dd;
+    --tear-primary: #176b4b;
+    --tear-primary-hover: #10543a;
+    --tear-danger: #b42318;
+    --tear-danger-bg: #fff2f0;
+    --tear-success: #157347;
+    --tear-success-bg: #ecfdf3;
+    --tear-info: #195d91;
+    --tear-info-bg: #edf6ff;
+    --tear-radius: 14px;
+    --tear-shadow: 0 18px 45px rgba(26, 57, 41, .08);
+  }
 
   * { box-sizing: border-box; }
 
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-width: 320px;
     margin: 0;
+    color: var(--tear-ink);
+    background: var(--tear-canvas);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16px;
     line-height: 1.5;
-    background: #f4f5f3;
-    color: #1c1e1c;
   }
 
   main {
-    max-width: 40rem;
-    margin: 2.5rem auto;
-    padding: 2rem 2.25rem;
-    background: #fff;
-    border: 1px solid #8883;
-    border-radius: .6rem;
-    box-shadow: 0 1px 3px #0001;
+    width: min(100% - 32px, 760px);
+    margin: clamp(24px, 6vw, 64px) auto;
+    padding: clamp(24px, 5vw, 48px);
+    background: var(--tear-surface);
+    border: 1px solid var(--tear-line);
+    border-radius: 20px;
+    box-shadow: var(--tear-shadow);
   }
 
-  h1 {
-    font-size: 1.5rem;
-    margin: 0 0 1rem;
-  }
-
-  h2 {
-    font-size: 1.1rem;
-    margin: 1.75rem 0 .75rem;
-  }
+  h1, h2, h3 { color: var(--tear-ink); letter-spacing: -.025em; }
+  h1 { margin: 0 0 8px; font-size: clamp(1.75rem, 4vw, 2.25rem); line-height: 1.15; }
+  h2 { margin: 32px 0 12px; font-size: 1.15rem; }
+  p { margin: 0 0 16px; }
+  .sub { max-width: 58ch; margin-bottom: 28px; color: var(--tear-muted); }
 
   nav {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1.25rem;
-    margin: 0 0 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #8883;
+    gap: 8px 18px;
+    margin: 0 0 32px;
+    padding: 0 0 18px;
+    border-bottom: 1px solid var(--tear-line);
   }
+  nav a { color: var(--tear-primary); font-size: .9375rem; font-weight: 700; text-decoration: none; }
+  nav a:hover { color: var(--tear-primary-hover); text-decoration: underline; text-underline-offset: 3px; }
+  nav button { margin-left: auto; }
+  nav nav { width: 100%; margin: 0; padding: 0; border: 0; }
+  nav nav button { margin-left: 0; }
+  .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .tool-grid button { margin: 0; }
 
-  nav a {
-    color: #2f6f4f;
-    text-decoration: none;
-    font-size: .95rem;
-    font-weight: 600;
-  }
-  nav a:hover { text-decoration: underline; }
-
-  nav button {
-    margin-left: auto;
-  }
-
-  p#mensagem {
-    min-height: 1.3em;
-    margin: 0 0 1.25rem;
-    font-size: .95rem;
-    opacity: .8;
-  }
-
-  form {
-    display: grid;
-    gap: .5rem;
-  }
-
-  label {
-    font-weight: 600;
-    font-size: .9rem;
-  }
-
-  input, select {
+  form { display: grid; gap: 10px; }
+  form + form { margin-top: 28px; }
+  label { display: grid; gap: 6px; color: var(--tear-ink); font-size: .9rem; font-weight: 700; }
+  input, select, textarea {
     width: 100%;
-    padding: .6rem .7rem;
-    font-size: 1rem;
-    font-family: inherit;
-    border: 1px solid #8886;
-    border-radius: .4rem;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--tear-ink);
     background: #fff;
-    color: inherit;
+    border: 1px solid #bac9bd;
+    border-radius: 10px;
+    font: inherit;
+  }
+  input::placeholder { color: #86958b; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 3px solid rgba(35, 134, 91, .28);
+    outline-offset: 2px;
   }
 
   button {
-    padding: .65rem 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: inherit;
-    border: 0;
-    border-radius: .4rem;
-    background: #2f6f4f;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--tear-primary);
+    border-radius: 10px;
     color: #fff;
+    background: var(--tear-primary);
     cursor: pointer;
+    font: inherit;
+    font-size: .9375rem;
+    font-weight: 750;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease;
   }
-  button:disabled { opacity: .6; cursor: progress; }
+  button:hover:not(:disabled) { border-color: var(--tear-primary-hover); background: var(--tear-primary-hover); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { cursor: wait; opacity: .6; }
+  button[data-acao="rejeitar"] { border-color: var(--tear-danger); background: var(--tear-danger); }
 
-  section {
-    margin: 0 0 1.25rem;
-  }
-
+  section { margin: 0 0 24px; }
   fieldset {
-    margin: 0 0 1rem;
-    padding: 1rem 1.1rem;
-    border: 1px solid #8883;
-    border-radius: .5rem;
+    display: grid;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 18px;
+    border: 1px solid var(--tear-line);
+    border-radius: var(--tear-radius);
+    background: #fbfdfb;
   }
-  legend {
-    font-weight: 600;
-    padding: 0 .35rem;
-  }
+  legend { padding: 0 6px; color: var(--tear-ink); font-weight: 750; }
+  fieldset p { margin: 0; color: var(--tear-muted); }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .9rem;
+  #mensagem, #resultado {
+    min-height: 1.5em;
+    margin: 20px 0;
+    color: var(--tear-muted);
+    font-size: .9375rem;
   }
-  th, td {
-    text-align: left;
-    padding: .55rem .6rem;
-    border-bottom: 1px solid #8883;
+  #resultado:not(.oculto), #mensagem:not(:empty) {
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
   }
+  #resultado.info { color: var(--tear-info); background: var(--tear-info-bg); border-color: #beddf6; }
+  #resultado.ok { color: var(--tear-success); background: var(--tear-success-bg); border-color: #abebc6; }
+  #resultado.erro { color: var(--tear-danger); background: var(--tear-danger-bg); border-color: #f7c6c1; }
+  #resultado.oculto { display: none; }
 
-  #botaoGoogle {
-    margin-top: .5rem;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { padding: 12px 10px; border-bottom: 1px solid var(--tear-line); text-align: left; vertical-align: top; }
+  th { color: var(--tear-muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+  #historico { overflow-x: auto; }
+  pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: #f1f5f1; font: .875rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
 
-  @media (prefers-color-scheme: dark) {
-    body { background: #17181a; color: #e7e8e6; }
-    main { background: #202226; border-color: #ffffff22; box-shadow: none; }
-    input, select { background: #16171a; border-color: #ffffff33; }
-    fieldset { border-color: #ffffff22; }
-    nav { border-color: #ffffff22; }
-    th, td { border-color: #ffffff22; }
+  @media (max-width: 560px) {
+    main { width: min(100% - 20px, 760px); padding: 22px 18px; border-radius: 14px; }
+    nav { align-items: flex-start; gap: 12px; }
+    nav button { width: 100%; margin-left: 0; }
+    button { width: 100%; }
+    .tool-grid { grid-template-columns: 1fr; }
+    fieldset { padding: 14px; }
+    th, td { min-width: 110px; }
   }
 </style>

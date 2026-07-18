@@ -3,11 +3,16 @@
   <head>
     <base target="_top" />
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <?!= include('src/ui/portal-head') ?>
     <title>TEAR — Entregas</title>
   </head>
   <body>
     <main>
+      <nav><a href="#" id="voltarAdmin">← Painel da equipe</a><button type="button" id="sair">Sair</button></nav>
       <h1>Entregas da Competência</h1>
+
+      <p class="sub">Acompanhe materiais enviados, aprove entregas e publique o conteúdo finalizado.</p>
 
       <form id="busca">
         <label for="mesReferencia">Competência (AAAA-MM)</label>
@@ -19,13 +24,20 @@
 
       <section id="entregas"></section>
 
-      <p id="mensagem" role="status"></p>
+      <p id="mensagem" role="status" aria-live="polite"></p>
     </main>
 
     <script>
       var busca = document.getElementById('busca');
       var entregasEl = document.getElementById('entregas');
       var mensagem = document.getElementById('mensagem');
+      var token = sessionStorage.getItem('tearPortalToken');
+
+      function navegarPara(pagina) {
+        var base = window.top.location.href.split('?')[0];
+        window.top.location.href = base + '?pagina=' + pagina;
+      }
+      if (!token) navegarPara('portal-login');
 
       function avisar(texto) {
         mensagem.textContent = texto;
@@ -33,12 +45,13 @@
 
       function filtroAtual() {
         var parceiraId = busca.parceiraId.value.trim();
-        var filtro = { mesReferencia: busca.mesReferencia.value.trim() };
+        var filtro = { mesReferencia: busca.mesReferencia.value.trim(), token: token };
         if (parceiraId !== '') filtro.parceiraId = parceiraId;
         return filtro;
       }
 
       function chamar(nomeDaFuncao, dados, mensagemDeSucesso) {
+        dados.token = token;
         avisar('Processando…');
         google.script.run
           .withSuccessHandler(function (resposta) {
@@ -122,6 +135,17 @@
           return chamar('aprovarEntrega', comando, 'Entrega aprovada.');
         }
         chamar('publicarEntrega', comando, 'Entrega publicada e arquivada.');
+      });
+
+      document.getElementById('voltarAdmin').addEventListener('click', function (evento) {
+        evento.preventDefault(); navegarPara('admin');
+      });
+      document.getElementById('sair').addEventListener('click', function () {
+        google.script.run.withSuccessHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).withFailureHandler(function () {
+          sessionStorage.removeItem('tearPortalToken'); navegarPara('portal-login');
+        }).sairDoPortal({ token: token });
       });
     </script>
   </body>
