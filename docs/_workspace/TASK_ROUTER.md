@@ -350,6 +350,46 @@ Toda SPEC deve respeitar, sem reabrir:
   logado com uma conta Google e clicar "Entrar com Google" para validar
   o login ponta a ponta — nenhum agente sem navegador consegue completar
   esse passo específico.
+- **Continuidade (2026-07-18, sessão sem acesso a navegador — 2ª tentativa,
+  foco exclusivo em destravar o login):** achado novo e corrigido:
+  `src/ui/login.html` nunca lia `error=` da URL de retorno do Google (só
+  `code`) — se o usuário cancelasse o consentimento (`access_denied`) ou o
+  Google devolvesse qualquer outro erro no redirect, a tela ficava muda,
+  sem mensagem nenhuma. Corrigido (mostra aviso e volta ao botão de login);
+  suíte 625/625 verde; lint limpo. **Publicado em produção:** versão 18
+  ("V 5.4 — trata error= no callback OAuth"), mesmo deploymentId de sempre
+  (`clasp deploy -i <id> -V 18`, não cria URL nova — redirect URIs já
+  registradas continuam válidas).
+  Tentativa de diagnóstico headless da hipótese `script.external_request`
+  via Apps Script Execution API (`clasp run`, manifest `executionApi`
+  temporário, removido depois): **bloqueada por um pré-requisito de conta
+  diferente** — `clasp run` falha com "Script function not found. Please
+  make sure script is deployed as API executable" mesmo com deployment
+  válido, o que é o sintoma padrão de a "Google Apps Script API" estar
+  desligada em `script.google.com/home/usersettings` para a conta usada
+  pelo `clasp login`. Ou seja: mesmo a via alternativa (sem navegador, via
+  API) para checar Script Properties/`UrlFetchApp` exige antes um toggle
+  manual nessa página, também só acionável logado no navegador. A hipótese
+  de reautorização de escopo segue **não confirmada nem descartada**
+  (pesquisa de documentação oficial do Google confirma que, SE for o caso,
+  não existe caminho por CLI/API — só clique manual). Auditoria de código
+  independente (2ª leitura completa do fluxo) não achou nenhum outro bug;
+  achado de maior probabilidade prática continua sendo erro humano de
+  digitação em `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (já ocorreu 2x
+  nesta mesma implantação, tabela de erros conhecidos em
+  `DEPLOY_CHECKLIST.md`), não a hipótese de permissão.
+  **Ação humana necessária (bloqueio real, ver relatório da sessão):**
+  (1) na conta que fez o deploy, abrir
+  `https://script.google.com/home/usersettings` e confirmar que "Google
+  Apps Script API" está ligada — desbloqueia diagnóstico futuro via
+  `clasp run` sem depender de navegador a cada vez; (2) abrir a URL do
+  deployment de produção (`clasp deployments`, ID `AKfycbwUhR1P7…`, `/exec`)
+  logado como essa mesma conta e clicar "Entrar com Google" — se aparecer
+  tela de consentimento pedindo escopos novos, aceitar (resolve a hipótese
+  de permissão, se for o caso); se aparecer qualquer outro erro, ele
+  finalmente será o primeiro erro real observado nesta versão do código e
+  pode ser corrigido dirigido pela mensagem exibida (agora sempre visível,
+  com a correção desta sessão).
 
 ---
 
