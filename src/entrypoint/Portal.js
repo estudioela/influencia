@@ -9,7 +9,8 @@
  */
 
 /**
- * Renderiza o Portal. Sem parâmetro: cadastro de Parceira (M1).
+ * Renderiza o Portal. Sem parâmetro: login federado do Portal (SPEC-035),
+ * que também cobre onboarding de quem ainda não tem cadastro.
  * Com `?pagina=compilar-mes`: compilação da Colaboração Mensal (M2).
  * Com `?pagina=briefing`: Briefing da Colaboração (M3).
  * Com `?pagina=entrega`/`envio`: telas internas de operação (M4/M5).
