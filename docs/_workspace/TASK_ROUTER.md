@@ -847,3 +847,72 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   rótulo "ADR-014" mas conteúdo antigo — não usar como referência de rollback
   para a arquitetura consolidada; a v32 é a primeira versão cujo conteúdo foi
   de fato verificado byte-a-byte contra o git.
+
+## 14. Redesign visual — Design System Estúdio Elã (iniciado 2026-07-19)
+
+- **Origem:** sessão de auditoria de UI (`src/ui/`) comparando com o Design
+  System Estúdio Elã e o export Stitch (`docs/stitch-export/`). Documentos de
+  referência (raiz do repo, não em `docs/` por serem artefatos de sessão):
+  `UI_AUDIT_REPORT.md`, `UI_DESIGN_SYSTEM_GAP_ANALYSIS.md`,
+  `UI_IMPLEMENTATION_ROADMAP.md`, `UI_VISUAL_HANDOFF.md`,
+  `NOTEBOOKLM_HANDOFF_UI.md`.
+- **Princípio:** evolução visual incremental, não redesign estrutural —
+  preserva páginas, `google.script.run`, arquitetura frontend/backend e
+  regras de negócio. Decisão de marca vigente: adoção integral do DS Elã
+  (vinho `#9f0003` no lugar do verde `#176b4b`), sem tema paralelo.
+- ✅ **Fase 1 (fundação) + Fase 2 (`admin.html`)** — commit `9bf189a`
+  (branch `feat/ui-design-system-ela`), aprovado pelo responsável do
+  projeto em 2026-07-19 (screenshots em `auditoria/`). Suíte 719/719 verde,
+  lint limpo.
+- ✅ **Fase 3 (migração página a página) concluída em 2026-07-19** — todas
+  as 11 páginas migradas em commits individuais na branch
+  `feat/ui-design-system-ela`: `login.html` → `dashboard.html` →
+  `perfil.html` → `briefing.html` → `entrega.html` → `envio.html` →
+  `financeiro.html` → `pagamentos.html` → `pendencias.html` →
+  `compilar-mes.html` → `documentos.html`. Regra transversal respeitada
+  (zero mudança em nomes de função `google.script.run` ou payloads); cada
+  página fechou com lint + suíte 719/719 verde antes do commit seguinte,
+  mais auditorias de consistência/segurança em subagentes (sem achados).
+  Achados corrigidos durante a migração (não previstos no roadmap original):
+  - Bug de escape em atributos por concatenação de string HTML
+    (`briefing.html`, `entrega.html`, `envio.html`, `pendencias.html`,
+    `financeiro.html`) — um valor vindo do backend com aspas podia quebrar
+    o atributo/markup; reescrito com `createElement`/`textContent`.
+  - Estados de enum crus (`AguardandoMaterial` etc.) trocados por rótulos
+    legíveis em badges (`entrega.html`, `envio.html`, `pagamentos.html`,
+    `pendencias.html`).
+  - `window.prompt()` em `pagamentos.html` substituído por painel próprio
+    (não bloqueia a thread, mesma linguagem visual do DS Elã).
+  - `id="resultado"` de `documentos.html` renomeado para
+    `resultadoDocumento` — colidia conceitualmente com o padrão de alerta
+    legado (`.ok/.erro/.info/.oculto`) que só `compilar-mes.html` usa de
+    fato.
+  - Item "consolidação de portal-head.html (limpeza de IDs legados)" do
+    roadmap original **não se aplicava**: `id="mensagem"` é o padrão vivo
+    em 11/12 páginas (não é removível sem quebrar todas), e `id="resultado"`
+    só tem um usuário legítimo restante (`compilar-mes.html`) — nada para
+    remover além da colisão já corrigida acima.
+  - `dashboard.html`/`financeiro.html` também tiveram `innerHTML` de
+    concatenação trocado por `createElement` (regra transversal do
+    roadmap), e `financeiro.html` ganhou coordenação das duas chamadas
+    `google.script.run` paralelas (mensagem "Carregando…" só limpa quando
+    ambas terminam).
+  - `pagamentos.html`/`documentos.html` desminificados (estavam em linha
+    única).
+- **Pendência para o responsável do projeto:** revisar e abrir PR de
+  `feat/ui-design-system-ela` para `main` (push protegido — `main` exige
+  PR no GitHub). Branch com 11 commits, todos com suíte 719/719 verde e
+  lint limpo.
+- **Pendências não bloqueantes:** P2 (fonte display IvyPresto — Adobe Fonts
+  — usando fallback Fraunces por ora) e P3 (re-export Stitch para tokens
+  secundários exatos de `on-surface`/`tertiary`/`surface-container-*`).
+- **Fase 4 (responsividade/acessibilidade/microinterações):** não iniciada;
+  mudanças estruturais de shell (sidebar/bottom nav) exigem ADR próprio
+  antes da execução.
+- **Nota (limpeza 2026-07-19):** os artefatos de sessão da Fase 1–3
+  (`UI_AUDIT_REPORT.md`, `UI_DESIGN_SYSTEM_GAP_ANALYSIS.md`,
+  `UI_IMPLEMENTATION_ROADMAP.md`, `UI_VISUAL_HANDOFF.md`,
+  `NOTEBOOKLM_HANDOFF_UI.md`, `docs/stitch-export/`, `auditoria/`) foram
+  removidos por já estarem concluídos e aprovados; as pendências não
+  bloqueantes acima foram preservadas nesta seção. `UI_FINAL_REVIEW.md`
+  foi mantido (revisão pré-merge da PR #40 ainda em andamento).
