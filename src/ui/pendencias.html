@@ -10,14 +10,20 @@
   <body>
     <main>
       <nav>
-        <span id="quemEsta"></span>
-        <a href="#" id="linkInicio">Início</a>
-        <a href="#" id="linkPerfil">Meu perfil</a>
-        <a href="#" id="linkFinanceiro">Financeiro e histórico</a>
-        <button type="button" id="sair">Sair</button>
+        <span class="wordmark">tear v2</span>
+        <nav>
+          <a href="#" id="linkInicio">Início</a>
+          <a href="#" id="linkPerfil">Meu perfil</a>
+          <a href="#" id="linkFinanceiro">Financeiro e histórico</a>
+        </nav>
+        <button type="button" id="sair" class="secundario">Sair</button>
       </nav>
 
-      <h1>Pendências da Competência</h1>
+      <header>
+        <p class="eyebrow micro">estúdio elã — portal da parceira</p>
+        <h1>Pendências da competência</h1>
+        <p class="sub">Envie os materiais das colaborações desta competência.</p>
+      </header>
 
       <p id="mensagem" role="status"></p>
 
@@ -58,45 +64,73 @@
         return false;
       }
 
-      function renderizarBriefing(briefing) {
-        if (!briefing) {
-          return '<p>Briefing ainda não disponível.</p>';
-        }
-        return (
-          '<p>Look: ' + briefing.look + '</p>' +
-          '<p>Entrega: ' + briefing.dataEntrega + '</p>' +
-          '<p>Postagem: ' + briefing.dataPostagem + '</p>'
-        );
+      var ROTULOS_DE_ESTADO = {
+        AguardandoMaterial: 'aguardando material',
+        EmRevisao: 'em revisão',
+        Aprovado: 'aprovado',
+        Publicado: 'publicado',
+      };
+
+      function linha(texto) {
+        var p = document.createElement('p');
+        p.className = 'sub';
+        p.textContent = texto;
+        return p;
       }
 
-      function acoesDoItem(item, indice) {
-        if (item.estado !== 'AguardandoMaterial') {
-          return '';
+      function renderizarBriefing(grupo, briefing) {
+        if (!briefing) {
+          grupo.appendChild(linha('Briefing ainda não disponível.'));
+          return;
         }
-        return (
-          '<label>Link do material <input name="link-' + indice + '" type="text" required /></label>' +
-          '<button type="button" data-acao="enviar" data-indice="' + indice + '" data-rotulo="' +
-          item.rotulo + '">Enviar material</button>'
-        );
+        grupo.appendChild(linha('Look: ' + briefing.look));
+        grupo.appendChild(linha('Entrega: ' + briefing.dataEntrega));
+        grupo.appendChild(linha('Postagem: ' + briefing.dataPostagem));
+      }
+
+      function acoesDoItem(grupo, item, indice) {
+        if (item.estado !== 'AguardandoMaterial') {
+          return;
+        }
+        var label = document.createElement('label');
+        label.textContent = 'Link do material ';
+        var input = document.createElement('input');
+        input.name = 'link-' + indice;
+        input.type = 'text';
+        input.required = true;
+        label.appendChild(input);
+        grupo.appendChild(label);
+
+        var botao = document.createElement('button');
+        botao.type = 'button';
+        botao.setAttribute('data-acao', 'enviar');
+        botao.setAttribute('data-indice', indice);
+        botao.setAttribute('data-rotulo', item.rotulo);
+        botao.textContent = 'Enviar material';
+        grupo.appendChild(botao);
       }
 
       function renderizar(itens) {
+        pendenciasEl.textContent = '';
         if (itens.length === 0) {
-          pendenciasEl.innerHTML = '';
+          var vazio = document.createElement('p');
+          vazio.className = 'empty-state';
+          vazio.textContent = 'Nenhuma pendência nesta competência.';
+          pendenciasEl.appendChild(vazio);
           avisar('Nenhuma pendência nesta competência.');
           return;
         }
-        pendenciasEl.innerHTML = itens
-          .map(function (item, indice) {
-            return (
-              '<fieldset>' +
-              '<legend>' + item.rotulo + ' — ' + item.estado + '</legend>' +
-              renderizarBriefing(item.briefing) +
-              acoesDoItem(item, indice) +
-              '</fieldset>'
-            );
-          })
-          .join('');
+        itens.forEach(function (item, indice) {
+          var grupo = document.createElement('fieldset');
+
+          var legend = document.createElement('legend');
+          legend.textContent = item.rotulo + ' — ' + (ROTULOS_DE_ESTADO[item.estado] || item.estado);
+          grupo.appendChild(legend);
+
+          renderizarBriefing(grupo, item.briefing);
+          acoesDoItem(grupo, item, indice);
+          pendenciasEl.appendChild(grupo);
+        });
         avisar(itens.length + ' pendência(s).');
       }
 
