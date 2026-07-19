@@ -599,7 +599,7 @@ Mudanças de design devem:
 # 10. REFERÊNCIA OFICIAL
 
 Fontes visuais do TEAR:
-design/stitch/
+docs/stitch-export/
 
 Inclui:
 

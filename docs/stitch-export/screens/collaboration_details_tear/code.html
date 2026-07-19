@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TEAR - Collaboration Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&amp;family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;family=Noto+Serif:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#410002",
+                        "tertiary-container": "#666561",
+                        "surface-dim": "#ded9d8",
+                        "secondary": "#a63931",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#cd0005",
+                        "secondary-container": "#ff7b6f",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fef8f8",
+                        "primary-fixed": "#ffdad5",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "inverse-surface": "#323030",
+                        "secondary-fixed-dim": "#ffb4ab",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "surface-container": "#f2edec",
+                        "on-primary-container": "#ffdbd6",
+                        "tertiary": "#4e4d4a",
+                        "surface-container-high": "#ece7e6",
+                        "on-secondary-container": "#731311",
+                        "surface-container-highest": "#e6e1e1",
+                        "outline-variant": "#e8bdb6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef8f8",
+                        "on-tertiary-fixed-variant": "#474743",
+                        "primary": "#9f0003",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#930002",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#ffb4a9",
+                        "inverse-on-surface": "#f5efef",
+                        "on-surface-variant": "#5e3f3b",
+                        "surface-variant": "#e6e1e1",
+                        "on-tertiary-container": "#e6e3de",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#c00004",
+                        "on-surface": "#1d1b1b",
+                        "surface-container-low": "#f8f2f2",
+                        "on-secondary-fixed-variant": "#86211d",
+                        "on-background": "#1d1b1b",
+                        "tertiary-fixed": "#e5e2dd",
+                        "error": "#ba1a1a",
+                        "background": "#fef8f8",
+                        "on-primary-fixed": "#410000",
+                        "outline": "#926e69",
+                        "secondary-fixed": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0",
+                        "lg": "0",
+                        "xl": "0",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "s-2": "8px",
+                        "container-max": "1026px",
+                        "s-6": "32px",
+                        "gutter": "40px",
+                        "s-4": "16px",
+                        "s-8": "64px",
+                        "s-3": "12px",
+                        "s-9": "96px",
+                        "s-1": "4px",
+                        "s-5": "24px",
+                        "s-10": "140px",
+                        "s-7": "48px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["notoSerif"],
+                        "display-lg-mobile": ["notoSerif"],
+                        "caption": ["archivoNarrow"],
+                        "body-s": ["hankenGrotesk"],
+                        "h3": ["notoSerif"],
+                        "body-base": ["hankenGrotesk"],
+                        "display-xl": ["notoSerif"],
+                        "display-sm": ["notoSerif"],
+                        "display-md": ["notoSerif"],
+                        "body-l": ["hankenGrotesk"],
+                        "micro": ["hankenGrotesk"],
+                        "h4": ["hankenGrotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["64px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "caption": ["13px", { "lineHeight": "1.45", "fontWeight": "300" }],
+                        "body-s": ["15px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "h3": ["26px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "body-base": ["16px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "display-xl": ["96px", { "lineHeight": "0.95", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-sm": ["36px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-md": ["48px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "body-l": ["18px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "micro": ["11px", { "lineHeight": "1.60", "letterSpacing": "0.18em", "fontWeight": "500" }],
+                        "h4": ["20px", { "lineHeight": "1.10", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .hairline-b { border-bottom: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-t { border-top: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-l { border-left: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-r { border-right: 1px solid rgba(29, 27, 27, 0.18); }
+        
+        .red-ground .hairline-b { border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
+        .red-ground .hairline-t { border-top: 1px solid rgba(255, 255, 255, 0.3); }
+        
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            width: 208px;
+            background-color: #9f0003;
+            color: white;
+            font-family: 'Hanken Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: lowercase;
+            border-radius: 9999px;
+            border: 1px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-primary:hover {
+            background-color: transparent;
+            border-color: #9f0003;
+            color: #9f0003;
+        }
+
+        .btn-primary.red-ground-btn {
+            background-color: white;
+            color: #9f0003;
+        }
+
+        .btn-primary.red-ground-btn:hover {
+            background-color: transparent;
+            border-color: white;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-base min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col py-s-8 px-s-4 h-full gap-y-s-2 bg-surface dark:bg-surface-dim border-r border-on-surface/10 dark:border-on-surface/20 w-64 shrink-0 fixed left-0 top-0 z-50">
+<div class="font-display-md text-display-md font-light text-primary dark:text-primary-fixed mb-s-8 pl-s-2">
+            TEAR
+            <div class="font-micro text-micro text-on-surface-variant mt-2">Influence Management</div>
+</div>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">business</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Brands</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">handshake</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Partners</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-primary dark:text-primary-fixed-dim border-l-2 border-primary pl-s-2 font-bold hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">group_work</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Collaborations</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Briefings</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">folder_open</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Materials</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Approvals</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Logistics</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Payments</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Contracts</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">History</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant dark:text-on-tertiary-fixed-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Settings</span>
+</a>
+<div class="mt-auto pl-s-2 pt-s-8">
+<button class="btn-primary w-full max-w-[208px]">new briefing</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 w-full relative">
+<!-- TopAppBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center w-full px-s-5 h-20 border-b border-on-surface/10 bg-background sticky top-0 z-40">
+<div class="font-display-sm text-display-sm font-light text-primary tracking-tight">TEAR</div>
+<div class="flex gap-4 text-primary">
+<span class="material-symbols-outlined">search</span>
+<span class="material-symbols-outlined">notifications</span>
+</div>
+</header>
+<div class="max-w-[1026px] mx-auto w-full">
+<!-- Hero / Campaign Header -->
+<section class="px-gutter py-s-10 lg:py-[140px] flex flex-col md:flex-row gap-s-8 md:gap-[80px]">
+<div class="md:w-[320px] shrink-0">
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant mb-s-4">Collaboration 048</div>
+<h1 class="font-display-xl text-display-xl-mobile md:text-display-xl text-on-surface leading-tight mb-s-6">
+                        Aura<br/>Winter
+                    </h1>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-on-surface/20">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-micro text-micro uppercase tracking-widest">In Production</span>
+</div>
+</div>
+<div class="flex-1 md:max-w-[496px] pt-2">
+<p class="font-body-l text-body-l text-on-surface-variant mb-s-8">
+                        The Aura Winter '24 capsule collection requires a highly curated visual narrative. This collaboration focuses on stark architectural landscapes paired with fluid garment movement. Key deliverables emphasize high-contrast editorial photography and short-form video vignettes.
+                    </p>
+<div class="grid grid-cols-2 gap-s-6 mb-s-8">
+<div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant mb-1">Brand</div>
+<div class="font-body-base text-body-base text-on-surface">Maison Aura</div>
+</div>
+<div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant mb-1">Partner</div>
+<div class="font-body-base text-body-base text-on-surface">Studio Blanc</div>
+</div>
+<div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant mb-1">Budget</div>
+<div class="font-body-base text-body-base text-on-surface">€ 45,000</div>
+</div>
+<div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant mb-1">Deadline</div>
+<div class="font-body-base text-body-base text-on-surface">14 Nov 2024</div>
+</div>
+</div>
+<button class="btn-primary">view briefing</button>
+</div>
+</section>
+<!-- Timeline Section -->
+<section class="px-gutter py-s-10 bg-surface-container-lowest hairline-t">
+<div class="font-h3 text-h3 mb-s-10">Lifecycle</div>
+<div class="relative">
+<!-- Timeline Track -->
+<div class="absolute top-[11px] left-0 w-full h-[1px] bg-on-surface/10"></div>
+<div class="absolute top-[11px] left-0 w-[60%] h-[1px] bg-primary"></div>
+<div class="grid grid-cols-3 md:grid-cols-6 gap-s-4 relative z-10">
+<!-- Step 1 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center mb-s-3">
+<span class="material-symbols-outlined text-[14px] text-on-primary">check</span>
+</div>
+<div class="font-micro text-micro uppercase tracking-widest text-center">Creation</div>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center mb-s-3">
+<span class="material-symbols-outlined text-[14px] text-on-primary">check</span>
+</div>
+<div class="font-micro text-micro uppercase tracking-widest text-center">Briefing</div>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center mb-s-3 outline outline-[4px] outline-surface-container-lowest">
+<div class="w-2 h-2 rounded-full bg-on-primary"></div>
+</div>
+<div class="font-micro text-micro uppercase tracking-widest text-primary font-bold text-center">Production</div>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-on-surface/20 mb-s-3"></div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant text-center">Approval</div>
+</div>
+<!-- Step 5 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-on-surface/20 mb-s-3"></div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant text-center">Payment</div>
+</div>
+<!-- Step 6 -->
+<div class="flex flex-col items-center">
+<div class="w-6 h-6 rounded-full bg-surface-container-high border border-on-surface/20 mb-s-3"></div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-surface-variant text-center">Conclusion</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Materials Gallery (Blood Red Ground) -->
+<section class="bg-primary text-on-primary red-ground px-gutter py-s-10 lg:py-[140px]">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-s-10 gap-s-6">
+<div>
+<div class="font-micro text-micro uppercase tracking-widest text-on-primary/70 mb-s-2">Deliverables</div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg">Material Gallery</h2>
+</div>
+<button class="btn-primary red-ground-btn">upload assets</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-on-primary/30 border border-on-primary/30">
+<!-- Asset 1 -->
+<div class="bg-primary aspect-square relative group">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" data-alt="A high-fashion editorial photograph of a model wearing a structured winter coat standing in a stark, minimalist concrete architectural setting. The lighting is cold, high-contrast, and dramatic, emphasizing the textures of the garment and the raw concrete. The mood is sophisticated and severe, fitting a high-end luxury brand's winter campaign." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXB3KscG-EzoZOyiv5eJQvsLY4n9hYaPTwdjEbaPaHlbZRuCrLxPRJAA9I2TER-xzVo8OS_pExnOnfQV_nKPzGub96yhx4tva14jdsrjGJHpxyM06g8n4VqhOSSVycwsiGVLev6XTIXWi6TMBlhRUdvzDRUTDKQ-1zkP0KPTrDochHfWJ1j97hQI5uoky19XZEzSD1B86M4nigpPXmmAXMv_NhR5HBI6biEtA93tbsLwuLzaDfbHC-"/>
+<div class="absolute bottom-0 left-0 w-full p-s-4 bg-gradient-to-t from-primary/90 to-transparent">
+<div class="font-micro text-micro uppercase tracking-widest">Look 01_Final.jpg</div>
+</div>
+</div>
+<!-- Asset 2 -->
+<div class="bg-primary aspect-square relative group">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" data-alt="A minimalist still-life photograph of a luxury winter accessory, perhaps a scarf or leather gloves, arranged sculpturally on a stark white plinth against a deep red background. The lighting is precise and crisp, highlighting the material quality. The composition is highly disciplined and asymmetrical, evoking an editorial print magazine aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9pYWT77wTIkmhitricaxh5r30xDlh2gG3mIn2U51S608JqtQJciYrynNp5u8oUPKSK6KxHuTlX72ePPYFKsxUmV1FI21rXC7a4VxfTTl92JKALsfEYEoNPugWIPifNQf2vCFu6cjxGwZ8HrHNW2Qt0jCCFQQQohKeYKkMrfqopGxvOMs_HOu7RRgU8rejL-Fq7mBWt8TC36VmsuGWhIsAd8LmZ2OwNgxHWGuGMhc6MKV2ahBn1GPb"/>
+<div class="absolute bottom-0 left-0 w-full p-s-4 bg-gradient-to-t from-primary/90 to-transparent">
+<div class="font-micro text-micro uppercase tracking-widest">Details_Still.jpg</div>
+</div>
+</div>
+<!-- Asset 3 -->
+<div class="bg-primary aspect-square relative flex items-center justify-center hairline-l hairline-b">
+<div class="text-center p-s-6">
+<span class="material-symbols-outlined text-[48px] mb-s-4 text-on-primary/50">video_library</span>
+<div class="font-micro text-micro uppercase tracking-widest text-on-primary/70">Awaiting Video Cut</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Approvals Section (Paper Ground) -->
+<section class="bg-surface-container px-gutter py-s-10 lg:py-[140px]">
+<div class="flex flex-col md:flex-row gap-s-8 md:gap-[80px]">
+<div class="md:w-[320px] shrink-0">
+<h2 class="font-display-sm text-display-sm">Approvals</h2>
+<p class="font-body-s text-body-s text-on-surface-variant mt-s-4">
+                            Review and sign-off on current deliverables before proceeding to the final payment phase.
+                        </p>
+</div>
+<div class="flex-1 md:max-w-[496px]">
+<!-- Accordion Item 1 -->
+<div class="hairline-b py-s-5 group cursor-pointer" onclick="this.classList.toggle('active')">
+<div class="flex justify-between items-center">
+<div class="font-h3 text-h3 group-hover:font-bold group-hover:underline transition-all duration-300">Brand Sign-off</div>
+<span class="material-symbols-outlined transform transition-transform duration-300 group-[.active]:rotate-180">add</span>
+</div>
+<div class="h-0 overflow-hidden opacity-0 group-[.active]:h-auto group-[.active]:opacity-100 transition-all duration-500 ease-out pt-s-4">
+<div class="flex justify-between items-center mb-s-2">
+<span class="font-body-s text-on-surface-variant">Status</span>
+<span class="font-micro uppercase tracking-widest text-secondary">Pending</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-s text-on-surface-variant">Reviewer</span>
+<span class="font-body-s">E. Laurent</span>
+</div>
+</div>
+</div>
+<!-- Accordion Item 2 -->
+<div class="hairline-b py-s-5 group cursor-pointer" onclick="this.classList.toggle('active')">
+<div class="flex justify-between items-center">
+<div class="font-h3 text-h3 group-hover:font-bold group-hover:underline transition-all duration-300">Creative Direction</div>
+<span class="material-symbols-outlined transform transition-transform duration-300 group-[.active]:rotate-180">add</span>
+</div>
+<div class="h-0 overflow-hidden opacity-0 group-[.active]:h-auto group-[.active]:opacity-100 transition-all duration-500 ease-out pt-s-4">
+<div class="flex justify-between items-center mb-s-2">
+<span class="font-body-s text-on-surface-variant">Status</span>
+<span class="font-micro uppercase tracking-widest text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check</span> Approved</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-s text-on-surface-variant">Reviewer</span>
+<span class="font-body-s">S. Blanc</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TEAR - Access</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@300;400;500&amp;family=Hanken+Grotesk:wght@300;400;500;700&amp;family=Noto+Serif:wght@300;400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#410002",
+                        "tertiary-container": "#666561",
+                        "surface-dim": "#ded9d8",
+                        "secondary": "#a63931",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#cd0005",
+                        "secondary-container": "#ff7b6f",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fef8f8",
+                        "primary-fixed": "#ffdad5",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "inverse-surface": "#323030",
+                        "secondary-fixed-dim": "#ffb4ab",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "surface-container": "#f2edec",
+                        "on-primary-container": "#ffdbd6",
+                        "tertiary": "#4e4d4a",
+                        "surface-container-high": "#ece7e6",
+                        "on-secondary-container": "#731311",
+                        "surface-container-highest": "#e6e1e1",
+                        "outline-variant": "#e8bdb6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef8f8",
+                        "on-tertiary-fixed-variant": "#474743",
+                        "primary": "#9f0003",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#930002",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#ffb4a9",
+                        "inverse-on-surface": "#f5efef",
+                        "on-surface-variant": "#5e3f3b",
+                        "surface-variant": "#e6e1e1",
+                        "on-tertiary-container": "#e6e3de",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#c00004",
+                        "on-surface": "#1d1b1b",
+                        "surface-container-low": "#f8f2f2",
+                        "on-secondary-fixed-variant": "#86211d",
+                        "on-background": "#1d1b1b",
+                        "tertiary-fixed": "#e5e2dd",
+                        "error": "#ba1a1a",
+                        "background": "#fef8f8",
+                        "on-primary-fixed": "#410000",
+                        "outline": "#926e69",
+                        "secondary-fixed": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "s-2": "8px",
+                        "container-max": "1026px",
+                        "s-6": "32px",
+                        "gutter": "40px",
+                        "s-4": "16px",
+                        "s-8": "64px",
+                        "s-3": "12px",
+                        "s-9": "96px",
+                        "s-1": "4px",
+                        "s-5": "24px",
+                        "s-10": "140px",
+                        "s-7": "48px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["notoSerif"],
+                        "display-lg-mobile": ["notoSerif"],
+                        "caption": ["archivoNarrow"],
+                        "body-s": ["hankenGrotesk"],
+                        "h3": ["notoSerif"],
+                        "body-base": ["hankenGrotesk"],
+                        "display-xl": ["notoSerif"],
+                        "display-sm": ["notoSerif"],
+                        "display-md": ["notoSerif"],
+                        "body-l": ["hankenGrotesk"],
+                        "micro": ["hankenGrotesk"],
+                        "h4": ["hankenGrotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["64px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "caption": ["13px", { "lineHeight": "1.45", "fontWeight": "300" }],
+                        "body-s": ["15px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "h3": ["26px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "body-base": ["16px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "display-xl": ["96px", { "lineHeight": "0.95", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-sm": ["36px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-md": ["48px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "body-l": ["18px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "micro": ["11px", { "lineHeight": "1.60", "letterSpacing": "0.18em", "fontWeight": "500" }],
+                        "h4": ["20px", { "lineHeight": "1.10", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom utilities for Editorial Minimalism */
+        .hairline-b { border-bottom: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-all { border: 1px solid rgba(29, 27, 27, 0.18); }
+        .input-focus-ring:focus { border-color: #9f0003; outline: none; }
+        .estrela-rotation { animation: spin 60s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center font-body-base">
+<!-- Fixed Grid Container -->
+<main class="w-full max-w-container-max h-full md:h-[720px] flex flex-col md:flex-row hairline-all bg-surface">
+<!-- Branding Block: High-Contrast Ground Flip -->
+<section class="w-full md:w-[420px] bg-primary h-[30vh] md:h-full flex flex-col justify-between p-s-6 md:p-s-10 relative overflow-hidden shrink-0">
+<!-- Decorative North Star (Estrela) -->
+<div class="absolute top-s-10 right-s-10 opacity-20 pointer-events-none estrela-rotation">
+<svg fill="none" height="120" viewbox="0 0 120 120" width="120" xmlns="http://www.w3.org/2000/svg">
+<path d="M60 0L63.5 45.5L108.5 28.5L74.5 60L108.5 91.5L63.5 74.5L60 120L56.5 74.5L11.5 91.5L45.5 60L11.5 28.5L56.5 45.5L60 0Z" fill="#ffffff"></path>
+</svg>
+</div>
+<div class="z-10">
+<span class="font-micro text-micro text-on-primary/60 block mb-s-2 uppercase">Platform Access</span>
+</div>
+<div class="z-10 flex-grow flex items-center">
+<h1 class="font-display-xl text-display-xl text-on-primary">TEAR</h1>
+</div>
+<div class="z-10 hidden md:block">
+<p class="font-caption text-caption text-on-primary/60 uppercase tracking-widest">Influence Management</p>
+</div>
+</section>
+<!-- Functional Block: White Ground -->
+<section class="w-full flex-grow bg-surface h-[70vh] md:h-full flex items-center justify-center p-s-6 md:p-[80px]">
+<div class="w-full max-w-[360px] flex flex-col">
+<header class="mb-s-10">
+<h2 class="font-display-md text-display-md text-on-surface mb-s-2">Authenticate</h2>
+<p class="font-body-s text-body-s text-on-surface-variant">Enter your credentials to proceed.</p>
+</header>
+<form class="flex flex-col gap-y-s-6">
+<!-- Identification Field -->
+<div class="flex flex-col">
+<label class="font-micro text-micro text-on-surface uppercase tracking-[0.18em] mb-s-2" for="identification">Identification</label>
+<input class="h-12 w-full bg-transparent border border-on-surface/20 rounded-none px-s-4 font-body-base text-body-base text-on-surface placeholder:text-on-surface/30 input-focus-ring transition-colors duration-300" id="identification" name="identification" placeholder="name@domain.com" required="" type="email"/>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col">
+<div class="flex justify-between items-end mb-s-2">
+<label class="font-micro text-micro text-on-surface uppercase tracking-[0.18em]" for="password">Password</label>
+<a class="font-caption text-caption text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Forgot password?</a>
+</div>
+<input class="h-12 w-full bg-transparent border border-on-surface/20 rounded-none px-s-4 font-body-base text-body-base text-on-surface input-focus-ring transition-colors duration-300" id="password" name="password" required="" type="password"/>
+</div>
+<!-- Action Row -->
+<div class="mt-s-4 flex justify-start">
+<button class="h-[48px] w-[208px] bg-primary text-on-primary rounded-full font-body-s text-body-s font-bold lowercase flex items-center justify-center border border-transparent hover:bg-transparent hover:text-primary hover:border-primary transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group" type="submit">
+<span>enter</span>
+<span class="material-symbols-outlined ml-s-2 text-[18px] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-400">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</section>
+</main>
+</body></html>

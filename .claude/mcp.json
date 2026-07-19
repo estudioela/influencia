@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tear": {
+      "command": "node",
+      "args": [
+        "../mcp/tear-mcp-server/src/index.js"
+      ]
+    }
+  }
+}

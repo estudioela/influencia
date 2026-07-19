@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TEAR - Materials Management</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&amp;family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;family=Noto+Serif:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#410002",
+                        "tertiary-container": "#666561",
+                        "surface-dim": "#ded9d8",
+                        "secondary": "#a63931",
+                        "on-tertiary-fixed": "#1c1c19",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#cd0005",
+                        "secondary-container": "#ff7b6f",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fef8f8",
+                        "primary-fixed": "#ffdad5",
+                        "primary-fixed-dim": "#ffb4a9",
+                        "inverse-surface": "#323030",
+                        "secondary-fixed-dim": "#ffb4ab",
+                        "tertiary-fixed-dim": "#c8c6c2",
+                        "surface-container": "#f2edec",
+                        "on-primary-container": "#ffdbd6",
+                        "tertiary": "#4e4d4a",
+                        "surface-container-high": "#ece7e6",
+                        "on-secondary-container": "#731311",
+                        "surface-container-highest": "#e6e1e1",
+                        "outline-variant": "#e8bdb6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fef8f8",
+                        "on-tertiary-fixed-variant": "#474743",
+                        "primary": "#9f0003",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#930002",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#ffb4a9",
+                        "inverse-on-surface": "#f5efef",
+                        "on-surface-variant": "#5e3f3b",
+                        "surface-variant": "#e6e1e1",
+                        "on-tertiary-container": "#e6e3de",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#c00004",
+                        "on-surface": "#1d1b1b",
+                        "surface-container-low": "#f8f2f2",
+                        "on-secondary-fixed-variant": "#86211d",
+                        "on-background": "#1d1b1b",
+                        "tertiary-fixed": "#e5e2dd",
+                        "error": "#ba1a1a",
+                        "background": "#fef8f8",
+                        "on-primary-fixed": "#410000",
+                        "outline": "#926e69",
+                        "secondary-fixed": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "s-2": "8px",
+                        "container-max": "1026px",
+                        "s-6": "32px",
+                        "gutter": "40px",
+                        "s-4": "16px",
+                        "s-8": "64px",
+                        "s-3": "12px",
+                        "s-9": "96px",
+                        "s-1": "4px",
+                        "s-5": "24px",
+                        "s-10": "140px",
+                        "s-7": "48px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["notoSerif"],
+                        "display-lg-mobile": ["notoSerif"],
+                        "caption": ["archivoNarrow"],
+                        "body-s": ["hankenGrotesk"],
+                        "h3": ["notoSerif"],
+                        "body-base": ["hankenGrotesk"],
+                        "display-xl": ["notoSerif"],
+                        "display-sm": ["notoSerif"],
+                        "display-md": ["notoSerif"],
+                        "body-l": ["hankenGrotesk"],
+                        "micro": ["hankenGrotesk"],
+                        "h4": ["hankenGrotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["64px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "caption": ["13px", { "lineHeight": "1.45", "fontWeight": "300" }],
+                        "body-s": ["15px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "h3": ["26px", { "lineHeight": "1.10", "fontWeight": "300" }],
+                        "body-base": ["16px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "display-xl": ["96px", { "lineHeight": "0.95", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-sm": ["36px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "display-md": ["48px", { "lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300" }],
+                        "body-l": ["18px", { "lineHeight": "1.60", "fontWeight": "300" }],
+                        "micro": ["11px", { "lineHeight": "1.60", "letterSpacing": "0.18em", "fontWeight": "500" }],
+                        "h4": ["20px", { "lineHeight": "1.10", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex flex-col min-h-screen">
+<!-- TopAppBar Mobile / Hidden on Desktop (md) -->
+<header class="md:hidden bg-background border-b border-on-surface/10 docked full-width top-0 z-50">
+<div class="flex justify-between items-center w-full px-s-5 h-20 max-w-[1026px] mx-auto">
+<div class="flex items-center">
+<!-- Search (Left) -->
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-400 p-2">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</div>
+<!-- Brand Logo -->
+<div class="font-display-sm text-display-sm font-light text-primary tracking-tight">
+                TEAR
+            </div>
+<!-- Trailing Icons -->
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-400 p-2">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-on-surface/10 ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A sophisticated black and white fashion portrait of a model, high contrast, editorial style, serving as a user profile avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRiQ5-Bdzelbi89heDgc79UREKezsQ_afiO0jGIyatW6iHQs_GjrQBW9PJiJhl4zkQddd4fmYE5wYArIMauOgFkUTKlUY8mSQIaUtQ6tq7tFNYPItg4JeCnD4pPL4zLcrlfqQeDOjMaYAJ6d4brkl79k-9R3BCsL-p9acDKJ05lwv12h16f4rmf1QI5F4Jxj7_sJRSw6RO60q4FFCAetjkz-XrfIYkXJ75x0pwhrX_YYhVma79A11n"/>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar Desktop -->
+<nav class="hidden md:flex flex-col bg-surface docked left-0 h-screen w-64 border-r border-on-surface/10 py-s-8 px-s-4 gap-y-s-2 z-40 fixed">
+<!-- Header -->
+<div class="mb-s-8 pl-s-2">
+<h1 class="font-display-md text-display-md font-light text-primary tracking-tight mb-2">TEAR</h1>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Influence Management</p>
+</div>
+<!-- CTA -->
+<div class="mb-s-6 px-s-2">
+<button class="w-full h-[48px] rounded-full bg-primary text-on-primary font-body-s text-body-s font-bold lowercase border border-transparent hover:bg-transparent hover:text-primary hover:border-primary transition-all duration-400 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Briefing
+                </button>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-1 overflow-y-auto pb-s-8">
+<!-- Dashboard -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="dashboard">dashboard</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Dashboard</span>
+</a>
+<!-- Brands -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="business">business</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Brands</span>
+</a>
+<!-- Partners -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="handshake">handshake</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Partners</span>
+</a>
+<!-- Collaborations -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="group_work">group_work</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Collaborations</span>
+</a>
+<!-- Briefings -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="description">description</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Briefings</span>
+</a>
+<!-- Materials (ACTIVE) -->
+<a class="group flex items-center gap-3 py-3 rounded-none text-primary border-l-2 border-primary pl-s-2 font-bold bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="folder_open" data-weight="fill">folder_open</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Materials</span>
+</a>
+<!-- Approvals -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="verified">verified</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Approvals</span>
+</a>
+<!-- Logistics -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="local_shipping">local_shipping</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Logistics</span>
+</a>
+<!-- Payments -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Payments</span>
+</a>
+<!-- Contracts -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="assignment">assignment</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Contracts</span>
+</a>
+<!-- History -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="history">history</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">History</span>
+</a>
+<!-- Settings -->
+<a class="group flex items-center gap-3 px-s-2 py-3 rounded-none text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all duration-300 mt-auto pt-s-6" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+<span class="font-caption text-caption uppercase tracking-[0.18em]">Settings</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 w-full bg-background overflow-y-auto">
+<!-- Content Container -->
+<div class="max-w-[1026px] mx-auto w-full px-gutter py-s-10 min-h-screen flex flex-col">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-s-10 gap-s-6">
+<div class="max-w-[496px]">
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-s-4">Materials</h2>
+<p class="font-body-l text-body-l text-on-surface-variant">Review and manage creative assets submitted by partners. Maintain the quiet luxury standard across all campaigns.</p>
+</div>
+<button class="w-[208px] h-[48px] rounded-full bg-primary text-on-primary font-body-s text-body-s font-bold lowercase border border-transparent hover:bg-transparent hover:text-primary hover:border-primary transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0">
+                        upload new material
+                    </button>
+</div>
+<!-- Filters / Tabs (Minimalist) -->
+<div class="flex gap-s-6 mb-s-8 border-b border-on-surface/10 pb-4 overflow-x-auto no-scrollbar">
+<button class="font-micro text-micro uppercase tracking-widest text-primary font-bold whitespace-nowrap">All Assets</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Under Review (3)</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Approved</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Requires Adjustment</button>
+</div>
+<!-- Gallery Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-gutter gap-y-s-10">
+<!-- Item 1: Under Review -->
+<div class="group flex flex-col">
+<div class="aspect-[4/5] w-full border border-on-surface/20 mb-s-4 relative overflow-hidden bg-surface-container">
+<img alt="Campaign Asset" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A high-fashion editorial photograph of a minimalist leather handbag resting on a brutalist concrete block. The lighting is harsh and direct, creating sharp shadows. The color palette is muted, focusing on textures of leather and stone, embodying a quiet luxury aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsCHsfrHcRlXbS9LTjtz1401k709yGeh0rid49zNU1xVmQxGE3oMpet4PtWU5QxpYkPqjeR5HpzK8KqZFc1_hctE-sYtNmuSzoy8JTyABoKgmjXttuILXKC15zzwveoyuw0wZ5hYbJEMqQIPQ8YeSAVM-k3qJ20pHihL2beI13YsDLljnKTPb4mb7iEolpvj-q-PZVjeIO2FpzQBv-iZYBb65IoVBqfVNb1kEmcgluoMvXBtkniaGG"/>
+<div class="absolute top-4 left-4 bg-background/90 px-3 py-1 border border-on-surface/10 backdrop-blur-sm">
+<span class="font-micro text-micro uppercase tracking-widest text-on-surface">Under Review</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h4 text-h4 text-on-surface mb-1">FW24 Campaign Main</h3>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Uploaded Oct 12, 2023</p>
+</div>
+<button class="text-primary hover:text-secondary transition-colors group-hover:underline font-body-s text-body-s lowercase font-bold">
+                                review
+                            </button>
+</div>
+</div>
+<!-- Item 2: Approved -->
+<div class="group flex flex-col">
+<div class="aspect-[4/5] w-full border border-on-surface/20 mb-s-4 relative overflow-hidden bg-surface-container">
+<img alt="Campaign Asset" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A cinematic, wide-angle shot of a model walking through an empty, stark white contemporary art gallery wearing a long, flowing blood-red trench coat. The scene is immaculate, bright, and flatly lit, emphasizing the high-contrast ground flip aesthetic of modern editorial design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADb_JCHnZSN08Lp6ieoaK6Bg5HoCaZqk_8ecbfrVyTOIS8lRjGaJ5TOFliivNWIjqFG6VtkzALzcXT19i1YfltGiWRc2BmdJW-ZVL23mRDx556CyUqaE4W0eOvgox3R0zxMjrNk4YYDOIDZX63QnRff1wFrm6I8qo8XVid8WOTnwo-dcIF-7nbou-XmQ-h1v8-B6-VgR2MT88PkmkLcJYfheGIFpTYn-Zv3U_R8WFE4IJj-zqjw49g"/>
+<div class="absolute top-4 left-4 bg-background/90 px-3 py-1 border border-on-surface/10 backdrop-blur-sm">
+<span class="font-micro text-micro uppercase tracking-widest text-on-surface">Approved</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h4 text-h4 text-on-surface mb-1">Gallery Walk Video</h3>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Uploaded Oct 10, 2023</p>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors font-body-s text-body-s lowercase">
+                                view
+                            </button>
+</div>
+</div>
+<!-- Item 3: Adjustment Requested -->
+<div class="group flex flex-col">
+<div class="aspect-[4/5] w-full border border-on-surface/20 mb-s-4 relative overflow-hidden bg-surface-container">
+<img alt="Campaign Asset" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A close-up, highly detailed shot of luxury skincare packaging. A heavy glass bottle with a minimalist label sitting on a stark white pedestal against a pale beige background. The lighting is soft and diffused, creating a premium, serene atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByJEH1NY1mGCmr14YDwFutfNe0osmQyn52vJt6YI-WHenHZpMwDYOHbBA2_WsvHqtw6NfhTF7nffpO0LaryOSDKRKhiXi3kcS5zqAmWTZHCWjqXA5Y76MaN0LjTSA72seSL5_SMZH2VEfYbCAdRQawT7akr4LkASabdRc7TcdPkmX2A0o17skx2ITUCLMEIcv1PIwos-JN4HSC1V4QuXaUAPLIUO-YlLNOlbn0D-dJaE_joRWAeOrs"/>
+<div class="absolute top-4 left-4 bg-secondary/10 px-3 py-1 border border-secondary/30 backdrop-blur-sm">
+<span class="font-micro text-micro uppercase tracking-widest text-secondary">Adjustment Req.</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h4 text-h4 text-on-surface mb-1">Product Close-up</h3>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Uploaded Oct 08, 2023</p>
+</div>
+<button class="text-primary hover:text-secondary transition-colors group-hover:underline font-body-s text-body-s lowercase font-bold">
+                                review
+                            </button>
+</div>
+</div>
+<!-- Item 4: Sent -->
+<div class="group flex flex-col">
+<div class="aspect-[4/5] w-full border border-on-surface/20 mb-s-4 relative overflow-hidden bg-surface-container">
+<img alt="Campaign Asset" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" data-alt="A sophisticated flat lay arrangement of luxury stationery, including a fountain pen, thick textured paper cards, and a leather notebook on a stark white marble surface. Shot from directly above with zero perspective distortion, adhering to absolute flatness design principles." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6sTXIm99mtR_-eo5xpQaTwX6KDilKDpoGunZekuDm-QgYLOrBT9rXRYDYs_bGiPBMv1A73CfOlWPvZkcJGtRsZlRGSlqcgGZ4we7FBMqabZv3DsuMctEd0GP2-7EQ2JUuxLXj4unesZtjI9KrMIZBqG3MNmd0d5zo0-0XqQG5xbM5AiQ1iFX5o-ObLaVE3vKvsCkSJAakoRcY4lCWTU-uztUq6vj6iYvRn8twTabd4OoMLsZbx5xm"/>
+<div class="absolute top-4 left-4 bg-surface-container-high/90 px-3 py-1 border border-on-surface/10 backdrop-blur-sm">
+<span class="font-micro text-micro uppercase tracking-widest text-on-surface-variant">Sent</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h4 text-h4 text-on-surface mb-1">Stationery Flatlay</h3>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Uploaded Oct 14, 2023</p>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors font-body-s text-body-s lowercase">
+                                view
+                            </button>
+</div>
+</div>
+<!-- Item 5: Under Review -->
+<div class="group flex flex-col">
+<div class="aspect-[4/5] w-full border border-on-surface/20 mb-s-4 relative overflow-hidden bg-surface-container">
+<img alt="Campaign Asset" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="An abstract, architectural detail shot of a modern building facade. Crisp lines, stark shadows, and a monochromatic palette of whites and grays, emphasizing structural discipline and asymmetrical composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZzW9of8-UMrg8PwOUtYoI0PpSPVk7f1wb04J5q55vOhp6yYH5UzhQENbZ04_gIbOcOiMXt7ogshyuK8Ru5uvzALHZtMmEm4peIZWF-HPOsRVH2MFPHetAZPJRJ1d0JLZWbfDfeopjOkVtFWUrzC-4Q9FoofpXcnT0ZyVb5i4McjbSxn_CSp5D2MdFWWN4WHOtgSVX1nsjYUglZNWk85ZwYnR15NIbBytJA7uMNBMfbhbHNx5gMfK_"/>
+<div class="absolute top-4 left-4 bg-background/90 px-3 py-1 border border-on-surface/10 backdrop-blur-sm">
+<span class="font-micro text-micro uppercase tracking-widest text-on-surface">Under Review</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h4 text-h4 text-on-surface mb-1">Architectural B-Roll</h3>
+<p class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant">Uploaded Oct 14, 2023</p>
+</div>
+<button class="text-primary hover:text-secondary transition-colors group-hover:underline font-body-s text-body-s lowercase font-bold">
+                                review
+                            </button>
+</div>
+</div>
+</div>
+<!-- Load More / Spacer -->
+<div class="mt-s-10 flex justify-center border-t border-on-surface/10 pt-s-8 pb-s-10">
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Load More Assets</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

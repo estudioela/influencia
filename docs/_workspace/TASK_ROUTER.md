@@ -606,6 +606,14 @@ Corrigidas (FASE 4.1, decisão explícita do responsável, 2026-07-16, suíte 10
   "ativação" referente ao vínculo Ativa/Inativa da Parceira foi preservado
   — é um conceito diferente, não tocado).
 
+**Dívida registrada (saneamento de infraestrutura, 2026-07-19):**
+`docs/design/DESIGN_SYSTEM.md` traz tokens desatualizados (paleta `#BC0004`,
+cards com radius 16px, sombras discretas) que conflitam com a paleta e as
+regras visuais já adotadas em `ADR-002-frontend-foundation.md` (`#CD0005`,
+radius 0, "Absolute Flatness", zero box-shadow) e com o export elã/Stitch
+em `docs/stitch-export/`. Atualizar `DESIGN_SYSTEM.md` para alinhar os
+tokens ao ADR-002 antes da implementação frontend.
+
 ## 8. Preparação para deploy (FASE 6 pós-SPECs, 2026-07-16)
 
 Ver `docs/_workspace/DEPLOY_CHECKLIST.md` (checklist completo de pré-deploy
