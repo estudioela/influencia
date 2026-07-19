@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
-  return loadGas(['src/shared/Envelope.js', 'src/controller/AcessoController.js']);
+  return loadGas(['src/shared/Nucleo.js', 'src/controller/AcessoController.js']);
 }
 
 // Projeção mínima de Sessao para o stub do service: o controller só lê

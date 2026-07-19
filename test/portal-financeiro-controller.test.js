@@ -2,7 +2,7 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function montar(servicoFake) {
   const gas = loadGas([
-    'src/shared/Envelope.js',
+    'src/shared/Nucleo.js',
     'src/controller/PortalFinanceiroController.js',
   ]);
   return new gas.PortalFinanceiroController(servicoFake);

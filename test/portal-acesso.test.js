@@ -56,9 +56,7 @@ function montarPortal(abas) {
   let uuid = 0;
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
-      'src/shared/ErroComCodigo.js',
+      'src/shared/Nucleo.js',
       'src/domain/Credencial.js',
       'src/domain/TokenDeSessao.js',
       'src/domain/Sessao.js',

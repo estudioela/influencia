@@ -98,8 +98,7 @@ function montarPortal(abas) {
   const identidadeAbas = abasIdentidade();
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
+      'src/shared/Nucleo.js',
       'src/domain/MesReferencia.js',
       'src/domain/CondicaoComercialSnapshot.js',
       'src/domain/BlocoDeFormato.js',

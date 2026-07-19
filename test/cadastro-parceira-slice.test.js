@@ -14,7 +14,7 @@ function fakeSheet(header) {
 
 function montarSlice(sheet) {
   const gas = loadGas([
-    'src/shared/Envelope.js',
+    'src/shared/Nucleo.js',
     'src/domain/Parceira.js',
     'src/acl/ParceiraACL.js',
     'src/repository/ParceiraRepository.js',

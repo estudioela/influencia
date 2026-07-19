@@ -17,8 +17,7 @@ function fakeSheet(header) {
 function montarPortal(sheet, propriedade) {
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
+      'src/shared/Nucleo.js',
       'src/domain/Parceira.js',
       'src/acl/ParceiraACL.js',
       'src/repository/ParceiraRepository.js',

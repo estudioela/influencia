@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
-  return loadGas(['src/shared/Envelope.js', 'src/controller/DocumentoController.js']);
+  return loadGas(['src/shared/Nucleo.js', 'src/controller/DocumentoController.js']);
 }
 
 const documentoGerado = {

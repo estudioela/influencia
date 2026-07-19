@@ -46,8 +46,7 @@ function montarPortal({ baseLegada, baseNova, propriedades }) {
   const identidadeAbas = abasIdentidade();
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
+      'src/shared/Nucleo.js',
       'src/domain/Parceira.js',
       'src/domain/ChaveInfluenciadora.js',
       'src/acl/ParceiraACL.js',

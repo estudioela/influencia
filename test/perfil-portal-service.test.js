@@ -24,7 +24,7 @@ function perfilVazio() {
 
 function montar() {
   const gas = loadGas([
-    'src/shared/ErroComCodigo.js',
+    'src/shared/Nucleo.js',
     'src/domain/PIX.js',
     'src/domain/Endereco.js',
     'src/service/PerfilPortalService.js',

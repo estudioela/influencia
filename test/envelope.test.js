@@ -5,7 +5,7 @@
  */
 const { loadGas } = require('./helpers/gasHarness');
 
-const gas = loadGas(['src/shared/Envelope.js']);
+const gas = loadGas(['src/shared/Nucleo.js']);
 
 describe('Envelope (contrato §3.3) via harness GAS/vm', () => {
   test('envelopeOk envolve o payload em {success:true, data}', () => {

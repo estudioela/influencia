@@ -2,7 +2,7 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function montar() {
   const gas = loadGas([
-    'src/shared/ErroComCodigo.js',
+    'src/shared/Nucleo.js',
     'src/domain/MesReferencia.js',
     'src/domain/ObrigacaoFinanceira.js',
     'src/domain/IdentificadorDeEntrega.js',

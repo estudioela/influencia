@@ -215,8 +215,7 @@ function fakeEnviosAba() {
 function montarPortal(abas, propriedade) {
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
+      'src/shared/Nucleo.js',
       'src/domain/Parceira.js',
       'src/domain/MesReferencia.js',
       'src/domain/CondicaoComercialSnapshot.js',
