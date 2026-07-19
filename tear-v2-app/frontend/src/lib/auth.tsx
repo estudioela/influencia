@@ -16,6 +16,10 @@ export type AuthUser = {
   role: Role | null;
 };
 
+type MeResponse = {
+  data: AuthUser;
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
   isLoading: boolean;
@@ -36,8 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     apiClient
-      .get<AuthUser>('/me')
-      .then((response) => setUser(response.data))
+      .get<MeResponse>('/me')
+      .then((response) => {
+        const { data } = response.data;
+        setUser(data);
+      })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
@@ -45,8 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     await ensureCsrfCookie();
     await apiClient.post('/login', { email, password });
-    const response = await apiClient.get<AuthUser>('/me');
-    setUser(response.data);
+    const response = await apiClient.get<MeResponse>('/me');
+    const { data } = response.data;
+    setUser(data);
   }
 
   async function logout() {

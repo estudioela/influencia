@@ -16,7 +16,7 @@ function App() {
     <main style={{ fontFamily: 'monospace', padding: '2rem' }}>
       <h1>TEAR V2</h1>
       <p>
-        Autenticado como {user.email} — {user.role ?? 'sem role'}
+        Autenticado como {user.name} — {user.role ?? 'sem role'}
       </p>
       <button type="button" onClick={() => void logout()}>
         sair
