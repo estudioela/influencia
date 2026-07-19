@@ -25,22 +25,6 @@
  * @returns {GoogleAppsScript.HTML.HtmlOutput}
  */
 function doGet(e) {
-  // TEAR-DIAG (temporário — remover após diagnosticar o login): confirma que
-  // a requisição chegou ao doGet e com quais parâmetros de callback OAuth.
-  Logger.log(
-    'TEAR-DIAG doGet pagina=%s code_presente=%s state_presente=%s error=%s',
-    e && e.parameter && e.parameter.pagina,
-    !!(e && e.parameter && e.parameter.code),
-    !!(e && e.parameter && e.parameter.state),
-    e && e.parameter && e.parameter.error
-  );
-  // TEAR-DIAG temporário: leitura HTTP direta do trace (sem depender de
-  // google.script.run/DevTools). Remover junto com o resto da instrumentação.
-  if (e && e.parameter && e.parameter.tearDiag === '1') {
-    return ContentService.createTextOutput(JSON.stringify(obterDiagTemporario())).setMimeType(
-      ContentService.MimeType.JSON
-    );
-  }
   if (e && e.parameter && e.parameter.pagina === 'compilar-mes') {
     return HtmlService.createTemplateFromFile('src/ui/compilar-mes')
       .evaluate()
@@ -1240,58 +1224,6 @@ function montarUsuario() {
   return new UsuarioController(montarUsuarioService());
 }
 
-// ============================================================================
-// MVP TEMPORÁRIO — ACESSO ABERTO SEM LOGIN (isolado; NÃO remove nem altera o
-// fluxo OAuth acima, ADR-013 intacto). Troca apenas o validadorDeToken por
-// um stub de identidade fixa, só usado por iniciarSessaoMvpTemporaria().
-// REVERTER: MVP_ACESSO_ABERTO = false, clasp push + clasp deploy.
-// ============================================================================
-var MVP_ACESSO_ABERTO = true;
-var MVP_IDENTIDADE_FIXA = {
-  sub: 'mvp-dev-elafashionmkt',
-  email: 'elafashionmkt@gmail.com',
-  name: 'Estúdio Elã (MVP Dev)',
-};
-
-function montarUsuarioMvp() {
-  var service = montarUsuarioService();
-  service.validadorDeToken = {
-    validar: function () {
-      return MVP_IDENTIDADE_FIXA;
-    },
-  };
-  if (!service.usuarioRepository.buscarPorSub(MVP_IDENTIDADE_FIXA.sub)) {
-    service.usuarioRepository.salvar(
-      Usuario.reconstituir(
-        MVP_IDENTIDADE_FIXA.sub,
-        MVP_IDENTIDADE_FIXA.email,
-        'ADMINISTRADOR',
-        'ACTIVE',
-        service.relogio.hoje(),
-        null
-      )
-    );
-  }
-  return new UsuarioController(service);
-}
-
-/**
- * MVP TEMPORÁRIO: sessão automática sem OAuth (ver bloco acima).
- * @returns {{success: true, data: object}|{success: false, error: object}}
- */
-function iniciarSessaoMvpTemporaria() {
-  if (!MVP_ACESSO_ABERTO) {
-    return envelopeFail({ mensagem: 'MVP de acesso aberto está desativado.' });
-  }
-  try {
-    return comTravaDeAcesso(function () {
-      return montarUsuarioMvp().entrar({ idToken: 'mvp-bypass' });
-    });
-  } catch (erro) {
-    return envelopeFail({ mensagem: erro.message });
-  }
-}
-
 /**
  * Função exposta a google.script.run: inicia o login federado (ADR-013) —
  * emite o state anti-CSRF e devolve a URL de autorização do Google para o
@@ -1300,17 +1232,9 @@ function iniciarSessaoMvpTemporaria() {
  * @returns {{success: true, data: {urlDeAutorizacao: string}}|{success: false, error: object}}
  */
 function iniciarLoginComGoogle() {
-  Logger.log('TEAR-DIAG iniciarLoginComGoogle: entrou');
   try {
-    var resultado = montarUsuario().iniciarLogin();
-    Logger.log(
-      'TEAR-DIAG iniciarLoginComGoogle: retorno success=%s urlDeAutorizacao_presente=%s',
-      resultado && resultado.success,
-      !!(resultado && resultado.data && resultado.data.urlDeAutorizacao)
-    );
-    return resultado;
+    return montarUsuario().iniciarLogin();
   } catch (erro) {
-    Logger.log('TEAR-DIAG iniciarLoginComGoogle: EXCEÇÃO %s\n%s', erro.message, erro.stack);
     return envelopeFail({ mensagem: erro.message });
   }
 }
@@ -1327,61 +1251,13 @@ function iniciarLoginComGoogle() {
  * @returns {{success: true, data: object}|{success: false, error: object}}
  */
 function entrarComCodigoOAuth(dados) {
-  // TEAR-DIAG temporário: traço passo a passo, gravado em CacheService (NÃO
-  // no payload de retorno — mutar `data`/`error` quebra o contrato exato do
-  // envelope, coberto por teste). Ler via obterDiagTemporario(). Remover
-  // esta função, a chamada a gravarDiagTemporario e o botão/chamada
-  // correspondente em login.html ao final do diagnóstico.
-  var diag = [];
-  function passo(nome) {
-    diag.push(nome);
-    Logger.log('TEAR-DIAG entrarComCodigoOAuth: ' + nome);
-  }
-
-  passo('1 entrou na função code_presente=' + !!(dados && dados.code) + ' state_presente=' + !!(dados && dados.state));
   try {
-    passo('2 antes de comTravaDeAcesso (LockService.getScriptLock().waitLock)');
-    var resultado = comTravaDeAcesso(function () {
-      passo('3 lock adquirido, antes de montarUsuario()');
-      var controller = montarUsuario();
-      passo('4 controller montado (montarUsuarioService concluiu), antes de controller.entrarComCodigo(dados)');
-      var r = controller.entrarComCodigo(dados);
-      passo('5 controller.entrarComCodigo retornou success=' + (r && r.success));
-      return r;
+    return comTravaDeAcesso(function () {
+      return montarUsuario().entrarComCodigo(dados);
     });
-    passo('6 comTravaDeAcesso retornou (lock liberado)');
-    passo('7 imediatamente antes do return final success=' + (resultado && resultado.success));
-    Logger.log(
-      'TEAR-DIAG entrarComCodigoOAuth: retorno FINAL success=%s status=%s papel=%s erro_codigo=%s',
-      resultado && resultado.success,
-      resultado && resultado.data && resultado.data.status,
-      resultado && resultado.data && resultado.data.papel,
-      resultado && resultado.error && resultado.error.codigo
-    );
-    gravarDiagTemporario(diag);
-    return resultado;
   } catch (erro) {
-    passo('EXCEÇÃO capturada: ' + erro.message + ' | stack: ' + erro.stack);
-    Logger.log('TEAR-DIAG entrarComCodigoOAuth: EXCEÇÃO (fora do envelope) %s\n%s', erro.message, erro.stack);
-    gravarDiagTemporario(diag);
     return envelopeFail({ mensagem: erro.message });
   }
-}
-
-// TEAR-DIAG temporário — remover junto com entrarComCodigoOAuth acima.
-function gravarDiagTemporario(diag) {
-  try {
-    CacheService.getScriptCache().put('TEAR_DIAG_ULTIMO_LOGIN', JSON.stringify(diag), 1800);
-  } catch (e) {
-    Logger.log('TEAR-DIAG gravarDiagTemporario: falhou ao gravar cache: ' + e.message);
-  }
-}
-
-// TEAR-DIAG temporário — exposta a google.script.run só para o diagnóstico
-// atual do login. Remover junto com o resto da instrumentação.
-function obterDiagTemporario() {
-  var bruto = CacheService.getScriptCache().get('TEAR_DIAG_ULTIMO_LOGIN');
-  return envelopeOk({ diag: bruto ? JSON.parse(bruto) : null });
 }
 
 /**
@@ -1534,7 +1410,6 @@ if (typeof module !== 'undefined' && module.exports) {
     arquivarLote,
     iniciarLoginComGoogle,
     entrarComCodigoOAuth,
-    iniciarSessaoMvpTemporaria,
     confirmarVinculacaoDeIdentidade,
     completarCadastroDeUsuario,
     listarUsuariosPendentes,

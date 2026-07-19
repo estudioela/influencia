@@ -436,19 +436,14 @@ this.UsuarioService = class UsuarioService {
    *   de entrar() (§14.3).
    */
   entrarComCodigo(dados) {
-    Logger.log('TEAR-DIAG UsuarioService.entrarComCodigo: entrou');
-    const stateValido = this.guardiaoDeEstadoOAuth.validarEConsumir(dados && dados.state);
-    Logger.log('TEAR-DIAG UsuarioService.entrarComCodigo: stateValido=%s', stateValido);
-    if (!stateValido) {
+    if (!this.guardiaoDeEstadoOAuth.validarEConsumir(dados && dados.state)) {
       throw erroComCodigo(
         'ERR_AUTH_STATE_INVALIDO',
         'Sessão de login inválida ou expirada — recomece o login.'
       );
     }
     const idToken = this.trocadorDeCodigoOAuth.trocarCodigoPorIdToken(dados && dados.code);
-    Logger.log('TEAR-DIAG UsuarioService.entrarComCodigo: idToken_obtido=%s', !!idToken);
     const resultado = this.entrar({ idToken: idToken });
-    Logger.log('TEAR-DIAG UsuarioService.entrarComCodigo: resultado.status=%s', resultado.status);
     if (resultado.status !== 'AUTENTICADO') {
       resultado.idToken = idToken;
     }
@@ -464,18 +459,14 @@ this.UsuarioService = class UsuarioService {
    * @throws {Error} ERR_AUTH_INVALID_TOKEN; ERR_AUTH_ACCOUNT_PENDING/INACTIVE/REJECTED (§14.3).
    */
   entrar(dados) {
-    Logger.log('TEAR-DIAG UsuarioService.entrar: entrou');
     const agora = this.relogio.hoje();
     const identidade = this.validadorDeToken.validar(dados && dados.idToken, agora);
-    Logger.log('TEAR-DIAG UsuarioService.entrar: idToken validado sub=%s email=%s', identidade.sub, identidade.email);
     const usuario = this.usuarioRepository.buscarPorSub(identidade.sub);
-    Logger.log('TEAR-DIAG UsuarioService.entrar: usuario_encontrado=%s papel=%s estado=%s', !!usuario, usuario && usuario.papel, usuario && usuario.estado);
 
     if (!usuario) {
       const candidata = identidade.email
         ? this.parceiraACL.buscarCandidataPorEmail(identidade.email)
         : null;
-      Logger.log('TEAR-DIAG UsuarioService.entrar: sem usuario, candidata_encontrada=%s -> status=%s', !!candidata, candidata ? 'CANDIDATA_VINCULACAO' : 'ONBOARDING_REQUERIDO');
       if (candidata) {
         return {
           status: 'CANDIDATA_VINCULACAO',
@@ -494,7 +485,6 @@ this.UsuarioService = class UsuarioService {
     }
 
     if (!usuario.estaAtivo()) {
-      Logger.log('TEAR-DIAG UsuarioService.entrar: usuario NÃO ativo (estado=%s) -> lança erroDeEstado', usuario.estado);
       throw this.erroDeEstado(usuario.estado);
     }
 
@@ -510,7 +500,6 @@ this.UsuarioService = class UsuarioService {
     this.sessaoRepository.salvar(sessao);
     this.publicador.publicar({ nome: 'UsuarioAutenticado', subProvider: usuario.subProvider });
 
-    Logger.log('TEAR-DIAG UsuarioService.entrar: AUTENTICADO papel=%s token_criado=%s', usuario.papel, !!sessao.token.valor);
     return { status: 'AUTENTICADO', sessao: sessao, papel: usuario.papel };
   }
 

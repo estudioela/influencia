@@ -160,7 +160,6 @@ module.exports = [
         GuardiaoDeEstadoOAuth: 'readonly',
         ScriptApp: 'readonly',
         CacheService: 'readonly',
-        ContentService: 'readonly',
       },
     },
     rules: {
