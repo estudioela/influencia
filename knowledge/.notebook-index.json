@@ -16,8 +16,8 @@
     "source_id": "a3024b99-3ffd-46c6-b959-0f9ba53b5e2b"
   },
   "knowledge/specs/AUDITORIA_SPEC012.md": {
-    "sha256": "2d973ba8e4480eeb8131d282b1a9794ceb725ef0c5cf26102f27055fa34249dc",
-    "source_id": "9a47f76a-cb0a-4b2f-b2db-a776a262ab08"
+    "sha256": "83edb3e7cae6e1d7fd10f616e561f8a36847107ddb17b1c54e0127c4f94f45ba",
+    "source_id": "034e2547-70e6-4365-aa83-81bfe5840c75"
   },
   "knowledge/specs/CONTRATO_SOBERANO.md": {
     "sha256": "853ca92eab5c4ffcf821d52b7fec775eaf421d477af8025983faa923078f6a40",
@@ -40,7 +40,11 @@
     "source_id": "dd27bfa3-37d4-4f44-9502-76539e4e46fc"
   },
   "knowledge/specs/TASK_ROUTER.md": {
-    "sha256": "f7c4ff02ec26803af79be1ab793c3eca4c10042dc870d3fb7f9eedc7b00a5f9d",
-    "source_id": "ca6c3dff-9c2b-469f-8e54-8b6ef917de9c"
+    "sha256": "82be4e3d0369c6ff7e7635f57009f5c66e668ea074f02e8a09020b6a8b0e7325",
+    "source_id": "d6093313-68e5-4631-8549-df3410282649"
+  },
+  "knowledge/sessions/HANDOFF_SESSAO_OAUTH_2026-07-18.md": {
+    "sha256": "6dc48e671d33ff595955d51e5b97b4e2b616e59eb3f2a3c0733e9712990bb41b",
+    "source_id": "4b0ed6bc-bf64-40c8-b952-bb45c7000afe"
   }
 }
