@@ -864,14 +864,45 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   (branch `feat/ui-design-system-ela`), aprovado pelo responsável do
   projeto em 2026-07-19 (screenshots em `auditoria/`). Suíte 719/719 verde,
   lint limpo.
-- **[>] Fase 3 (migração página a página)** — em andamento nesta sessão,
-  ordem completa em `UI_IMPLEMENTATION_ROADMAP.md` §"Fase 3": consolidação
-  de `portal-head.html` → `login.html` → `dashboard.html` → `perfil.html` →
-  `briefing.html` → `entrega.html` → `envio.html` → `financeiro.html` →
-  `pagamentos.html` → `pendencias.html` → `compilar-mes.html` →
-  `documentos.html`. Regra transversal: zero mudança em nomes de função
-  `google.script.run` ou payloads; cada página fecha com lint + suíte verde
-  antes do commit seguinte.
+- ✅ **Fase 3 (migração página a página) concluída em 2026-07-19** — todas
+  as 11 páginas migradas em commits individuais na branch
+  `feat/ui-design-system-ela`: `login.html` → `dashboard.html` →
+  `perfil.html` → `briefing.html` → `entrega.html` → `envio.html` →
+  `financeiro.html` → `pagamentos.html` → `pendencias.html` →
+  `compilar-mes.html` → `documentos.html`. Regra transversal respeitada
+  (zero mudança em nomes de função `google.script.run` ou payloads); cada
+  página fechou com lint + suíte 719/719 verde antes do commit seguinte,
+  mais auditorias de consistência/segurança em subagentes (sem achados).
+  Achados corrigidos durante a migração (não previstos no roadmap original):
+  - Bug de escape em atributos por concatenação de string HTML
+    (`briefing.html`, `entrega.html`, `envio.html`, `pendencias.html`,
+    `financeiro.html`) — um valor vindo do backend com aspas podia quebrar
+    o atributo/markup; reescrito com `createElement`/`textContent`.
+  - Estados de enum crus (`AguardandoMaterial` etc.) trocados por rótulos
+    legíveis em badges (`entrega.html`, `envio.html`, `pagamentos.html`,
+    `pendencias.html`).
+  - `window.prompt()` em `pagamentos.html` substituído por painel próprio
+    (não bloqueia a thread, mesma linguagem visual do DS Elã).
+  - `id="resultado"` de `documentos.html` renomeado para
+    `resultadoDocumento` — colidia conceitualmente com o padrão de alerta
+    legado (`.ok/.erro/.info/.oculto`) que só `compilar-mes.html` usa de
+    fato.
+  - Item "consolidação de portal-head.html (limpeza de IDs legados)" do
+    roadmap original **não se aplicava**: `id="mensagem"` é o padrão vivo
+    em 11/12 páginas (não é removível sem quebrar todas), e `id="resultado"`
+    só tem um usuário legítimo restante (`compilar-mes.html`) — nada para
+    remover além da colisão já corrigida acima.
+  - `dashboard.html`/`financeiro.html` também tiveram `innerHTML` de
+    concatenação trocado por `createElement` (regra transversal do
+    roadmap), e `financeiro.html` ganhou coordenação das duas chamadas
+    `google.script.run` paralelas (mensagem "Carregando…" só limpa quando
+    ambas terminam).
+  - `pagamentos.html`/`documentos.html` desminificados (estavam em linha
+    única).
+- **Pendência para o responsável do projeto:** revisar e abrir PR de
+  `feat/ui-design-system-ela` para `main` (push protegido — `main` exige
+  PR no GitHub). Branch com 11 commits, todos com suíte 719/719 verde e
+  lint limpo.
 - **Pendências não bloqueantes:** P2 (fonte display IvyPresto — Adobe Fonts
   — usando fallback Fraunces por ora) e P3 (re-export Stitch para tokens
   secundários exatos), registradas em `UI_IMPLEMENTATION_ROADMAP.md`.
