@@ -7,6 +7,8 @@ export type Parceira = {
   nome: string;
   status: ParceiraStatus;
   email: string | null;
+  telefone: string | null;
+  instagram: string | null;
   cnpj: string | null;
   chave_pix: string | null;
   cep: string | null;
@@ -22,6 +24,8 @@ export type Parceira = {
 export type ParceiraFormValues = {
   nome: string;
   email: string;
+  telefone: string;
+  instagram: string;
   cnpj: string;
   chave_pix: string;
   cep: string;

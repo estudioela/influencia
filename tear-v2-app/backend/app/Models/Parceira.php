@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'nome',
     'email',
+    'telefone',
+    'instagram',
     'cnpj',
     'chave_pix',
     'cep',

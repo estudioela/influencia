@@ -18,6 +18,8 @@ class ParceiraFactory extends Factory
         return [
             'nome' => fake()->unique()->name(),
             'email' => fake()->safeEmail(),
+            'telefone' => fake()->numerify('(##) #####-####'),
+            'instagram' => '@'.fake()->userName(),
             'cnpj' => fake()->numerify('##.###.###/####-##'),
             'chave_pix' => fake()->safeEmail(),
             'cep' => fake()->numerify('#####-###'),

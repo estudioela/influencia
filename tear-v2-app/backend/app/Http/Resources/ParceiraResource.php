@@ -17,6 +17,8 @@ class ParceiraResource extends JsonResource
             'nome' => $this->nome,
             'status' => $this->status,
             'email' => $this->email,
+            'telefone' => $this->telefone,
+            'instagram' => $this->instagram,
             'cnpj' => $this->cnpj,
             'chave_pix' => $this->chave_pix,
             'cep' => $this->cep,

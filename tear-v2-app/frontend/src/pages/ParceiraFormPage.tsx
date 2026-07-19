@@ -14,6 +14,8 @@ import styles from './ParceiraFormPage.module.css';
 const EMPTY_FORM: ParceiraFormValues = {
   nome: '',
   email: '',
+  telefone: '',
+  instagram: '',
   cnpj: '',
   chave_pix: '',
   cep: '',
@@ -43,6 +45,8 @@ export default function ParceiraFormPage({ mode }: { mode: 'create' | 'edit' }) 
           setForm({
             nome: parceira.nome,
             email: parceira.email ?? '',
+            telefone: parceira.telefone ?? '',
+            instagram: parceira.instagram ?? '',
             cnpj: parceira.cnpj ?? '',
             chave_pix: parceira.chave_pix ?? '',
             cep: parceira.cep ?? '',
@@ -114,6 +118,21 @@ export default function ParceiraFormPage({ mode }: { mode: 'create' | 'edit' }) 
             value={form.email}
             onChange={(event) => updateField('email', event.target.value)}
             error={fieldErrors.email}
+            required
+          />
+          <TextField
+            label="Telefone"
+            value={form.telefone}
+            onChange={(event) => updateField('telefone', event.target.value)}
+            error={fieldErrors.telefone}
+            required
+          />
+          <TextField
+            label="Instagram"
+            value={form.instagram}
+            onChange={(event) => updateField('instagram', event.target.value)}
+            error={fieldErrors.instagram}
+            required
           />
         </section>
 
@@ -130,6 +149,7 @@ export default function ParceiraFormPage({ mode }: { mode: 'create' | 'edit' }) 
             value={form.chave_pix}
             onChange={(event) => updateField('chave_pix', event.target.value)}
             error={fieldErrors.chave_pix}
+            required
           />
         </section>
 
@@ -148,6 +168,7 @@ export default function ParceiraFormPage({ mode }: { mode: 'create' | 'edit' }) 
               onChange={(event) => updateField('uf', event.target.value.toUpperCase())}
               error={fieldErrors.uf}
               maxLength={2}
+              required
             />
           </div>
           <TextField
@@ -181,6 +202,7 @@ export default function ParceiraFormPage({ mode }: { mode: 'create' | 'edit' }) 
             value={form.cidade}
             onChange={(event) => updateField('cidade', event.target.value)}
             error={fieldErrors.cidade}
+            required
           />
         </section>
 

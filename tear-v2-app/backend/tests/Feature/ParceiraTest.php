@@ -18,20 +18,34 @@ class ParceiraTest extends TestCase
         $this->postJson('/api/parceiras', ['nome' => 'Maria'])->assertUnauthorized();
     }
 
+    private function dadosCadastroValidos(array $overrides = []): array
+    {
+        return array_merge([
+            'nome' => 'Maria Influenciadora',
+            'email' => 'maria@example.com',
+            'telefone' => '(11) 98888-7777',
+            'instagram' => '@mariainfluenciadora',
+            'chave_pix' => 'maria@example.com',
+            'cidade' => 'São Paulo',
+            'uf' => 'SP',
+        ], $overrides);
+    }
+
     public function test_cadastro_cria_parceira_inativa(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $response = $this->postJson('/api/parceiras', [
-            'nome' => 'Maria Influenciadora',
-            'email' => 'maria@example.com',
-        ]);
+        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos());
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'Inativa');
+        $response->assertJsonPath('data.telefone', '(11) 98888-7777');
+        $response->assertJsonPath('data.instagram', '@mariainfluenciadora');
         $this->assertDatabaseHas('parceiras', [
             'nome' => 'Maria Influenciadora',
             'status' => 'Inativa',
+            'telefone' => '(11) 98888-7777',
+            'instagram' => '@mariainfluenciadora',
         ]);
     }
 
@@ -39,10 +53,7 @@ class ParceiraTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $response = $this->postJson('/api/parceiras', [
-            'nome' => 'Maria Influenciadora',
-            'status' => 'Ativa',
-        ]);
+        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['status' => 'Ativa']));
 
         $response->assertJsonPath('data.status', 'Inativa');
     }
@@ -52,10 +63,20 @@ class ParceiraTest extends TestCase
         Sanctum::actingAs(User::factory()->create());
         Parceira::factory()->create(['nome' => 'Maria Influenciadora']);
 
-        $response = $this->postJson('/api/parceiras', ['nome' => 'Maria Influenciadora']);
+        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos());
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors('nome');
+    }
+
+    public function test_telefone_instagram_cidade_uf_e_chave_pix_sao_obrigatorios(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $response = $this->postJson('/api/parceiras', ['nome' => 'Maria Influenciadora']);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['email', 'telefone', 'instagram', 'chave_pix', 'cidade', 'uf']);
     }
 
     public function test_lista_parceiras_paginada(): void
@@ -85,16 +106,19 @@ class ParceiraTest extends TestCase
         Sanctum::actingAs(User::factory()->create());
         $parceira = Parceira::factory()->create(['nome' => 'Nome Antigo']);
 
-        $response = $this->putJson("/api/parceiras/{$parceira->id}", [
-            'nome' => 'Nome Novo',
-            'email' => 'novo@example.com',
-            'cep' => '01310-100',
-            'rua' => 'Av. Paulista',
-            'numero' => '1000',
-            'bairro' => 'Bela Vista',
-            'cidade' => 'São Paulo',
-            'uf' => 'SP',
-        ]);
+        $response = $this->putJson(
+            "/api/parceiras/{$parceira->id}",
+            $this->dadosCadastroValidos([
+                'nome' => 'Nome Novo',
+                'email' => 'novo@example.com',
+                'cep' => '01310-100',
+                'rua' => 'Av. Paulista',
+                'numero' => '1000',
+                'bairro' => 'Bela Vista',
+                'cidade' => 'São Paulo',
+                'uf' => 'SP',
+            ]),
+        );
 
         $response->assertOk();
         $response->assertJsonPath('data.nome', 'Nome Novo');
@@ -106,10 +130,10 @@ class ParceiraTest extends TestCase
         Sanctum::actingAs(User::factory()->create());
         $parceira = Parceira::factory()->create();
 
-        $response = $this->putJson("/api/parceiras/{$parceira->id}", [
-            'nome' => $parceira->nome,
-            'status' => 'Ativa',
-        ]);
+        $response = $this->putJson(
+            "/api/parceiras/{$parceira->id}",
+            $this->dadosCadastroValidos(['nome' => $parceira->nome, 'status' => 'Ativa']),
+        );
 
         $response->assertJsonPath('data.status', 'Inativa');
     }

@@ -51,6 +51,8 @@ export default function ParceiraProfilePage() {
       <section className={styles.group}>
         <h3 className={styles.groupTitle}>Identificação</h3>
         <Field label="Email" value={parceira.email} />
+        <Field label="Telefone" value={parceira.telefone} />
+        <Field label="Instagram" value={parceira.instagram} />
       </section>
 
       <section className={styles.group}>
