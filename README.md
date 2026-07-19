@@ -6,16 +6,20 @@ sincronizado via `clasp`.
 
 ## Arquitetura
 
-O código de produção vive em **`src/`**, em camadas DDD:
+O código de produção vive em **`src/`**, organizado em **fatias verticais**
+(ADR-014): um arquivo por módulo de negócio em `src/modulos/`, com as camadas
+DDD como seções internas, sempre nesta ordem de responsabilidade:
 
 ```
 Entrypoint (Portal.js) → Controller → Service → Repository → ACL → Domain
 ```
 
+Os contratos de cada camada estão em `docs/ARQUITETURA_CAMADAS.md`.
+
 - Só a **ACL** conhece a coluna física da planilha (resolução sempre por
   cabeçalho, nunca por índice fixo).
 - Só o **Controller** converte exceção em envelope `{ success, data | error }`
-  (`src/shared/Envelope.js`).
+  (`src/shared/Nucleo.js`).
 - O **Domain** é puro — não conhece `SpreadsheetApp`, HTML ou HTTP.
 - O **Entrypoint** (`src/entrypoint/Portal.js`) é o único ponto autorizado a
   tocar `SpreadsheetApp`/`LockService` e a compor o grafo de objetos.

@@ -39,6 +39,8 @@
 | `ADR-002 — Frontend Foundation` | `docs/adrs/ADR-002-frontend-foundation.md` | no repo |
 | `ADR-010 — Banco oficial do Portal (planilha V2 "Portal Ela")` | `docs/adrs/ADR-010-banco-oficial-do-portal.md` | no repo |
 | `ADR-013 — Autenticação do Portal via OAuth 2.0 Authorization Code Flow` | `docs/adrs/ADR-013-autenticacao-oauth-authorization-code.md` | no repo |
+| `ADR-014 — Consolidação de arquivos por módulo de negócio` | `docs/adrs/ADR-014-consolidacao-de-arquivos-por-modulo.md` | no repo (2026-07-19: `src/` reorganizado em 14 `.js` — fatias verticais em `src/modulos/`; caminhos `src/{acl,adapters,controller,domain,repository,service}/...` citados em achados anteriores são históricos; mapa classe→arquivo na ADR) |
+| Contratos de camada (ex-`_contract.js`) | `docs/ARQUITETURA_CAMADAS.md` | no repo (migrados pela ADR-014) |
 | `DECISOES_BLOQUEANTES.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; o estado de cada pergunta P3–P8/Q-NN está rastreado por SPEC neste roteador — resolvidas: Q-03/04/07/08/10; abertas: Q-05/06/09) |
 | `SPEC.md` (formato/Entrega 01) | `docs/specs/SPEC-001.md` | no repo |
 | `PLANILHA_TEAR_2.0_MAPA.md` | `PLANILHA_TEAR_2.0_MAPA.md` (raiz) | no repo |
@@ -91,7 +93,7 @@ Toda SPEC deve respeitar, sem reabrir:
   (novas portas de idempotência/escrita em lote na base nova, §6.3) →
   `ImportadorService` → `ImportacaoController` → Portal
   `importarBaseLegada`). Nova Script Property `SPREADSHEET_ID_LEGADO`
-  (`src/shared/Config.js`) — planilha de origem, distinta de
+  (`src/shared/Nucleo.js`, ex-`Config.js` — ADR-014) — planilha de origem, distinta de
   `SPREADSHEET_ID` (nunca a mesma, `DEPLOY_CHECKLIST.md` §2).
 - ✅ **Resolvido (PO, 2026-07-17, D-01/D-02):** numeração confirmada por
   este roteador (`WORKFLOW.md` externo não existe mais); critério de
