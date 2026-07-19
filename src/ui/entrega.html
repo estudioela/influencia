@@ -11,8 +11,8 @@
     <main>
       <nav>
         <span class="wordmark">tear v2</span>
-        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
         <button type="button" id="sair" class="secundario">Sair</button>
+        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
       </nav>
 
       <header>
@@ -75,6 +75,12 @@
         EmRevisao: 'em revisão',
         Aprovado: 'aprovado',
         Publicado: 'publicado',
+      };
+      var CLASSES_DE_ESTADO = {
+        AguardandoMaterial: 'pendente',
+        EmRevisao: 'pendente',
+        Aprovado: 'aprovado',
+        Publicado: 'pago',
       };
 
       function acoes(grupo, entrega, i) {
@@ -143,7 +149,7 @@
           estadoP.className = 'sub';
           estadoP.appendChild(document.createTextNode('Estado: '));
           var badge = document.createElement('span');
-          badge.className = 'badge micro';
+          badge.className = 'badge micro ' + (CLASSES_DE_ESTADO[entrega.estado] || '');
           badge.textContent = ROTULOS_DE_ESTADO[entrega.estado] || entrega.estado;
           estadoP.appendChild(badge);
           grupo.appendChild(estadoP);

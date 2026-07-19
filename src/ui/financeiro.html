@@ -8,14 +8,15 @@
     <title>TEAR — Portal da Parceira — Financeiro e Histórico</title>
   </head>
   <body>
-    <main>
+    <main class="amplo">
       <nav>
         <span class="wordmark">tear v2</span>
+        <button type="button" id="sair" class="secundario">Sair</button>
         <nav>
           <a href="#" id="linkInicio">Início</a>
           <a href="#" id="linkPendencias">Pendências</a>
+          <a href="#" id="linkPerfil">Meu perfil</a>
         </nav>
-        <button type="button" id="sair" class="secundario">Sair</button>
       </nav>
 
       <header>
@@ -26,8 +27,10 @@
 
       <p id="mensagem" role="status"></p>
 
-      <label for="periodo">Competência</label>
-      <select id="periodo"></select>
+      <section class="paper-panel">
+        <label for="periodo">Competência</label>
+        <select id="periodo"></select>
+      </section>
 
       <section aria-label="Resumo financeiro">
         <div class="kpi-grid" id="resumoFinanceiro"></div>
@@ -46,6 +49,7 @@
       var historico = document.getElementById('historico');
       var linkInicio = document.getElementById('linkInicio');
       var linkPendencias = document.getElementById('linkPendencias');
+      var linkPerfil = document.getElementById('linkPerfil');
       var botaoSair = document.getElementById('sair');
 
       function avisar(texto) {
@@ -220,6 +224,10 @@
       linkPendencias.addEventListener('click', function (evento) {
         evento.preventDefault();
         navegarPara('portal-pendencias');
+      });
+      linkPerfil.addEventListener('click', function (evento) {
+        evento.preventDefault();
+        navegarPara('portal-perfil');
       });
 
       botaoSair.addEventListener('click', function () {

@@ -11,12 +11,12 @@
     <main>
       <nav>
         <span class="wordmark">tear v2</span>
+        <button type="button" id="sair" class="secundario">Sair</button>
         <nav>
           <a href="#" id="linkInicio">Início</a>
           <a href="#" id="linkPerfil">Meu perfil</a>
           <a href="#" id="linkFinanceiro">Financeiro e histórico</a>
         </nav>
-        <button type="button" id="sair" class="secundario">Sair</button>
       </nav>
 
       <header>
@@ -70,11 +70,28 @@
         Aprovado: 'aprovado',
         Publicado: 'publicado',
       };
+      var CLASSES_DE_ESTADO = {
+        AguardandoMaterial: 'pendente',
+        EmRevisao: 'pendente',
+        Aprovado: 'aprovado',
+        Publicado: 'pago',
+      };
 
       function linha(texto) {
         var p = document.createElement('p');
         p.className = 'sub';
         p.textContent = texto;
+        return p;
+      }
+
+      function linhaDeEstado(estado) {
+        var p = document.createElement('p');
+        p.className = 'sub';
+        p.appendChild(document.createTextNode('Estado: '));
+        var badge = document.createElement('span');
+        badge.className = 'badge micro ' + (CLASSES_DE_ESTADO[estado] || '');
+        badge.textContent = ROTULOS_DE_ESTADO[estado] || estado;
+        p.appendChild(badge);
         return p;
       }
 
@@ -124,9 +141,10 @@
           var grupo = document.createElement('fieldset');
 
           var legend = document.createElement('legend');
-          legend.textContent = item.rotulo + ' — ' + (ROTULOS_DE_ESTADO[item.estado] || item.estado);
+          legend.textContent = item.rotulo;
           grupo.appendChild(legend);
 
+          grupo.appendChild(linhaDeEstado(item.estado));
           renderizarBriefing(grupo, item.briefing);
           acoesDoItem(grupo, item, indice);
           pendenciasEl.appendChild(grupo);

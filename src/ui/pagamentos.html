@@ -11,8 +11,8 @@
     <main>
       <nav>
         <span class="wordmark">tear v2</span>
-        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
         <button type="button" id="sair" class="secundario">Sair</button>
+        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
       </nav>
 
       <header>
@@ -54,6 +54,11 @@
         Aprovado: 'aprovado',
         Pago: 'pago',
       };
+      var CLASSES_DE_ESTADO = {
+        EmAberto: 'pendente',
+        Aprovado: 'aprovado',
+        Pago: 'pago',
+      };
 
       function navegarPara(pagina) {
         var base = window.top.location.href.split('?')[0];
@@ -88,12 +93,12 @@
         return p;
       }
 
-      function linhaComBadge(rotuloTexto, valorTexto) {
+      function linhaComBadge(rotuloTexto, valorTexto, classeEstado) {
         var p = document.createElement('p');
         p.className = 'sub';
         p.appendChild(document.createTextNode(rotuloTexto + ': '));
         var badge = document.createElement('span');
-        badge.className = 'badge micro';
+        badge.className = 'badge micro' + (classeEstado ? ' ' + classeEstado : '');
         badge.textContent = valorTexto;
         p.appendChild(badge);
         return p;
@@ -117,7 +122,7 @@
           card.appendChild(titulo);
 
           card.appendChild(linha('Tipo: ' + item.tipo));
-          card.appendChild(linhaComBadge('Estado', ROTULOS_DE_ESTADO[item.estado] || item.estado));
+          card.appendChild(linhaComBadge('Estado', ROTULOS_DE_ESTADO[item.estado] || item.estado, CLASSES_DE_ESTADO[item.estado]));
           card.appendChild(linha('ID: ' + item.id));
 
           if (item.estado === 'EmAberto' || item.estado === 'Aprovado') {

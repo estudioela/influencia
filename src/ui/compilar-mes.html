@@ -15,8 +15,8 @@
     <main>
       <nav>
         <span class="wordmark">tear v2</span>
-        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
         <button type="button" id="sair" class="secundario">Sair</button>
+        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
       </nav>
 
       <header>
@@ -61,6 +61,13 @@
 
         function listar(colaboracoes) {
           lista.textContent = '';
+          if (colaboracoes.length === 0) {
+            var vazio = document.createElement('p');
+            vazio.className = 'empty-state';
+            vazio.textContent = 'Nenhuma colaboração compilada nesta competência.';
+            lista.appendChild(vazio);
+            return;
+          }
           colaboracoes.forEach(function (c) {
             var item = document.createElement('div');
             item.className = 'item-lista';

@@ -11,8 +11,8 @@
     <main>
       <nav>
         <span class="wordmark">tear v2</span>
-        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
         <button type="button" id="sair" class="secundario">Sair</button>
+        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
       </nav>
 
       <header>
@@ -100,11 +100,21 @@
         AguardandoConfirmacao: 'aguardando confirmação',
         Confirmado: 'confirmado',
       };
+      var CLASSES_DE_REVISAO = {
+        AguardandoConfirmacao: 'pendente',
+        Confirmado: 'aprovado',
+      };
       var ROTULOS_DE_JORNADA = {
         Pendente: 'pendente',
         Expedido: 'expedido',
         Entregue: 'entregue',
         Cancelado: 'cancelado',
+      };
+      var CLASSES_DE_JORNADA = {
+        Pendente: 'pendente',
+        Expedido: 'pendente',
+        Entregue: 'pago',
+        Cancelado: 'erro',
       };
 
       function campoRastreio(i) {
@@ -152,12 +162,12 @@
         }
       }
 
-      function linhaComBadge(rotuloTexto, valorTexto) {
+      function linhaComBadge(rotuloTexto, valorTexto, classeEstado) {
         var p = document.createElement('p');
         p.className = 'sub';
         p.appendChild(document.createTextNode(rotuloTexto + ': '));
         var badge = document.createElement('span');
-        badge.className = 'badge micro';
+        badge.className = 'badge micro' + (classeEstado ? ' ' + classeEstado : '');
         badge.textContent = valorTexto;
         p.appendChild(badge);
         return p;
@@ -188,8 +198,8 @@
           legend.textContent = envio.parceiraId + ' — ' + envio.mesReferencia;
           grupo.appendChild(legend);
 
-          grupo.appendChild(linhaComBadge('Revisão', ROTULOS_DE_REVISAO[envio.revisao] || envio.revisao));
-          grupo.appendChild(linhaComBadge('Jornada', ROTULOS_DE_JORNADA[envio.jornada] || envio.jornada));
+          grupo.appendChild(linhaComBadge('Revisão', ROTULOS_DE_REVISAO[envio.revisao] || envio.revisao, CLASSES_DE_REVISAO[envio.revisao]));
+          grupo.appendChild(linhaComBadge('Jornada', ROTULOS_DE_JORNADA[envio.jornada] || envio.jornada, CLASSES_DE_JORNADA[envio.jornada]));
           grupo.appendChild(linha('Rastreio: ' + (envio.rastreio || '—')));
           grupo.appendChild(linha('Envio: ' + (envio.dataEnvio || '—')));
           grupo.appendChild(linha('Arquivamento: ' + (envio.dataArquivamento || '—')));
