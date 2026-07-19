@@ -397,6 +397,27 @@ Toda SPEC deve respeitar, sem reabrir:
   finalmente será o primeiro erro real observado nesta versão do código e
   pode ser corrigido dirigido pela mensagem exibida (agora sempre visível,
   com a correção desta sessão).
+- **Go-live operacional (2026-07-19, sessão de entrega):** produção estava
+  na **versão 23** ("V 5.9 — OAuth encerrado, produção limpa") — sessões de
+  2026-07-18 posteriores ao registro anterior validaram o login OAuth em
+  produção (rótulo da v21) e removeram a sonda de autorização (v22/v23);
+  diff pull-v23 × repo confirmou **produção = HEAD, sem drift**. Nesta
+  sessão, executadas as 3 pendências operacionais SEM navegador logado, via
+  **deployment temporário separado** (rota de bootstrap protegida por
+  segredo, executada como USER_DEPLOYING; produção permaneceu pinada na
+  v23): (1) **RN-07 concluído** — primeiro Administrador (sub `1073…2915`)
+  `PENDING→ACTIVE` em `SIS_IDENTIDADES`; (2) **aba `DIAG_ADR013` removida**
+  da planilha PROD; (3) **Importação Inicial da Base executada**
+  (`importarBaseLegada`, SPEC-003): `totalImportado: 7` — as 7 Parceiras da
+  base legada agora populam `BASE DE DADOS` (verificado por leitura da
+  planilha). Limpeza verificada ao fim: deployment temporário excluído
+  (`clasp undeploy`), código temporário revertido, `clasp push` do HEAD
+  limpo, restam só os 2 deployments de sempre (@HEAD e produção @23);
+  suíte 626/626 verde. A versão 24 ("TEMP — bootstrap RN-07") existe no
+  histórico de versões mas não tem deployment que a sirva. **Pendência
+  restante:** smoke test visual das jornadas em produção (login admin →
+  dashboard → telas operacionais), dependente de sessão de navegador
+  logada pelo operador.
 - **Incidente de drift de produção (2026-07-18, sessão Tech Lead):** a
   auditoria de sincronia remoto×local (pull da versão publicada + diff
   contra o repo) revelou que produção estava servindo a **versão 15** —
@@ -421,6 +442,26 @@ Toda SPEC deve respeitar, sem reabrir:
   deploymentId) e verificada com o mesmo diff (pull da v19 × repo:
   idênticos). **Produção ao fim de 2026-07-18: versão 19 = HEAD do
   repositório.**
+- **Login OAuth validado até o callback; causa raiz do último bloqueio
+  corrigida (2026-07-18, sessão Tech Lead, continuação):** o operador
+  confirmou o fluxo funcionando até o retorno do Google — o erro passou a
+  ser "Você não tem permissão para chamar UrlFetchApp.fetch" na troca do
+  código (`AdaptadorOAuthGoogle.js:62`), o que PROVA que client_id/
+  redirect URIs/state estão corretos. Causa raiz (auditada, sem hipótese):
+  o manifesto **nunca declarou `oauthScopes`** e a autorização da conta
+  USER_DEPLOYING era anterior ao ADR-013 (era M1, só planilha);
+  documentação oficial confirma que Web App como USER_DEPLOYING *"may not
+  request authorization"* — falha em vez de re-pedir consentimento.
+  Correção: `oauthScopes` explícitos no `appsscript.json`
+  (`spreadsheets` + `script.external_request` — conjunto completo
+  verificado por grep de todos os serviços GAS usados e pela referência
+  oficial de cada um; `ScriptApp.getService().getUrl()` não exige escopo).
+  Publicado como **versão 20** no mesmo deployment, diff verificado.
+  **Passo humano final:** a conta que publica precisa consentir os
+  escopos UMA vez — abrir o projeto em script.google.com, rodar qualquer
+  função no editor e aceitar a tela de autorização (caminho garantido; a
+  doc diz que o /exec pode não pedir) — e então repetir o login no
+  `/exec`.
 
 ---
 
