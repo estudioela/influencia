@@ -397,6 +397,27 @@ Toda SPEC deve respeitar, sem reabrir:
   finalmente será o primeiro erro real observado nesta versão do código e
   pode ser corrigido dirigido pela mensagem exibida (agora sempre visível,
   com a correção desta sessão).
+- **Go-live operacional (2026-07-19, sessão de entrega):** produção estava
+  na **versão 23** ("V 5.9 — OAuth encerrado, produção limpa") — sessões de
+  2026-07-18 posteriores ao registro anterior validaram o login OAuth em
+  produção (rótulo da v21) e removeram a sonda de autorização (v22/v23);
+  diff pull-v23 × repo confirmou **produção = HEAD, sem drift**. Nesta
+  sessão, executadas as 3 pendências operacionais SEM navegador logado, via
+  **deployment temporário separado** (rota de bootstrap protegida por
+  segredo, executada como USER_DEPLOYING; produção permaneceu pinada na
+  v23): (1) **RN-07 concluído** — primeiro Administrador (sub `1073…2915`)
+  `PENDING→ACTIVE` em `SIS_IDENTIDADES`; (2) **aba `DIAG_ADR013` removida**
+  da planilha PROD; (3) **Importação Inicial da Base executada**
+  (`importarBaseLegada`, SPEC-003): `totalImportado: 7` — as 7 Parceiras da
+  base legada agora populam `BASE DE DADOS` (verificado por leitura da
+  planilha). Limpeza verificada ao fim: deployment temporário excluído
+  (`clasp undeploy`), código temporário revertido, `clasp push` do HEAD
+  limpo, restam só os 2 deployments de sempre (@HEAD e produção @23);
+  suíte 626/626 verde. A versão 24 ("TEMP — bootstrap RN-07") existe no
+  histórico de versões mas não tem deployment que a sirva. **Pendência
+  restante:** smoke test visual das jornadas em produção (login admin →
+  dashboard → telas operacionais), dependente de sessão de navegador
+  logada pelo operador.
 - **Incidente de drift de produção (2026-07-18, sessão Tech Lead):** a
   auditoria de sincronia remoto×local (pull da versão publicada + diff
   contra o repo) revelou que produção estava servindo a **versão 15** —
