@@ -9,12 +9,21 @@
   </head>
   <body>
     <main>
-      <nav><a href="#" id="voltarAdmin">← Painel da equipe</a><button type="button" id="sair">Sair</button></nav>
-      <h1>Entregas da Competência</h1>
+      <nav>
+        <span class="wordmark">tear v2</span>
+        <nav><a href="#" id="voltarAdmin">← Painel da equipe</a></nav>
+        <button type="button" id="sair" class="secundario">Sair</button>
+      </nav>
 
-      <p class="sub">Acompanhe materiais enviados, aprove entregas e publique o conteúdo finalizado.</p>
+      <header>
+        <p class="eyebrow micro">estúdio elã — operação</p>
+        <h1>Entregas da Competência</h1>
+        <p class="sub">Acompanhe materiais enviados, aprove entregas e publique o conteúdo finalizado.</p>
+      </header>
 
-      <form id="busca">
+      <p id="mensagem" role="status" aria-live="polite"></p>
+
+      <form id="busca" class="paper-panel">
         <label for="mesReferencia">Competência (AAAA-MM)</label>
         <input id="mesReferencia" name="mesReferencia" required placeholder="2026-07" />
         <label for="parceiraId">Parceira (opcional)</label>
@@ -23,8 +32,6 @@
       </form>
 
       <section id="entregas"></section>
-
-      <p id="mensagem" role="status" aria-live="polite"></p>
     </main>
 
     <script>
@@ -63,41 +70,97 @@
           [nomeDaFuncao](dados);
       }
 
-      function acoes(entrega, i) {
+      var ROTULOS_DE_ESTADO = {
+        AguardandoMaterial: 'aguardando material',
+        EmRevisao: 'em revisão',
+        Aprovado: 'aprovado',
+        Publicado: 'publicado',
+      };
+
+      function acoes(grupo, entrega, i) {
         if (entrega.estado === 'AguardandoMaterial' || entrega.estado === 'EmRevisao') {
-          var html =
-            '<label>Link do material <input name="link-' + i + '" type="url" required /></label>' +
-            '<button type="button" data-acao="enviar" data-indice="' + i + '">Enviar material</button>';
+          var label = document.createElement('label');
+          label.textContent = 'Link do material ';
+          var input = document.createElement('input');
+          input.name = 'link-' + i;
+          input.type = 'url';
+          input.required = true;
+          label.appendChild(input);
+          grupo.appendChild(label);
+
+          var enviar = document.createElement('button');
+          enviar.type = 'button';
+          enviar.setAttribute('data-acao', 'enviar');
+          enviar.setAttribute('data-indice', i);
+          enviar.textContent = 'Enviar material';
+          grupo.appendChild(enviar);
+
           if (entrega.estado === 'EmRevisao') {
-            html += '<button type="button" data-acao="aprovar" data-indice="' + i + '">Aprovar</button>';
+            var aprovar = document.createElement('button');
+            aprovar.type = 'button';
+            aprovar.setAttribute('data-acao', 'aprovar');
+            aprovar.setAttribute('data-indice', i);
+            aprovar.textContent = 'Aprovar';
+            grupo.appendChild(aprovar);
           }
-          return html;
+          return;
         }
         if (entrega.estado === 'Aprovado') {
-          return '<button type="button" data-acao="publicar" data-indice="' + i + '">Publicar</button>';
+          var publicar = document.createElement('button');
+          publicar.type = 'button';
+          publicar.setAttribute('data-acao', 'publicar');
+          publicar.setAttribute('data-indice', i);
+          publicar.textContent = 'Publicar';
+          grupo.appendChild(publicar);
+          return;
         }
-        return '<p>Arquivada em: ' + (entrega.dataArquivamento || '—') + '</p>';
+        var arquivado = document.createElement('p');
+        arquivado.className = 'sub';
+        arquivado.textContent = 'Arquivada em: ' + (entrega.dataArquivamento || '—');
+        grupo.appendChild(arquivado);
       }
 
       function renderizar(entregas) {
+        entregasEl.textContent = '';
         if (entregas.length === 0) {
-          entregasEl.innerHTML = '';
+          var vazio = document.createElement('p');
+          vazio.className = 'empty-state';
+          vazio.textContent = 'Nenhuma Entrega na competência — compile o mês primeiro.';
+          entregasEl.appendChild(vazio);
           avisar('Nenhuma Entrega na competência — compile o mês primeiro.');
           return;
         }
-        entregasEl.innerHTML = entregas
-          .map(function (entrega, i) {
-            return (
-              '<fieldset data-parceira="' + entrega.parceiraId + '" data-rotulo="' + entrega.rotulo + '">' +
-              '<legend>' + entrega.parceiraId + ' — ' + entrega.rotulo + '</legend>' +
-              '<p>Estado: ' + entrega.estado + '</p>' +
-              '<p>Material: ' + (entrega.material || '—') + '</p>' +
-              '<p>Aprovação interna: ' + (entrega.dataAprovacaoInterna || '—') + '</p>' +
-              acoes(entrega, i) +
-              '</fieldset>'
-            );
-          })
-          .join('');
+        entregas.forEach(function (entrega, i) {
+          var grupo = document.createElement('fieldset');
+          grupo.setAttribute('data-parceira', entrega.parceiraId);
+          grupo.setAttribute('data-rotulo', entrega.rotulo);
+
+          var legend = document.createElement('legend');
+          legend.textContent = entrega.parceiraId + ' — ' + entrega.rotulo;
+          grupo.appendChild(legend);
+
+          var estadoP = document.createElement('p');
+          estadoP.className = 'sub';
+          estadoP.appendChild(document.createTextNode('Estado: '));
+          var badge = document.createElement('span');
+          badge.className = 'badge micro';
+          badge.textContent = ROTULOS_DE_ESTADO[entrega.estado] || entrega.estado;
+          estadoP.appendChild(badge);
+          grupo.appendChild(estadoP);
+
+          var material = document.createElement('p');
+          material.className = 'sub';
+          material.textContent = 'Material: ' + (entrega.material || '—');
+          grupo.appendChild(material);
+
+          var aprovacao = document.createElement('p');
+          aprovacao.className = 'sub';
+          aprovacao.textContent = 'Aprovação interna: ' + (entrega.dataAprovacaoInterna || '—');
+          grupo.appendChild(aprovacao);
+
+          acoes(grupo, entrega, i);
+          entregasEl.appendChild(grupo);
+        });
         avisar(entregas.length + ' entrega(s).');
       }
 
