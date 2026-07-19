@@ -2,9 +2,8 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function dominio() {
   return loadGas([
-    'src/domain/MesReferencia.js',
-    'src/domain/CondicaoComercialSnapshot.js',
-    'src/domain/ColaboracaoMensal.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Parceira.js',
   ]);
 }
 

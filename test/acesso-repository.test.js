@@ -40,9 +40,7 @@ function stubBloqueioACL() {
 describe('SessaoRepository — projeção explícita da Sessão (SPEC-025 §3.5)', () => {
   function carregar() {
     return loadGas([
-      'src/domain/TokenDeSessao.js',
-      'src/domain/Sessao.js',
-      'src/repository/SessaoRepository.js',
+      'src/modulos/Autenticacao.js',
     ]);
   }
 
@@ -100,8 +98,7 @@ describe('SessaoRepository — projeção explícita da Sessão (SPEC-025 §3.5)
 describe('BloqueioRepository — estado de tentativas e janela (SPEC-025 RN-02)', () => {
   function carregar() {
     return loadGas([
-      'src/domain/JanelaDeBloqueio.js',
-      'src/repository/BloqueioRepository.js',
+      'src/modulos/Arquivamento.js',
     ]);
   }
 

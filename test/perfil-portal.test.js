@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const { loadGas } = require('./helpers/gasHarness');
 
 // Slice ponta a ponta do M8 · Perfil no Portal da Parceira (SPEC-032), no
@@ -8,22 +6,10 @@ const { loadGas } = require('./helpers/gasHarness');
 // funções do Portal (`verPerfilDoPortal`/`editarPerfilDoPortal`), tudo sobre
 // a pilha real de fakes de planilha.
 //
-// O adaptador de CEP é descoberto dinamicamente em src/adapters/ (ver
-// `arquivosDeAdaptadores` abaixo) para não depender de acertar o nome do
-// arquivo — hoje é AdaptadorDeCepBrasilApi.js (BrasilAPI), então o fake de
+// O adaptador de CEP vive em src/modulos/Parceira.js desde a ADR-014 —
+// hoje é AdaptadorDeCepBrasilApi (BrasilAPI), então o fake de
 // UrlFetchApp.fetch devolve getResponseCode()/getContentText() no formato
 // dessa API (street/neighborhood/city/state); falha = fetch lança.
-
-const ROOT = path.resolve(__dirname, '..');
-
-function arquivosDeAdaptadores() {
-  const dir = path.resolve(ROOT, 'src/adapters');
-  const conhecidos = new Set(['_contract.js', 'VerificadorDeCredencialLegado.js']);
-  return fs
-    .readdirSync(dir)
-    .filter((nome) => nome.endsWith('.js') && !conhecidos.has(nome))
-    .map((nome) => 'src/adapters/' + nome);
-}
 
 // Aba BASE DE DADOS: colunas do Cadastro (compilarMes) + do acesso legado
 // (CUPOM/INFLUENCIADORA_CNPJ, RN-16) + campos de perfil (SPEC-032).
@@ -189,62 +175,16 @@ function montarPortal(abas) {
 
   const gas = loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
-      'src/shared/ErroComCodigo.js',
-      'src/domain/Parceira.js',
-      'src/domain/MesReferencia.js',
-      'src/domain/CondicaoComercialSnapshot.js',
-      'src/domain/ColaboracaoMensal.js',
-      'src/domain/CalculadoraDeAprovacao.js',
-      'src/domain/BlocoDeFormato.js',
-      'src/domain/Briefing.js',
-      'src/domain/IdentificadorDeEntrega.js',
-      'src/domain/LinkDoMaterial.js',
-      'src/domain/Entrega.js',
-      'src/domain/CodigoRastreio.js',
-      'src/domain/EnderecoDeEntrega.js',
-      'src/domain/Envio.js',
-      'src/domain/Credencial.js',
-      'src/domain/TokenDeSessao.js',
-      'src/domain/Sessao.js',
-      'src/domain/JanelaDeBloqueio.js',
-      'src/domain/Autenticador.js',
-      'src/domain/ItemDePendencia.js',
-      'src/domain/PIX.js',
-      'src/domain/Endereco.js',
-      'src/acl/ParceiraACL.js',
-      'src/acl/ColaboracaoMensalACL.js',
-      'src/acl/BriefingACL.js',
-      'src/acl/EntregaACL.js',
-      'src/acl/EnvioACL.js',
-      'src/acl/SessaoACL.js',
-      'src/acl/BloqueioACL.js',
-      'src/adapters/VerificadorDeCredencialLegado.js',
-      ...arquivosDeAdaptadores(),
-      'src/repository/ParceiraRepository.js',
-      'src/repository/ColaboracaoMensalRepository.js',
-      'src/repository/BriefingRepository.js',
-      'src/repository/EntregaRepository.js',
-      'src/repository/EnvioRepository.js',
-      'src/repository/SessaoRepository.js',
-      'src/repository/BloqueioRepository.js',
-      'src/service/CadastrarParceiraService.js',
-      'src/service/CompiladorDoMes.js',
-      'src/service/BriefingService.js',
-      'src/service/EntregaService.js',
-      'src/service/EnvioService.js',
-      'src/service/AcessoPortalService.js',
-      'src/service/PortalDeConteudoService.js',
-      'src/service/PerfilPortalService.js',
-      'src/controller/ParceiraController.js',
-      'src/controller/ColaboracaoMensalController.js',
-      'src/controller/BriefingController.js',
-      'src/controller/EntregaController.js',
-      'src/controller/EnvioController.js',
-      'src/controller/AcessoController.js',
-      'src/controller/PortalDeConteudoController.js',
-      'src/controller/PerfilPortalController.js',
+      'src/shared/Nucleo.js',
+      'src/modulos/Parceira.js',
+      'src/modulos/ColaboracaoMensal.js',
+      'src/modulos/Briefing.js',
+      'src/modulos/Entrega.js',
+      'src/modulos/Envio.js',
+      'src/modulos/Autenticacao.js',
+      'src/modulos/Arquivamento.js',
+      'src/modulos/PortalConteudo.js',
+      'src/modulos/Perfil.js',
       'src/entrypoint/Portal.js',
     ],
     {

@@ -2,16 +2,11 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function montar() {
   const gas = loadGas([
-    'src/shared/ErroComCodigo.js',
-    'src/domain/MesReferencia.js',
-    'src/domain/IdentificadorDeEntrega.js',
-    'src/domain/LinkDoMaterial.js',
-    'src/domain/Entrega.js',
-    'src/domain/CalculadoraDeAprovacao.js',
-    'src/domain/BlocoDeFormato.js',
-    'src/domain/Briefing.js',
-    'src/domain/ItemDePendencia.js',
-    'src/service/PortalDeConteudoService.js',
+    'src/shared/Nucleo.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Entrega.js',
+    'src/modulos/Briefing.js',
+    'src/modulos/PortalConteudo.js',
   ]);
 
   const AGORA = new Date('2026-07-16T10:00:00Z');

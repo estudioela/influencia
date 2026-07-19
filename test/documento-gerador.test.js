@@ -2,8 +2,7 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
   return loadGas([
-    'src/domain/CamposDeMesclagem.js',
-    'src/adapters/GeradorDeDocumentosTexto.js',
+    'src/modulos/Documento.js',
   ]);
 }
 

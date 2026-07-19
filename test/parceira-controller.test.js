@@ -2,8 +2,8 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function novoController(service) {
   const gas = loadGas([
-    'src/shared/Envelope.js',
-    'src/controller/ParceiraController.js',
+    'src/shared/Nucleo.js',
+    'src/modulos/Parceira.js',
   ]);
   return new gas.ParceiraController(service);
 }

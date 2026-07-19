@@ -2,13 +2,10 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function montar() {
   return loadGas([
-    'src/domain/MesReferencia.js',
-    'src/domain/ObrigacaoFinanceira.js',
-    'src/domain/IdentificadorDeEntrega.js',
-    'src/domain/LinkDoMaterial.js',
-    'src/domain/Entrega.js',
-    'src/domain/ResumoFinanceiro.js',
-    'src/domain/ItemDeHistorico.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Financeiro.js',
+    'src/modulos/Entrega.js',
+    'src/modulos/PortalConteudo.js',
   ]);
 }
 

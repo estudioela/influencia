@@ -46,14 +46,8 @@ function montarPortal({ baseLegada, baseNova, propriedades }) {
   const identidadeAbas = abasIdentidade();
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
-      'src/domain/Parceira.js',
-      'src/domain/ChaveInfluenciadora.js',
-      'src/acl/ParceiraACL.js',
-      'src/acl/LegadoACL.js',
-      'src/service/ImportadorService.js',
-      'src/controller/ImportacaoController.js',
+      'src/shared/Nucleo.js',
+      'src/modulos/Parceira.js',
       'src/entrypoint/Portal.js',
       ...ARQUIVOS_IDENTIDADE,
     ],

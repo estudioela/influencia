@@ -38,9 +38,8 @@ function fakeAba() {
 
 function carregar(sheet) {
   const gas = loadGas([
-    'src/domain/MesReferencia.js',
-    'src/domain/ObrigacaoFinanceira.js',
-    'src/acl/PagamentoACL.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Financeiro.js',
   ]);
   return { gas, acl: new gas.PagamentoACL(sheet) };
 }

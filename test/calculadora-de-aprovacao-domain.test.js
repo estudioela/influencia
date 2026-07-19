@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function dominio() {
-  return loadGas(['src/domain/CalculadoraDeAprovacao.js']);
+  return loadGas(['src/modulos/Briefing.js']);
 }
 
 function iso(data) {

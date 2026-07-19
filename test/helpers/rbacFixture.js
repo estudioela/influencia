@@ -12,27 +12,9 @@ const ADMIN_TOKEN = 'tok-admin-rbac-fixture';
 const ADMIN_SUB = 'sub-admin-rbac-fixture';
 
 const ARQUIVOS_IDENTIDADE = [
-  'src/domain/Credencial.js',
-  'src/domain/TokenDeSessao.js',
-  'src/domain/Sessao.js',
-  'src/domain/JanelaDeBloqueio.js',
-  'src/domain/Autenticador.js',
-  'src/domain/Usuario.js',
-  'src/acl/SessaoACL.js',
-  'src/acl/BloqueioACL.js',
-  'src/acl/UsuarioACL.js',
-  'src/acl/AdministradorACL.js',
-  'src/adapters/VerificadorDeCredencialLegado.js',
-  'src/adapters/ValidadorDeTokenGoogle.js',
-  'src/adapters/AdaptadorOAuthGoogle.js',
-  'src/adapters/GuardiaoDeEstadoOAuth.js',
-  'src/repository/SessaoRepository.js',
-  'src/repository/BloqueioRepository.js',
-  'src/repository/UsuarioRepository.js',
-  'src/service/AcessoPortalService.js',
-  'src/service/UsuarioService.js',
-  'src/controller/AcessoController.js',
-  'src/controller/UsuarioController.js',
+  'src/modulos/Autenticacao.js',
+  'src/modulos/Arquivamento.js',
+  'src/modulos/Usuario.js',
 ];
 
 function fakeAbaGravavel(cabecalho, linhas) {

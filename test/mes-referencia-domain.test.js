@@ -8,7 +8,7 @@ const { loadGas } = require('./helpers/gasHarness');
 // `gas` (mesmo realm). `dominio()` carrega uma vez por teste; os helpers
 // abaixo recebem esse `gas` em vez de chamar `loadGas` por si.
 function dominio() {
-  return loadGas(['src/domain/MesReferencia.js']);
+  return loadGas(['src/modulos/ColaboracaoMensal.js']);
 }
 
 function novoMesReferencia(gas, ano, mes) {

@@ -24,10 +24,9 @@ function perfilVazio() {
 
 function montar() {
   const gas = loadGas([
-    'src/shared/ErroComCodigo.js',
-    'src/domain/PIX.js',
-    'src/domain/Endereco.js',
-    'src/service/PerfilPortalService.js',
+    'src/shared/Nucleo.js',
+    'src/modulos/Parceira.js',
+    'src/modulos/Perfil.js',
   ]);
 
   const sessoes = { 'tok-maria': 'Maria' };

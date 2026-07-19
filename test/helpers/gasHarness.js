@@ -5,7 +5,7 @@
  * globais do GAS mockáveis, e devolve o sandbox para asserção.
  *
  * Uso:
- *   const gas = loadGas(['src/shared/Envelope.js']);
+ *   const gas = loadGas(['src/shared/Nucleo.js']);
  *   gas.envelopeOk({a:1});
  */
 const fs = require('fs');

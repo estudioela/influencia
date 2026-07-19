@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
-  return loadGas(['src/domain/Documento.js', 'src/repository/DocumentoRepository.js']);
+  return loadGas([, 'src/modulos/Documento.js']);
 }
 
 // Fake da porta da ACL do Documento: upsert pela identidade e leitura completa.

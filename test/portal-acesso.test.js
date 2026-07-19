@@ -56,22 +56,10 @@ function montarPortal(abas) {
   let uuid = 0;
   return loadGas(
     [
-      'src/shared/Envelope.js',
-      'src/shared/Config.js',
-      'src/shared/ErroComCodigo.js',
-      'src/domain/Credencial.js',
-      'src/domain/TokenDeSessao.js',
-      'src/domain/Sessao.js',
-      'src/domain/JanelaDeBloqueio.js',
-      'src/domain/Autenticador.js',
-      'src/acl/ParceiraACL.js',
-      'src/acl/SessaoACL.js',
-      'src/acl/BloqueioACL.js',
-      'src/adapters/VerificadorDeCredencialLegado.js',
-      'src/repository/SessaoRepository.js',
-      'src/repository/BloqueioRepository.js',
-      'src/service/AcessoPortalService.js',
-      'src/controller/AcessoController.js',
+      'src/shared/Nucleo.js',
+      'src/modulos/Autenticacao.js',
+      'src/modulos/Arquivamento.js',
+      'src/modulos/Parceira.js',
       'src/entrypoint/Portal.js',
     ],
     {

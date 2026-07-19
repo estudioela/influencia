@@ -31,7 +31,7 @@ describe('SessaoACL — aba SESSOES (SPEC-025 §14, ADR-001)', () => {
   const CABECALHO = ['TOKEN', 'PARCEIRA_ID', 'EXPIRA_EM'];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/SessaoACL.js']);
+    const gas = loadGas(['src/modulos/Autenticacao.js']);
     return { gas, acl: new gas.SessaoACL(aba) };
   }
 
@@ -117,7 +117,7 @@ describe('BloqueioACL — aba BLOQUEIOS (SPEC-025 RN-02, ADR-001)', () => {
   const CABECALHO = ['IDENTIFICADOR', 'TENTATIVAS', 'BLOQUEIO_INICIO'];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/BloqueioACL.js']);
+    const gas = loadGas(['src/modulos/Arquivamento.js']);
     return { gas, acl: new gas.BloqueioACL(aba) };
   }
 
@@ -199,7 +199,7 @@ describe('ParceiraACL.obterAcessoLegado — porta do Acesso (SPEC-025 §14.1, RN
   }
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/ParceiraACL.js']);
+    const gas = loadGas(['src/modulos/Parceira.js']);
     return new gas.ParceiraACL(aba);
   }
 

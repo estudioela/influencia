@@ -10,8 +10,7 @@ function stubParceiraACL(acessoPorCupom) {
 
 function carregar(stub) {
   const gas = loadGas([
-    'src/domain/Credencial.js',
-    'src/adapters/VerificadorDeCredencialLegado.js',
+    'src/modulos/Autenticacao.js',
   ]);
   return { gas, verificador: new gas.VerificadorDeCredencialLegado(stub) };
 }

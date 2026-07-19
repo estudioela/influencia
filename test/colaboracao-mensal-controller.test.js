@@ -2,13 +2,9 @@ const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
   return loadGas([
-    'src/shared/Envelope.js',
-    'src/domain/MesReferencia.js',
-    'src/domain/CondicaoComercialSnapshot.js',
-    'src/domain/ColaboracaoMensal.js',
-    'src/repository/ColaboracaoMensalRepository.js',
-    'src/service/CompiladorDoMes.js',
-    'src/controller/ColaboracaoMensalController.js',
+    'src/shared/Nucleo.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Parceira.js',
   ]);
 }
 

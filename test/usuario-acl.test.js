@@ -50,7 +50,7 @@ describe('UsuarioACL — aba SIS_IDENTIDADES (SPEC-035 §10.2.1)', () => {
   ];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/UsuarioACL.js']);
+    const gas = loadGas(['src/modulos/Usuario.js']);
     return { gas, acl: new gas.UsuarioACL(aba) };
   }
 
@@ -139,7 +139,7 @@ describe('AdministradorACL — aba BASE_ADMINISTRADORES (SPEC-035 §10.2.2)', ()
   const CABECALHO = ['SUB_PROVIDER', 'NOME_COMPLETO', 'AREA_RESPONSABILIDADE'];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/AdministradorACL.js']);
+    const gas = loadGas(['src/modulos/Autenticacao.js']);
     return { gas, acl: new gas.AdministradorACL(aba) };
   }
 

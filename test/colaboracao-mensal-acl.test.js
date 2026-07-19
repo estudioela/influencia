@@ -46,10 +46,8 @@ function fakeSheet(header) {
 
 function carregar() {
   return loadGas([
-    'src/domain/MesReferencia.js',
-    'src/domain/CondicaoComercialSnapshot.js',
-    'src/domain/ColaboracaoMensal.js',
-    'src/acl/ColaboracaoMensalACL.js',
+    'src/modulos/ColaboracaoMensal.js',
+    'src/modulos/Parceira.js',
   ]);
 }
 
