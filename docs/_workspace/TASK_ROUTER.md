@@ -549,6 +549,23 @@ Toda SPEC deve respeitar, sem reabrir:
   lá (relevante para ADR-010: "migração da planilha antiga") — isso não é
   verificável a partir deste repositório.
 
+> **Atualização (2026-07-19, sessão de limpeza de ambiente):** `NEXT_AGENT.md`
+> e `CONHECIMENTO/` foram **removidos** do repositório (antes só o primeiro
+> estava marcado como obsoleto, sem ser apagado) — preservados no histórico
+> Git (commits `aa5546d` e anteriores). A pergunta em aberto acima **segue
+> sem resposta**: uma auditoria completa do ambiente de desenvolvimento
+> local encontrou evidências de pelo menos dois scriptIds de Apps Script
+> distintos ligados a um possível "V1 em produção" — um reverse-engineered
+> em `docs/04.5-engenharia-reversa/snapshot-v1/` do repositório
+> `estudioela/ela-tear-v1` (scriptId `1jSMRq5wu...`), e outro da própria
+> fase `mae/` deste repositório antes do refactor DDD (scriptId
+> `1fE8w10O3...`, presente no histórico Git daqui, commits de 2026-07-03 a
+> 2026-07-11). Nenhum dos dois foi verificado contra o Google Apps Script
+> real (exigiria `clasp deployments -i <scriptId>` autenticado) — a
+> verificação foi iniciada e interrompida a pedido do responsável do
+> projeto nesta sessão, sem conclusão. **Ainda não verificável a partir
+> daqui; pendência para sessão futura, se relevante.**
+
 ## 7. Dívidas técnicas (achado da FASE 4 pós-SPECs, 2026-07-16)
 
 Auditoria por camada (Domain/ACL+Repository/Service+Controller+Entrypoint).

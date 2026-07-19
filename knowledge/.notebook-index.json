@@ -40,11 +40,31 @@
     "source_id": "dd27bfa3-37d4-4f44-9502-76539e4e46fc"
   },
   "knowledge/specs/TASK_ROUTER.md": {
-    "sha256": "82be4e3d0369c6ff7e7635f57009f5c66e668ea074f02e8a09020b6a8b0e7325",
-    "source_id": "d6093313-68e5-4631-8549-df3410282649"
+    "sha256": "4ed2eaff315ee96f0329ffc2746dcf9525f32d077b0c4322ba06ca45fa8a38db",
+    "source_id": "f0c3d6fb-528b-47ed-a3fb-eaf7cd75371e"
   },
   "knowledge/sessions/HANDOFF_SESSAO_OAUTH_2026-07-18.md": {
     "sha256": "6dc48e671d33ff595955d51e5b97b4e2b616e59eb3f2a3c0733e9712990bb41b",
     "source_id": "4b0ed6bc-bf64-40c8-b952-bb45c7000afe"
+  },
+  "knowledge/archive/REF-005_ARQUITETURA_DE_SOFTWARE.md": {
+    "sha256": "5b8a95c957621cc8a28a6ac1d73bae28211207340391999c12b6e55c17e8200b",
+    "source_id": "37121350-34b0-4d98-8f5d-146878009357"
+  },
+  "knowledge/references/REF-001_GOOGLE_IDENTITY_OAUTH.md": {
+    "sha256": "316d81eafce918878f40ca509441b4ab9d4800ea1042088deccde505231f43b6",
+    "source_id": "5ff0f4ce-96a4-41ea-b2b1-ab3c3086295d"
+  },
+  "knowledge/references/REF-002_MODELO_DE_IDENTIDADE.md": {
+    "sha256": "3a0bdce11c0a51a19b9c52a12b7f3f7404e5f4a548d7bddc6d95c44d6723ce03",
+    "source_id": "8e4922f3-5f3c-4c1d-812c-ffff18998182"
+  },
+  "knowledge/references/REF-003_ONBOARDING_E_BOOTSTRAP.md": {
+    "sha256": "ae9fc84168563c30c0aa53be094ccdfcd0a063c04c4ab60f5f420dcf8ff3d9a4",
+    "source_id": "b56ab288-0084-4ab9-9d1a-06d8b4f02f73"
+  },
+  "knowledge/references/REF-004_SESSAO_E_AUTORIZACAO.md": {
+    "sha256": "a9f1a39fe66ddd4d18b8339d412e15944c427de396ebbed873bb7592efed316b",
+    "source_id": "814f67d9-f672-4936-b7d3-d1c2b17b2bf0"
   }
 }
