@@ -8,7 +8,7 @@ const CLIENT_ID = 'tear-v2.apps.googleusercontent.com';
 const AGORA = new Date('2026-07-17T12:00:00Z'); // epoch segundos: 1784721600
 
 function carregar(fetchImpl) {
-  const gas = loadGas(['src/adapters/ValidadorDeTokenGoogle.js'], {
+  const gas = loadGas(['src/modulos/Autenticacao.js'], {
     UrlFetchApp: { fetch: fetchImpl },
   });
   return { gas, adaptador: new gas.ValidadorDeTokenGoogle(CLIENT_ID) };

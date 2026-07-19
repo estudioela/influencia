@@ -139,7 +139,7 @@ describe('AdministradorACL — aba BASE_ADMINISTRADORES (SPEC-035 §10.2.2)', ()
   const CABECALHO = ['SUB_PROVIDER', 'NOME_COMPLETO', 'AREA_RESPONSABILIDADE'];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/AdministradorACL.js']);
+    const gas = loadGas(['src/modulos/Autenticacao.js']);
     return { gas, acl: new gas.AdministradorACL(aba) };
   }
 

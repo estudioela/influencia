@@ -57,17 +57,9 @@ function montarPortal(abas) {
   return loadGas(
     [
       'src/shared/Nucleo.js',
-      'src/domain/Credencial.js',
-      'src/domain/TokenDeSessao.js',
-      'src/domain/Sessao.js',
+      'src/modulos/Autenticacao.js',
       'src/modulos/Arquivamento.js',
-      'src/domain/Autenticador.js',
       'src/acl/ParceiraACL.js',
-      'src/acl/SessaoACL.js',
-      'src/adapters/VerificadorDeCredencialLegado.js',
-      'src/repository/SessaoRepository.js',
-      'src/service/AcessoPortalService.js',
-      'src/controller/AcessoController.js',
       'src/entrypoint/Portal.js',
     ],
     {

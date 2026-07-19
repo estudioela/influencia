@@ -19,7 +19,7 @@ function fakeCache() {
 }
 
 function montar() {
-  const gas = loadGas(['src/adapters/GuardiaoDeEstadoOAuth.js']);
+  const gas = loadGas(['src/modulos/Autenticacao.js']);
   const cache = fakeCache();
   return { guardiao: new gas.GuardiaoDeEstadoOAuth(cache), cache };
 }

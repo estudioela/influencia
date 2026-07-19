@@ -31,7 +31,7 @@ describe('SessaoACL — aba SESSOES (SPEC-025 §14, ADR-001)', () => {
   const CABECALHO = ['TOKEN', 'PARCEIRA_ID', 'EXPIRA_EM'];
 
   function carregar(aba) {
-    const gas = loadGas(['src/acl/SessaoACL.js']);
+    const gas = loadGas(['src/modulos/Autenticacao.js']);
     return { gas, acl: new gas.SessaoACL(aba) };
   }
 

@@ -10,7 +10,7 @@ const REDIRECT_URI = 'https://script.google.com/macros/s/FAKE/exec';
 
 function montar(respostaToken) {
   const chamadas = [];
-  const gas = loadGas(['src/adapters/AdaptadorOAuthGoogle.js'], {
+  const gas = loadGas(['src/modulos/Autenticacao.js'], {
     UrlFetchApp: {
       fetch: (url, opcoes) => {
         chamadas.push({ url, opcoes });

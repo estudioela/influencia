@@ -2,12 +2,8 @@ const { loadGas } = require('./helpers/gasHarness');
 
 const ARQUIVOS = [
   'src/shared/Nucleo.js',
-  'src/domain/Credencial.js',
-  'src/domain/TokenDeSessao.js',
+  'src/modulos/Autenticacao.js',
   'src/modulos/Arquivamento.js',
-  'src/domain/Sessao.js',
-  'src/domain/Autenticador.js',
-  'src/service/AcessoPortalService.js',
 ];
 
 const AGORA = new Date('2026-07-16T10:00:00Z');

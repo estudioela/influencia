@@ -1,11 +1,8 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 const ARQUIVOS = [
-  'src/domain/Credencial.js',
-  'src/domain/TokenDeSessao.js',
+  'src/modulos/Autenticacao.js',
   'src/modulos/Arquivamento.js',
-  'src/domain/Sessao.js',
-  'src/domain/Autenticador.js',
 ];
 
 function carregar() {
