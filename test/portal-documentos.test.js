@@ -99,7 +99,7 @@ function montarPortal(abas) {
   return loadGas(
     [
       'src/shared/Nucleo.js',
-      'src/domain/MesReferencia.js',
+      'src/modulos/ColaboracaoMensal.js',
       'src/domain/CondicaoComercialSnapshot.js',
       'src/modulos/Briefing.js',
       'src/modulos/Documento.js',

@@ -3,7 +3,7 @@ const { loadGas } = require('./helpers/gasHarness');
 function carregar() {
   return loadGas([
     'src/shared/Nucleo.js',
-    'src/domain/MesReferencia.js',
+    'src/modulos/ColaboracaoMensal.js',
     'src/domain/CodigoRastreio.js',
     'src/domain/EnderecoDeEntrega.js',
     'src/domain/Envio.js',

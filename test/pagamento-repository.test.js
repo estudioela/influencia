@@ -35,7 +35,7 @@ function fakeAba() {
 
 function carregar() {
   const gas = loadGas([
-    'src/domain/MesReferencia.js',
+    'src/modulos/ColaboracaoMensal.js',
     'src/domain/ObrigacaoFinanceira.js',
     'src/acl/PagamentoACL.js',
     'src/repository/PagamentoRepository.js',

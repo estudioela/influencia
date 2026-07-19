@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
-  return loadGas(['src/domain/MesReferencia.js', 'src/domain/ObrigacaoFinanceira.js']);
+  return loadGas(['src/modulos/ColaboracaoMensal.js', 'src/domain/ObrigacaoFinanceira.js']);
 }
 
 describe('ObrigacaoFinanceira — máquina de estados (SPEC-020 §9)', () => {

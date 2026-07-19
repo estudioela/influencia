@@ -49,12 +49,8 @@ function fakeSheet(header) {
 
 function montarFatia(parceiras) {
   const gas = loadGas([
-    'src/domain/MesReferencia.js',
+    'src/modulos/ColaboracaoMensal.js',
     'src/domain/CondicaoComercialSnapshot.js',
-    'src/domain/ColaboracaoMensal.js',
-    'src/acl/ColaboracaoMensalACL.js',
-    'src/repository/ColaboracaoMensalRepository.js',
-    'src/service/CompiladorDoMes.js',
   ]);
   const sheet = fakeSheet(CABECALHO);
   const acl = new gas.ColaboracaoMensalACL(sheet);
