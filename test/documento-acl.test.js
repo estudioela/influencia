@@ -30,7 +30,7 @@ function fakeAba() {
 }
 
 function carregar(sheet) {
-  const gas = loadGas(['src/domain/Documento.js', 'src/acl/DocumentoACL.js']);
+  const gas = loadGas([, 'src/modulos/Documento.js']);
   return { gas, acl: new gas.DocumentoACL(sheet) };
 }
 

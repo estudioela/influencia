@@ -1,7 +1,7 @@
 const { loadGas } = require('./helpers/gasHarness');
 
 function carregar() {
-  return loadGas(['src/domain/CamposDeMesclagem.js', 'src/domain/Documento.js']);
+  return loadGas([, 'src/modulos/Documento.js']);
 }
 
 // Conjunto completo de campos de mesclagem (SPEC-023 §6.1).

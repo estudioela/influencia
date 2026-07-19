@@ -3,9 +3,7 @@ const { loadGas } = require('./helpers/gasHarness');
 function carregar() {
   return loadGas([
     'src/domain/MesReferencia.js',
-    'src/domain/CamposDeMesclagem.js',
-    'src/domain/Documento.js',
-    'src/service/DocumentoService.js',
+    'src/modulos/Documento.js',
   ]);
 }
 
