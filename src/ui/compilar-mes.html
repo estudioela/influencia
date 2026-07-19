@@ -48,9 +48,9 @@
         var lista = document.getElementById('colaboracoes');
         var token = sessionStorage.getItem('tearPortalToken');
 
+        var URL_BASE = <?!= JSON.stringify(ScriptApp.getService().getUrl()) ?>;
         function navegarPara(pagina) {
-          var base = window.top.location.href.split('?')[0];
-          window.top.location.href = base + '?pagina=' + pagina;
+          window.top.location.href = URL_BASE + '?pagina=' + pagina;
         }
         if (!token) navegarPara('portal-login');
 

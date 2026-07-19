@@ -74,9 +74,57 @@
       <section id="painelEspera" class="paper-panel" hidden>
         <p id="mensagemEspera"></p>
       </section>
+
+      <!-- TEAR-DIAG temporário — painel de diagnóstico visual do login.
+           Remover esta section e o bloco de script correspondente antes do
+           commit final, junto com todas as chamadas diagLog(). -->
+      <section
+        id="tearDiagPanel"
+        style="margin-top:24px;padding:12px;border:2px solid #b42318;background:#fff8f7;font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;max-height:400px;overflow:auto;"
+      >
+        <strong style="color:#b42318;">TEAR-DIAG — painel temporário (remover antes do commit final)</strong>
+      </section>
     </main>
 
     <script>
+      // TEAR-DIAG temporário — remover esta função e todas as chamadas
+      // diagLog(...) antes do commit final.
+      var tearDiagPanel = document.getElementById('tearDiagPanel');
+      function diagSerializar(valor) {
+        if (valor instanceof Error) {
+          return 'Error: ' + valor.message + (valor.stack ? '\n' + valor.stack : '');
+        }
+        try {
+          return JSON.stringify(valor, null, 2);
+        } catch (e) {
+          return String(valor);
+        }
+      }
+      function diagLog(etapa, dados) {
+        var linha = '[' + new Date().toISOString().slice(11, 23) + '] ' + etapa;
+        if (dados !== undefined) {
+          linha += '\n' + diagSerializar(dados);
+        }
+        console.log('[TEAR-DIAG] ' + etapa, dados);
+        var bloco = document.createElement('div');
+        bloco.style.borderTop = '1px solid #f7c6c1';
+        bloco.style.marginTop = '8px';
+        bloco.style.paddingTop = '8px';
+        bloco.textContent = linha;
+        tearDiagPanel.appendChild(bloco);
+      }
+      window.addEventListener('error', function (evento) {
+        diagLog('EXCEÇÃO NÃO TRATADA (window.onerror)', {
+          mensagem: evento.message,
+          arquivo: evento.filename,
+          linha: evento.lineno + ':' + evento.colno,
+          stack: evento.error && evento.error.stack,
+        });
+      });
+      window.addEventListener('unhandledrejection', function (evento) {
+        diagLog('PROMISE REJEITADA NÃO TRATADA', diagSerializar(evento.reason));
+      });
+
       var mensagem = document.getElementById('mensagem');
       var painelLogin = document.getElementById('painelLogin');
       var painelCandidata = document.getElementById('painelCandidata');
@@ -95,9 +143,24 @@
         mensagem.textContent = texto || '';
       }
 
+      // TEAR-DIAG: base vem do servidor (ScriptApp.getService().getUrl()),
+      // não de window.top.location.href — ler .href de window.top lança
+      // SecurityError (cross-origin: o conteúdo do HtmlService roda num
+      // iframe sandboxed em origem diferente da top-level script.google.com).
+      // Escrever em window.top.location.href é permitido (por isso o
+      // redirect para o Google, write-only, sempre funcionou); é a LEITURA
+      // que quebrava aqui e impedia o redirect ao dashboard pós-login.
+      var URL_BASE = <?!= JSON.stringify(ScriptApp.getService().getUrl()) ?>;
+      // MVP TEMPORÁRIO — ver bloco isolado em Portal.js (MVP_ACESSO_ABERTO).
+      var MVP_ACESSO_ABERTO = <?!= JSON.stringify(MVP_ACESSO_ABERTO) ?>;
       function navegarPara(pagina) {
-        var base = window.top.location.href.split('?')[0];
-        window.top.location.href = base + '?pagina=' + pagina;
+        diagLog('navegarPara', { pagina: pagina, URL_BASE: URL_BASE });
+        try {
+          window.top.location.href = URL_BASE + '?pagina=' + pagina;
+        } catch (erro) {
+          diagLog('navegarPara — EXCEÇÃO ao navegar', { mensagem: erro.message, stack: erro.stack });
+          throw erro;
+        }
       }
 
       function mostrarSomente(painel) {
@@ -112,11 +175,13 @@
       }
 
       function tratarResultadoEntrada(resposta) {
+        diagLog('tratarResultadoEntrada — resposta completa de entrarComCodigoOAuth', resposta);
         if (!resposta.success) {
           return tratarErroDeEntrada(resposta.error);
         }
         var dados = resposta.data;
         if (dados.status === 'AUTENTICADO') {
+          diagLog('AUTENTICADO', { papel: dados.papel, token_presente: !!dados.token, expiraEm: dados.expiraEm });
           avisar('');
           sessionStorage.setItem('tearPortalToken', dados.token);
           navegarPara(dados.papel === 'ADMINISTRADOR' ? 'admin' : 'portal-dashboard');
@@ -149,6 +214,7 @@
       };
 
       function tratarErroDeEntrada(erro) {
+        diagLog('tratarErroDeEntrada — erro retornado pelo backend (resposta.success=false)', erro);
         if (erro && MENSAGENS_DE_ESPERA[erro.codigo]) {
           mensagemEspera.textContent = MENSAGENS_DE_ESPERA[erro.codigo];
           mostrarSomente(painelEspera);
@@ -225,9 +291,11 @@
       // devolve a URL de autorização; a navegação é top-level (sai do
       // iframe sandbox do HtmlService, raiz da incompatibilidade com GIS).
       document.getElementById('entrarComGoogle').addEventListener('click', function () {
+        diagLog('clique entrarComGoogle');
         avisar('Redirecionando para o Google…');
         google.script.run
           .withSuccessHandler(function (resposta) {
+            diagLog('iniciarLoginComGoogle — callback success', resposta);
             if (!resposta.success) {
               avisar(resposta.error.mensagem);
               return;
@@ -235,20 +303,34 @@
             window.top.location.href = resposta.data.urlDeAutorizacao;
           })
           .withFailureHandler(function (erro) {
+            diagLog('iniciarLoginComGoogle — callback failure (falha de transporte google.script.run)', erro);
             avisar(erro.message);
           })
           .iniciarLoginComGoogle();
       });
 
-      // ADR-013: callback do Authorization Code Flow. O Google devolve
-      // code/state na URL /exec; doGet segue roteador puro — é o cliente
-      // que lê os parâmetros (google.script.url.getLocation) e completa a
-      // troca no backend.
-      if (!token) {
+      // MVP TEMPORÁRIO: acesso aberto sem OAuth (ver Portal.js). Isola o
+      // fluxo real (ADR-013) no ramo `else` abaixo, intocado.
+      if (!token && MVP_ACESSO_ABERTO) {
+        avisar('Entrando (MVP sem login)…');
+        diagLog('MVP_ACESSO_ABERTO — chamando iniciarSessaoMvpTemporaria');
+        google.script.run
+          .withSuccessHandler(tratarResultadoEntrada)
+          .withFailureHandler(function (erro) {
+            diagLog('iniciarSessaoMvpTemporaria — callback failure', erro);
+            avisar(erro.message);
+          })
+          .iniciarSessaoMvpTemporaria();
+      } else if (!token) {
+        // ADR-013: callback do Authorization Code Flow. O Google devolve
+        // code/state na URL /exec; doGet segue roteador puro — é o cliente
+        // que lê os parâmetros (google.script.url.getLocation) e completa a
+        // troca no backend.
         google.script.url.getLocation(function (localizacao) {
           var codigo = localizacao.parameter.code;
           var state = localizacao.parameter.state;
           var erroDoProvedor = localizacao.parameter.error;
+          diagLog('getLocation', { code_presente: !!codigo, state_presente: !!state, error: erroDoProvedor || null });
           if (erroDoProvedor) {
             mostrarSomente(painelLogin);
             avisar(
@@ -259,15 +341,34 @@
             return;
           }
           if (!codigo) {
+            diagLog('getLocation — sem code, primeiro acesso (só botão de login)');
             return; // primeiro acesso: só o botão de login.
           }
           avisar('Entrando…');
+          diagLog('chamando entrarComCodigoOAuth');
           google.script.run
             .withSuccessHandler(tratarResultadoEntrada)
             .withFailureHandler(function (erro) {
+              diagLog('entrarComCodigoOAuth — callback failure (falha de transporte google.script.run)', erro);
               avisar(erro.message);
             })
             .entrarComCodigoOAuth({ code: codigo, state: state });
+
+          // TEAR-DIAG temporário: busca o traço gravado no backend
+          // (CacheService) independente de success/failure já terem
+          // disparado — cobre o caso da chamada acima nunca retornar.
+          // Remover junto com obterDiagTemporario() em Portal.js.
+          setTimeout(function () {
+            diagLog('buscando trace server-side via obterDiagTemporario (5s depois)');
+            google.script.run
+              .withSuccessHandler(function (resposta) {
+                diagLog('obterDiagTemporario — resultado', resposta);
+              })
+              .withFailureHandler(function (erro) {
+                diagLog('obterDiagTemporario — falhou', erro);
+              })
+              .obterDiagTemporario();
+          }, 5000);
         });
       }
     </script>

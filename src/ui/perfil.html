@@ -73,9 +73,9 @@
 
       // Scaffolding temporário (FASE 3 pós-SPECs) — mesmo padrão de
       // navegação das demais páginas do Portal (window.top, sem round-trip).
+      var URL_BASE = <?!= JSON.stringify(ScriptApp.getService().getUrl()) ?>;
       function navegarPara(pagina) {
-        var base = window.top.location.href.split('?')[0];
-        window.top.location.href = base + '?pagina=' + pagina;
+        window.top.location.href = URL_BASE + '?pagina=' + pagina;
       }
 
       var token = sessionStorage.getItem('tearPortalToken');
