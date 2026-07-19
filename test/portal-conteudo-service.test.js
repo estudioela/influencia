@@ -7,9 +7,7 @@ function montar() {
     'src/domain/IdentificadorDeEntrega.js',
     'src/domain/LinkDoMaterial.js',
     'src/domain/Entrega.js',
-    'src/domain/CalculadoraDeAprovacao.js',
-    'src/domain/BlocoDeFormato.js',
-    'src/domain/Briefing.js',
+    'src/modulos/Briefing.js',
     'src/modulos/PortalConteudo.js',
   ]);
 
