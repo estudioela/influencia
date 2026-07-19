@@ -920,7 +920,13 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Nota (limpeza 2026-07-19):** os artefatos de sessão da Fase 1–3
   (`UI_AUDIT_REPORT.md`, `UI_DESIGN_SYSTEM_GAP_ANALYSIS.md`,
   `UI_IMPLEMENTATION_ROADMAP.md`, `UI_VISUAL_HANDOFF.md`,
-  `NOTEBOOKLM_HANDOFF_UI.md`, `docs/stitch-export/`, `auditoria/`) foram
+  `NOTEBOOKLM_HANDOFF_UI.md`, `UI_FINAL_REVIEW.md`, `auditoria/`) foram
   removidos por já estarem concluídos e aprovados; as pendências não
-  bloqueantes acima foram preservadas nesta seção. `UI_FINAL_REVIEW.md`
-  foi mantido (revisão pré-merge da PR #40 ainda em andamento).
+  bloqueantes acima foram preservadas nesta seção.
+- **Correção de caminho (2026-07-19, auditoria fase Implementação):** esta
+  nota listava `docs/stitch-export/` entre os artefatos removidos — o
+  diretório **continua presente no repositório**
+  (`docs/stitch-export/DESIGN.md` + `docs/stitch-export/screens/`, 9 telas)
+  e segue sendo a referência visual Stitch oficial. `UI_FINAL_REVIEW.md`
+  também já não existe (a nota anterior dizia "mantido"); a PR #40 já foi
+  revisada e mergeada em `origin/main` (merge commit `c96e618`).
