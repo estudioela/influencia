@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TEAR - Payments</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;700&amp;family=Archivo+Narrow:wght@300;400;500;700&amp;family=Hanken+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed": "#410002",
+                      "tertiary-container": "#666561",
+                      "surface-dim": "#ded9d8",
+                      "secondary": "#a63931",
+                      "on-tertiary-fixed": "#1c1c19",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#cd0005",
+                      "secondary-container": "#ff7b6f",
+                      "on-error-container": "#93000a",
+                      "surface-bright": "#fef8f8",
+                      "primary-fixed": "#ffdad5",
+                      "primary-fixed-dim": "#ffb4a9",
+                      "inverse-surface": "#323030",
+                      "secondary-fixed-dim": "#ffb4ab",
+                      "tertiary-fixed-dim": "#c8c6c2",
+                      "surface-container": "#f2edec",
+                      "on-primary-container": "#ffdbd6",
+                      "tertiary": "#4e4d4a",
+                      "surface-container-high": "#ece7e6",
+                      "on-secondary-container": "#731311",
+                      "surface-container-highest": "#e6e1e1",
+                      "outline-variant": "#e8bdb6",
+                      "surface-container-lowest": "#ffffff",
+                      "surface": "#fef8f8",
+                      "on-tertiary-fixed-variant": "#474743",
+                      "primary": "#9f0003",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#930002",
+                      "on-primary": "#ffffff",
+                      "inverse-primary": "#ffb4a9",
+                      "inverse-on-surface": "#f5efef",
+                      "on-surface-variant": "#5e3f3b",
+                      "surface-variant": "#e6e1e1",
+                      "on-tertiary-container": "#e6e3de",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#c00004",
+                      "on-surface": "#1d1b1b",
+                      "surface-container-low": "#f8f2f2",
+                      "on-secondary-fixed-variant": "#86211d",
+                      "on-background": "#1d1b1b",
+                      "tertiary-fixed": "#e5e2dd",
+                      "error": "#ba1a1a",
+                      "background": "#fef8f8",
+                      "on-primary-fixed": "#410000",
+                      "outline": "#926e69",
+                      "secondary-fixed": "#ffdad6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "s-2": "8px",
+                      "container-max": "1026px",
+                      "s-6": "32px",
+                      "gutter": "40px",
+                      "s-4": "16px",
+                      "s-8": "64px",
+                      "s-3": "12px",
+                      "s-9": "96px",
+                      "s-1": "4px",
+                      "s-5": "24px",
+                      "s-10": "140px",
+                      "s-7": "48px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Noto Serif"],
+                      "display-lg-mobile": ["Noto Serif"],
+                      "caption": ["Archivo Narrow"],
+                      "body-s": ["Hanken Grotesk"],
+                      "h3": ["Noto Serif"],
+                      "body-base": ["Hanken Grotesk"],
+                      "display-xl": ["Noto Serif"],
+                      "display-sm": ["Noto Serif"],
+                      "display-md": ["Noto Serif"],
+                      "body-l": ["Hanken Grotesk"],
+                      "micro": ["Hanken Grotesk"],
+                      "h4": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "display-lg": ["64px", {"lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300"}],
+                      "display-lg-mobile": ["36px", {"lineHeight": "1.10", "fontWeight": "300"}],
+                      "caption": ["13px", {"lineHeight": "1.45", "fontWeight": "300"}],
+                      "body-s": ["15px", {"lineHeight": "1.60", "fontWeight": "300"}],
+                      "h3": ["26px", {"lineHeight": "1.10", "fontWeight": "300"}],
+                      "body-base": ["16px", {"lineHeight": "1.60", "fontWeight": "300"}],
+                      "display-xl": ["96px", {"lineHeight": "0.95", "letterSpacing": "0.02em", "fontWeight": "300"}],
+                      "display-sm": ["36px", {"lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300"}],
+                      "display-md": ["48px", {"lineHeight": "1.05", "letterSpacing": "0.02em", "fontWeight": "300"}],
+                      "body-l": ["18px", {"lineHeight": "1.60", "fontWeight": "300"}],
+                      "micro": ["11px", {"lineHeight": "1.60", "letterSpacing": "0.18em", "fontWeight": "500"}],
+                      "h4": ["20px", {"lineHeight": "1.10", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { background-color: #fef8f8; color: #1d1b1b; }
+        .hairline-b { border-bottom: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-t { border-top: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-r { border-right: 1px solid rgba(29, 27, 27, 0.18); }
+        .hairline-l { border-left: 1px solid rgba(29, 27, 27, 0.18); }
+        
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            width: 208px;
+            border-radius: 9999px;
+            background-color: #9f0003;
+            color: #ffffff;
+            font-family: 'Hanken Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: lowercase;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover {
+            background-color: transparent;
+            color: #9f0003;
+            border-color: #9f0003;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            font-family: 'Hanken Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border: 1px solid;
+            border-radius: 0; /* Sharp corners */
+        }
+        .status-pending { border-color: rgba(29, 27, 27, 0.4); color: #1d1b1b; }
+        .status-processing { border-color: #9f0003; color: #9f0003; }
+        .status-paid { background-color: #1d1b1b; border-color: #1d1b1b; color: #ffffff; }
+        .status-cancelled { border-color: rgba(29, 27, 27, 0.2); color: rgba(29, 27, 27, 0.5); text-decoration: line-through; }
+    </style>
+</head>
+<body class="flex min-h-screen bg-background">
+<!-- Desktop Side Navigation (hidden md:flex) -->
+<nav class="hidden md:flex flex-col py-s-8 px-s-4 h-full gap-y-s-2 bg-surface border-r border-on-surface/10 docked left-0 h-screen w-64 fixed z-10">
+<div class="mb-s-8 pl-s-2">
+<h1 class="font-display-md text-display-md font-light text-primary tracking-tight">TEAR</h1>
+<p class="font-caption text-caption text-on-surface-variant uppercase tracking-[0.18em] mt-s-1">Influence Management</p>
+</div>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+            Dashboard
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">business</span>
+            Brands
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">handshake</span>
+            Partners
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">group_work</span>
+            Collaborations
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">description</span>
+            Briefings
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">folder_open</span>
+            Materials
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">verified</span>
+            Approvals
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">local_shipping</span>
+            Logistics
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-primary border-l-2 border-primary pl-s-2 font-bold flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+            Payments
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">assignment</span>
+            Contracts
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">history</span>
+            History
+        </a>
+<a class="font-caption text-caption uppercase tracking-[0.18em] text-on-surface-variant pl-s-2 hover:text-primary hover:bg-surface-container-low transition-all duration-300 flex items-center gap-s-3 py-s-2 rounded-none mt-auto" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+            Settings
+        </a>
+<div class="mt-s-4">
+<button class="btn-primary w-full">new briefing</button>
+</div>
+</nav>
+<!-- Mobile Top Navigation (md:hidden) -->
+<header class="md:hidden flex justify-between items-center w-full px-s-5 h-20 bg-background border-b border-on-surface/10 fixed top-0 z-20">
+<div class="font-display-sm text-display-sm font-light text-primary tracking-tight">TEAR</div>
+<div class="flex gap-s-4 text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+<span class="material-symbols-outlined">menu</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full md:pl-64 pt-20 md:pt-0 flex flex-col items-center">
+<div class="w-full max-w-container-max px-gutter py-s-10">
+<!-- Header Section -->
+<div class="mb-s-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-s-6">
+<div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">Payments</h2>
+<p class="font-body-l text-body-l text-on-surface-variant mt-s-2 max-w-md">Financial overview and transaction status across active collaborations.</p>
+</div>
+<button class="btn-primary flex-shrink-0">export report</button>
+</div>
+<!-- Summary Blocks (High Contrast Ground Flips) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-0 hairline-t hairline-l hairline-r mb-s-10">
+<div class="bg-surface-container p-s-6 hairline-b hairline-r flex flex-col">
+<span class="font-micro text-micro uppercase text-on-surface-variant mb-s-4">Total Outstanding</span>
+<span class="font-display-sm text-display-sm text-on-surface">$124,500</span>
+<span class="font-body-s text-body-s text-on-surface-variant mt-s-1">Across 14 transactions</span>
+</div>
+<div class="bg-primary p-s-6 hairline-b hairline-r flex flex-col text-on-primary">
+<span class="font-micro text-micro uppercase text-on-primary/80 mb-s-4">Pending Approval</span>
+<span class="font-display-sm text-display-sm">$32,100</span>
+<span class="font-body-s text-body-s text-on-primary/80 mt-s-1">Requires immediate attention</span>
+</div>
+<div class="bg-surface p-s-6 hairline-b flex flex-col">
+<span class="font-micro text-micro uppercase text-on-surface-variant mb-s-4">Processed (YTD)</span>
+<span class="font-display-sm text-display-sm text-on-surface">$845,200</span>
+<span class="font-body-s text-body-s text-on-surface-variant mt-s-1">Completed successfully</span>
+</div>
+</div>
+<!-- Filters & Search -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-s-6 gap-s-4 hairline-b pb-s-4">
+<div class="flex gap-s-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+<button class="font-micro text-micro uppercase tracking-widest text-primary border-b border-primary pb-s-1 whitespace-nowrap">All</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-on-surface pb-s-1 whitespace-nowrap">Pending</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-on-surface pb-s-1 whitespace-nowrap">Processing</button>
+<button class="font-micro text-micro uppercase tracking-widest text-on-surface-variant hover:text-on-surface pb-s-1 whitespace-nowrap">Paid</button>
+</div>
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-transparent border-0 border-b border-on-surface/20 pl-s-6 py-s-2 font-body-s text-body-s text-on-surface focus:ring-0 focus:border-primary transition-colors rounded-none placeholder-on-surface-variant/50" placeholder="Search beneficiary..." type="text"/>
+</div>
+</div>
+<!-- Financial Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="hairline-b">
+<th class="py-s-4 pr-s-4 font-micro text-micro text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap">Beneficiary</th>
+<th class="py-s-4 px-s-4 font-micro text-micro text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap">Collaboration</th>
+<th class="py-s-4 px-s-4 font-micro text-micro text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap text-right">Amount</th>
+<th class="py-s-4 px-s-4 font-micro text-micro text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap">Due Date</th>
+<th class="py-s-4 pl-s-4 font-micro text-micro text-on-surface-variant uppercase tracking-widest font-normal whitespace-nowrap text-right">Status</th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 1: Processing -->
+<tr class="hairline-b hover:bg-surface-container-low transition-colors group">
+<td class="py-s-5 pr-s-4 align-top">
+<div class="font-h4 text-h4 text-on-surface">Atelier Studio</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">INV-2023-089</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Autumn Campaign</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">Creative Direction</div>
+</td>
+<td class="py-s-5 px-s-4 align-top text-right">
+<div class="font-h3 text-h3 text-on-surface">$12,500</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">USD</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Oct 15, 2023</div>
+</td>
+<td class="py-s-5 pl-s-4 align-top text-right">
+<span class="status-badge status-processing">Processing</span>
+</td>
+</tr>
+<!-- Row 2: Pending (Highlight) -->
+<tr class="hairline-b bg-surface-container hover:bg-surface-container-high transition-colors group">
+<td class="py-s-5 pr-s-4 align-top pl-s-4">
+<div class="font-h4 text-h4 text-on-surface">Lumina Agency</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">INV-2023-092</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Winter Editorial</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">Photography</div>
+</td>
+<td class="py-s-5 px-s-4 align-top text-right">
+<div class="font-h3 text-h3 text-primary">$32,100</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">USD</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-primary font-bold">Oct 12, 2023</div>
+<div class="font-caption text-caption text-primary mt-1">Overdue</div>
+</td>
+<td class="py-s-5 pl-s-4 pr-s-4 align-top text-right">
+<span class="status-badge status-pending">Pending</span>
+</td>
+</tr>
+<!-- Row 3: Paid -->
+<tr class="hairline-b hover:bg-surface-container-low transition-colors group">
+<td class="py-s-5 pr-s-4 align-top">
+<div class="font-h4 text-h4 text-on-surface">Vanguard Media</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">INV-2023-074</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Brand Relaunch</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">PR Strategy</div>
+</td>
+<td class="py-s-5 px-s-4 align-top text-right">
+<div class="font-h3 text-h3 text-on-surface">$45,000</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">EUR</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Sep 30, 2023</div>
+</td>
+<td class="py-s-5 pl-s-4 align-top text-right">
+<span class="status-badge status-paid">Paid</span>
+</td>
+</tr>
+<!-- Row 4: Cancelled -->
+<tr class="hairline-b hover:bg-surface-container-low transition-colors group opacity-60">
+<td class="py-s-5 pr-s-4 align-top">
+<div class="font-h4 text-h4 text-on-surface">Echo Sound</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">INV-2023-081</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Podcast Series</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">Audio Production</div>
+</td>
+<td class="py-s-5 px-s-4 align-top text-right">
+<div class="font-h3 text-h3 text-on-surface">$8,200</div>
+<div class="font-caption text-caption text-on-surface-variant mt-1">USD</div>
+</td>
+<td class="py-s-5 px-s-4 align-top">
+<div class="font-body-base text-body-base text-on-surface">Oct 05, 2023</div>
+</td>
+<td class="py-s-5 pl-s-4 align-top text-right">
+<span class="status-badge status-cancelled">Cancelled</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination (Minimalist) -->
+<div class="mt-s-8 flex justify-between items-center hairline-t pt-s-4">
+<span class="font-caption text-caption text-on-surface-variant">Showing 1-4 of 42 records</span>
+<div class="flex gap-s-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors disabled:opacity-30"><span class="material-symbols-outlined">arrow_left_alt</span></button>
+<button class="text-on-surface hover:text-primary transition-colors"><span class="material-symbols-outlined">arrow_right_alt</span></button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

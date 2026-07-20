@@ -1,0 +1,94 @@
+:root {
+  /* Cor — Estúdio Elã / TEAR Editorial (docs/stitch-export/DESIGN.md) */
+  --color-primary: #9f0003;
+  --color-primary-container: #cd0005;
+  --color-on-primary: #ffffff;
+
+  --color-surface: #fef8f8;
+  --color-surface-container-low: #f8f2f2;
+  --color-surface-container: #f2edec;
+  --color-surface-container-high: #ece7e6;
+
+  --color-on-surface: #1d1b1b;
+  --color-on-surface-variant: #5e3f3b;
+  --color-outline: rgba(29, 27, 27, 0.18);
+  --color-outline-strong: rgba(29, 27, 27, 0.4);
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Estados — docs/design/DESIGN_SYSTEM.md §2.2 */
+  --color-success: #2e7d32;
+  --color-success-container: #e3f1e4;
+
+  /* Tipografia */
+  --font-display: 'Noto Serif', Georgia, serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-caption: 'Archivo Narrow', system-ui, sans-serif;
+
+  /* Espaçamento — base 8px (docs/design/DESIGN_SYSTEM.md §4.1) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Raio — ADR-002: Absolute Flatness, radius 0 exceto pill de CTA */
+  --radius-none: 0;
+  --radius-pill: 9999px;
+
+  color-scheme: light;
+  color: var(--color-on-surface);
+  background: var(--color-surface);
+  font: 16px/1.6 var(--font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}

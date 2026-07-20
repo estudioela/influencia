@@ -33,7 +33,7 @@
 |---|---|---|
 | `WORKFLOW.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; dependências entre SPECs já absorvidas por este roteador, ver SPEC-003 D-01) |
 | `PRD.md` | `docs/PRD.md` | no repo |
-| `CONTRATO_SOBERANO.md` | `CONTRATO_SOBERANO.md` (raiz) | no repo |
+| `CONTRATO_SOBERANO.md` | `docs/history/CONTRATO_SOBERANO.md` | no repo |
 | `ADR-001` (enums/MesReferencia/promoção) | `docs/adrs/ADR-001-FECHAMENTO-DE-CONTRATO-E-ENUMS.md` | no repo |
 | `ADR — Linguagem Ubíqua` | `docs/adrs/ADR-003-linguagem-ubiqua-do-dominio.md` | no repo (numeração a confirmar) |
 | `ADR-002 — Frontend Foundation` | `docs/adrs/ADR-002-frontend-foundation.md` | no repo |
@@ -606,6 +606,14 @@ Corrigidas (FASE 4.1, decisão explícita do responsável, 2026-07-16, suíte 10
   "ativação" referente ao vínculo Ativa/Inativa da Parceira foi preservado
   — é um conceito diferente, não tocado).
 
+**Dívida registrada (saneamento de infraestrutura, 2026-07-19):**
+`docs/design/DESIGN_SYSTEM.md` traz tokens desatualizados (paleta `#BC0004`,
+cards com radius 16px, sombras discretas) que conflitam com a paleta e as
+regras visuais já adotadas em `ADR-002-frontend-foundation.md` (`#CD0005`,
+radius 0, "Absolute Flatness", zero box-shadow) e com o export elã/Stitch
+em `docs/stitch-export/`. Atualizar `DESIGN_SYSTEM.md` para alinhar os
+tokens ao ADR-002 antes da implementação frontend.
+
 ## 8. Preparação para deploy (FASE 6 pós-SPECs, 2026-07-16)
 
 Ver `docs/_workspace/DEPLOY_CHECKLIST.md` (checklist completo de pré-deploy
@@ -912,7 +920,142 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Nota (limpeza 2026-07-19):** os artefatos de sessão da Fase 1–3
   (`UI_AUDIT_REPORT.md`, `UI_DESIGN_SYSTEM_GAP_ANALYSIS.md`,
   `UI_IMPLEMENTATION_ROADMAP.md`, `UI_VISUAL_HANDOFF.md`,
-  `NOTEBOOKLM_HANDOFF_UI.md`, `docs/stitch-export/`, `auditoria/`) foram
+  `NOTEBOOKLM_HANDOFF_UI.md`, `UI_FINAL_REVIEW.md`, `auditoria/`) foram
   removidos por já estarem concluídos e aprovados; as pendências não
-  bloqueantes acima foram preservadas nesta seção. `UI_FINAL_REVIEW.md`
-  foi mantido (revisão pré-merge da PR #40 ainda em andamento).
+  bloqueantes acima foram preservadas nesta seção.
+- **Correção de caminho (2026-07-19, auditoria fase Implementação):** esta
+  nota listava `docs/stitch-export/` entre os artefatos removidos — o
+  diretório **continua presente no repositório**
+  (`docs/stitch-export/DESIGN.md` + `docs/stitch-export/screens/`, 9 telas)
+  e segue sendo a referência visual Stitch oficial. `UI_FINAL_REVIEW.md`
+  também já não existe (a nota anterior dizia "mantido"); a PR #40 já foi
+  revisada e mergeada em `origin/main` (merge commit `c96e618`).
+
+---
+
+## 15. Implementação paralela `tear-v2-app` (Laravel + React) — achado de governança (2026-07-20)
+
+- **O que é:** um segundo sistema, independente do descrito neste roteador
+  (GAS + Google Sheets, `src/`, `clasp`), vive em `tear-v2-app/` —
+  `tear-v2-app/backend` (Laravel 12 + Sanctum + Spatie Permission) e
+  `tear-v2-app/frontend` (React 19 + Vite + TypeScript). Nasceu nesta mesma
+  branch (`feat/ui-design-system-ela`) em 7 commits (`ee3557f`…`f85264b`,
+  2026-07-19), sem nenhuma SPEC, ADR ou entrada neste roteador cobrindo-o —
+  achado de auditoria ao iniciar o fechamento do fluxo de cadastro de
+  influenciadora nesse stack.
+- **Não substitui nem estende as SPECs acima:** este roteador segue sendo a
+  fonte de verdade do sistema GAS (em produção). `tear-v2-app` é um esforço
+  paralelo; as regras de negócio RN-01/RN-02/RN-03 e RF-001–RF-004 do
+  `docs/PRD.md` (§6.1/§7/§9) foram reaproveitadas como referência por serem
+  agnósticas de stack, mas nenhuma SPEC formal foi aberta.
+- **Estado em 2026-07-20 (fechamento do cadastro de influenciadora):**
+  model `Parceira` (nasce `Inativa`, RN-01), CRUD administrativo
+  (`ParceiraController`, atrás de `auth:sanctum`) e agora rota pública de
+  cadastro (`POST /api/parceiras/cadastro`, sem auth, `throttle:6,1`) via
+  `CadastroPublicoController`, com página pública `/cadastro` no frontend
+  (`PublicCadastroPage.tsx`). RN-02 (endereço automático por CEP) **não
+  implementado** — débito registrado, decisão do responsável do projeto em
+  2026-07-20 de deixar para uma entrega futura.
+- ✅ **Resolvida (2026-07-20):** decidido continuar cobrindo `tear-v2-app`
+  por este mesmo roteador, nova entrada por módulo — ver "Módulo Campanhas /
+  Colaborações" abaixo, primeiro módulo registrado nesse padrão.
+- **Fluxo administrativo de aprovação de parceiras (2026-07-20):** primeiro
+  fluxo operacional do admin implementado (cadastro público → admin lista
+  pendentes → abre perfil → aprova → status muda para `Ativa`). Reaproveita
+  o enum binário já existente (`Ativa`/`Inativa`, sem novo estado
+  "pendente" — `Inativa` já cumpre esse papel) para não reabrir o mapeamento
+  fechado do ADR-001 nem exigir ADR novo. Adicionado apenas: colunas
+  `aprovado_por`/`aprovado_em` (auditoria, migration aditiva), método
+  `Parceira::aprovar(User $admin)` (único ponto de escrita de status, RN-01),
+  endpoint `PATCH /api/parceiras/{id}/aprovar` protegido por
+  `role:ADMIN` (primeiro uso do `spatie/laravel-permission` já instalado
+  mas até então sem nenhuma policy/gate aplicada), filtro
+  `GET /api/parceiras?status=`, e nas telas: toggle "novas inscrições" em
+  `ParceirasListPage`, botão "aprovar" em `ParceiraProfilePage` (visível só
+  para `role === 'ADMIN'`) e card "Aprovações" do `Dashboard` com contagem
+  real. Débito conhecido, não endereçado aqui (fora de escopo desta
+  entrega): as demais rotas de `parceiras` (`index`/`show`/`update`)
+  continuam sem gate de role — qualquer usuário autenticado ainda lê/edita
+  qualquer parceira.
+- **Módulo Campanhas / Colaborações (2026-07-20):** primeira vertical slice
+  do fluxo de campanha, resolvendo a pendência acima ("decidir se este
+  roteador passa a cobrir `tear-v2-app`") a favor de continuar cobrindo por
+  aqui, mesma seção. Sem ADR/SPEC formal — decisão explícita do responsável
+  do projeto nesta entrega (documentação completa fica para consolidação
+  futura via NotebookLM); domínio aprovado em conversa antes da execução:
+  - **Modelo:** três entidades novas, nenhuma reabre `Parceira` (que
+    permanece só cadastral/perfil, sem campo de condição comercial):
+    `Marca` (cadastro interno gerido por ADMIN — nome, contato, CNPJ,
+    status `Ativa`/`Inativa`; **sem** login/tenant próprio, decisão
+    explícita de escopo — nota também no PRD §11/§12/§13, que hoje trata
+    suporte a múltiplas marcas como fora de escopo/futuro não confirmado:
+    esta entrega abre essa porta arquiteturalmente, sem implementar acesso
+    externo), `Campanha` (pertence a uma `Marca`; `data_inicio`/`data_fim`
+    livres, sem amarração a `MesReferencia`/ciclo mensal do domínio legado
+    GAS; enum `status` uppercase `PLANEJADA`/`ATIVA`/`ENCERRADA`/
+    `CANCELADA`, transição só manual pelo ADMIN) e `ParticipacaoNaCampanha`
+    (vínculo Campanha×Parceira; carrega a condição comercial específica
+    daquele vínculo — `valor_contratado`, `reels_qtd`/`carrossel_qtd`/
+    `stories_qtd` — e enum `status` uppercase `ATIVA`/`CANCELADA`).
+  - **RN-C01…C04 (rascunho do agente, aprovadas em conversa antes da
+    execução):** só Parceira `Ativa` pode ser vinculada (`Rule::exists`
+    com `where('status','Ativa')` na FormRequest); uma Parceira não pode
+    ter duas participações na mesma Campanha (`unique(campanha_id,
+    parceira_id)` + `Rule::unique` na validação); nenhum `destroy` em
+    nenhum recurso novo — remover vínculo é soft (`status → CANCELADA`),
+    preservando histórico (mesma restrição "não apagar dados" das demais
+    SPECs); FKs `restrictOnDelete()` (não cascade) nas 3 tabelas.
+  - **Backend:** migrations `marcas`/`campanhas`/`participacoes_na_campanha`
+    → models com relacionamentos (`Marca::campanhas`, `Campanha::marca`/
+    `::participacoes`, `ParticipacaoNaCampanha::campanha`/`::parceira`) →
+    FormRequests/Resources/Controllers no mesmo padrão de
+    `ParceiraController` → rotas em `routes/api.php`
+    (`GET/POST /api/marcas`, `GET/POST /api/campanhas`,
+    `GET/POST /api/campanhas/{campanha}/participacoes`,
+    `PATCH /api/participacoes/{participacao}`; leitura aberta a qualquer
+    autenticado, escrita atrás de `role:ADMIN`, mesmo padrão parcial já
+    usado em `parceiras.aprovar`). 30 testes novos (`MarcaTest`,
+    `CampanhaTest`, `ParticipacaoNaCampanhaTest`), suíte completa 49/49
+    verde, `vendor/bin/pint --test` limpo.
+  - **Frontend:** `lib/marcas.ts`/`campanhas.ts`/`participacoes.ts` +
+    componentes novos `SelectField` (reaproveita `TextField.module.css`) e
+    `Badge` (genérico, tons success/neutral/error, substitui o
+    `StatusBadge` específico de Parceira só para os novos status
+    uppercase) → `MarcasListPage`/`MarcaFormPage`,
+    `CampanhasListPage`/`CampanhaFormPage`/`CampanhaDetailPage` (esta
+    última concentra o fluxo de vínculo: busca Parceiras `Ativa`, exclui as
+    já vinculadas do select, formulário de valor+entregáveis, tabela de
+    participações com ação "cancelar"). `AppShell` ganhou nav real para
+    "Marcas" e "Campanhas" (antes placeholders sem link); `Dashboard`
+    ganhou card "Campanhas" com contagem de `ATIVA`. `tsc -b && vite build`
+    e `oxlint` limpos (nenhum warning novo).
+  - **Validação manual (2026-07-20):** critério de aceite percorrido
+    ponta a ponta no navegador, logado como `admin@tear.test` (seed
+    `DevUserSeeder`) — criar Marca "Jescri" → criar Campanha "Verão 2026"
+    vinculada → selecionar Parceira `Ativa` ("Ana Teste", a Parceira
+    `Inativa` existente ficou corretamente fora do select) → definir valor
+    (R$ 2500) e entregáveis (2 reels/1 carrossel/4 stories) → participação
+    criada e visível na tabela da Campanha → cancelamento soft testado
+    (badge muda para `CANCELADA`, registro permanece, RN-C03) → edição de
+    status da Campanha (`PLANEJADA`→`ATIVA`) refletida no card do Dashboard
+    e no filtro `?status=ATIVA` da listagem.
+  - **Fora desta entrega (próxima fatia):** briefing, produção/aprovação de
+    conteúdo, logística e pagamento por participação — hoje só existe o
+    vínculo comercial Campanha×Parceira.
+  - **Módulo Briefings (2026-07-20):** CRUD ADMIN de `Briefing` 1:1 com
+    `ParticipacaoNaCampanha` (`orientacoes`, `prazo`, `entregaveis_esperados`;
+    `restrictOnDelete`, sem `destroy`). Backend: migration/model/FormRequests/
+    Resource/`BriefingController` (`show`/`store`/`update`), rotas
+    `GET/POST /api/participacoes/{participacao}/briefing`,
+    `PATCH /api/briefings/{briefing}` (leitura autenticado, escrita
+    `role:ADMIN`). Frontend: `lib/briefings.ts`, `BriefingFormPage`
+    (create/edit na mesma rota), `TextareaField` novo (reaproveita
+    `TextField.module.css`), ação "briefing" na tabela de participações de
+    `CampanhaDetailPage`. 9 testes novos, suíte 58/58 verde, pint/tsc/vite
+    build/oxlint limpos.
+    - **FUTURO/BACKLOG:** Portal da Influenciadora (login próprio,
+      ramificação de rota por `role`, leitura de briefing/campanha) — hoje
+      todo autenticado cai no `AppShell` admin; `Parceira.user_id` já
+      existe mas falta `User::parceira()` inverso. Upload de material,
+      aprovação (com cálculo de data tipo RN-04) e pagamento por
+      participação também ficam para depois.
