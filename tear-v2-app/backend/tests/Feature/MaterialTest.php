@@ -38,7 +38,7 @@ class MaterialTest extends TestCase
         $this->postJson("/api/participacoes/{$participacao->id}/materiais", [])->assertUnauthorized();
     }
 
-    public function test_usuario_sem_role_admin_nao_pode_enviar_material(): void
+    public function test_usuario_sem_posse_nem_role_admin_nao_pode_enviar_material(): void
     {
         Sanctum::actingAs(User::factory()->create());
         $participacao = ParticipacaoNaCampanha::factory()->create();
@@ -51,6 +51,23 @@ class MaterialTest extends TestCase
         ]);
 
         $response->assertForbidden();
+    }
+
+    public function test_dona_da_participacao_pode_enviar_material(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $participacao = ParticipacaoNaCampanha::factory()->create();
+        $participacao->parceira->vincularUsuario($user);
+        Sanctum::actingAs($user);
+        $briefing = Briefing::factory()->create(['participacao_id' => $participacao->id, 'tipo' => 'REELS']);
+
+        $response = $this->postJson("/api/participacoes/{$participacao->id}/materiais", [
+            'briefing_id' => $briefing->id,
+            'arquivo' => UploadedFile::fake()->create('video.mp4', 500),
+        ]);
+
+        $response->assertCreated();
     }
 
     public function test_admin_pode_enviar_material_sem_drive_configurado(): void

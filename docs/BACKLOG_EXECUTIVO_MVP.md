@@ -190,7 +190,29 @@ registrada na HU-1.1.
 - **Critério de aceite:** influenciadora vê briefing de cada tipo
   contratado assim que publicado pelo ADMIN, nunca antes.
 
-### HU-1.4 — Portal: envio de material pela própria influenciadora
+### HU-1.4 — Portal: envio de material pela própria influenciadora ✅
+
+**Implementada em 2026-07-20**, sobre a taxonomia unificada de HU-4.1.
+Backend: `POST /participacoes/{participacao}/materiais` perdeu o
+middleware `role:ADMIN` — autorização passa a ser
+`$this->authorize('view', $participacao)` no controller, mesmo padrão de
+`MedidaController::store` (dono via `ParticipacaoNaCampanhaPolicy::view`,
+`Gate::before` cobre ADMIN). 2 testes novos/atualizados (dono envia com
+sucesso; usuário sem posse nem ADMIN recebe 403). Suíte 155/155 verde,
+pint limpo. Frontend: `PortalParticipacaoPage.tsx` — cada bloco de
+Briefing ganhou lista de materiais já enviados (com badge de status e
+`motivo_reprovacao` sempre visível quando reprovado) + input de arquivo
+`multiple` (loop de `uploadMaterial` por arquivo — decisão técnica já
+prevista, sem endpoint de array no backend), visível só quando
+`enviados < contratado`. tsc/lint/build limpos.
+
+**Simplificação sobre o desenho original:** a seção "Materiais" deixou
+de ser uma seção separada com CTA de rolagem ancorada (como o desenho
+original da `AUDITORIA_UX_PORTAL_INFLUENCIADORA.md` §6 sugeria) —
+ficou embutida diretamente em cada bloco de Briefing, mesmo lugar onde a
+influenciadora já lê a orientação e o prazo daquele tipo. Menos
+navegação, mesma informação, sem construir mecânica de scroll-anchor
+entre seções para o mesmo resultado.
 
 - **Objetivo:** reabrir a rota de envio de material para o dono da
   participação (hoje `role:ADMIN`-only), com formulário sem campo de

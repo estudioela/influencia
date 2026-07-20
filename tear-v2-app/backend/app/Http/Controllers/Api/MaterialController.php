@@ -30,6 +30,8 @@ class MaterialController extends Controller
 
     public function store(StoreMaterialRequest $request, ParticipacaoNaCampanha $participacao): MaterialResource
     {
+        $this->authorize('view', $participacao);
+
         $file = $request->file('arquivo');
         $briefingId = $request->validated('briefing_id');
         $tipo = Briefing::findOrFail($briefingId)->tipo;
