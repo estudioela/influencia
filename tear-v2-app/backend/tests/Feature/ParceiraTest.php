@@ -52,12 +52,12 @@ class ParceiraTest extends TestCase
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'Inativa');
-        $response->assertJsonPath('data.telefone', '(11) 98888-7777');
+        $response->assertJsonPath('data.telefone', '11988887777');
         $response->assertJsonPath('data.instagram', '@mariainfluenciadora');
         $this->assertDatabaseHas('parceiras', [
             'nome' => 'Maria Influenciadora',
             'status' => 'Inativa',
-            'telefone' => '(11) 98888-7777',
+            'telefone' => '11988887777',
             'instagram' => '@mariainfluenciadora',
         ]);
     }

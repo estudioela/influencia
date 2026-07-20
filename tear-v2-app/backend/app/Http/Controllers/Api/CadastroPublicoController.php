@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Parceira\StoreParceiraRequest;
 use App\Http\Resources\ParceiraResource;
 use App\Models\Parceira;
+use App\Services\CepLookupService;
 
 class CadastroPublicoController extends Controller
 {
+    public function __construct(private readonly CepLookupService $cepLookup) {}
+
     public function store(StoreParceiraRequest $request): ParceiraResource
     {
-        $parceira = Parceira::create($request->validated());
+        $dados = $this->cepLookup->preencherEnderecoSeNecessario($request->validated());
+
+        $parceira = Parceira::create($dados);
 
         return new ParceiraResource($parceira);
     }

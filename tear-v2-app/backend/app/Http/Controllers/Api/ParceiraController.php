@@ -9,6 +9,7 @@ use App\Http\Resources\ParceiraResource;
 use App\Models\Parceira;
 use App\Models\User;
 use App\Notifications\InfluenciadoraConviteNotification;
+use App\Services\CepLookupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,6 +20,8 @@ use Spatie\Permission\Models\Role;
 
 class ParceiraController extends Controller
 {
+    public function __construct(private readonly CepLookupService $cepLookup) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Parceira::class);
@@ -40,7 +43,9 @@ class ParceiraController extends Controller
 
     public function store(StoreParceiraRequest $request): ParceiraResource
     {
-        $parceira = Parceira::create($request->validated());
+        $dados = $this->cepLookup->preencherEnderecoSeNecessario($request->validated());
+
+        $parceira = Parceira::create($dados);
 
         return new ParceiraResource($parceira);
     }
@@ -54,7 +59,13 @@ class ParceiraController extends Controller
 
     public function update(UpdateParceiraRequest $request, Parceira $parceira): ParceiraResource
     {
-        $parceira->update($request->validated());
+        $dados = $request->validated();
+
+        if (($dados['cep'] ?? null) !== $parceira->cep) {
+            $dados = $this->cepLookup->preencherEnderecoSeNecessario($dados);
+        }
+
+        $parceira->update($dados);
 
         return new ParceiraResource($parceira);
     }
