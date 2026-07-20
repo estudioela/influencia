@@ -62,3 +62,10 @@ export async function updateParceira(
   const response = await apiClient.put<ParceiraResponse>(`/parceiras/${id}`, values);
   return response.data.data;
 }
+
+export async function createParceiraPublica(
+  values: Partial<ParceiraFormValues>,
+): Promise<Parceira> {
+  const response = await apiClient.post<ParceiraResponse>('/parceiras/cadastro', values);
+  return response.data.data;
+}
