@@ -1,55 +1,77 @@
-# Sistema B — tear-v2-app: por que existe, objetivo e relação com o legado
+# TEAR — Transição do Sistema Legado para TEAR V2
 
-> Decisão de governança registrada em 2026-07-20 pelo responsável do projeto.
-> Este documento é a referência oficial para essa decisão até que seja
+> Narrativa oficial de transição, registrada em 2026-07-20 pelo responsável
+> do projeto. Este documento é a referência oficial até que seja
 > formalizada em ADR/TASK_ROUTER do repositório principal.
 
-## O que é
+## Contexto
 
-`tear-v2-app/` (backend Laravel 13 + Sanctum + Spatie Permission; frontend
-React 19 + Vite + TypeScript) é uma segunda implementação do domínio TEAR,
-iniciada em 2026-07-19 dentro da branch `feat/ui-design-system-ela` do
-repositório principal, sem ADR ou SPEC formal — decisões de domínio foram
-aprovadas em conversa direta com o responsável do projeto e registradas como
-prosa no `docs/_workspace/TASK_ROUTER.md` §15 do repositório GAS.
+O TEAR original foi desenvolvido utilizando Google Sheets + Google Apps
+Script. Ele permitiu operar campanhas de influenciadoras, porém apresentava
+limitações de escala, manutenção e governança. O TEAR V2 foi criado como
+uma nova plataforma utilizando arquitetura web moderna.
 
-## Por que existe
+## Sistema A — Legado
 
-O sistema em produção (Google Apps Script + Google Sheets, ver
-`knowledge/README.md`) atingiu os limites estruturais do seu banco físico
-(planilha) e da sua camada de apresentação (HTML Service dentro de iframe
-sandboxed). `tear-v2-app` nasceu como uma reconstrução em stack convencional
-(banco relacional, API REST, SPA) para permitir crescimento que o modelo
-atual não comporta com a mesma velocidade.
+Tecnologia: Google Sheets, Google Apps Script, Google Drive.
 
-## Objetivo
+Papel:
+- operação atual;
+- histórico;
+- referência de regras de negócio.
 
-**`tear-v2-app` é o sucessor planejado do sistema GAS — não um protótipo
-descartável nem um esforço paralelo permanente.** A intenção declarada é que
-ele se torne a nova plataforma TEAR e, no futuro, substitua o sistema atual
-em produção.
+## Sistema B — TEAR V2
 
-## Relação com o legado (sistema GAS)
+Tecnologia: Backend Laravel, Frontend React, banco relacional, APIs.
 
-- O sistema GAS **permanece a operação atual** enquanto `tear-v2-app`
-  amadurece — nenhuma migração de dados foi iniciada, e nenhuma data foi
-  definida para isso.
-- O sistema GAS é tratado como **fonte histórica e referência de domínio**:
-  o vocabulário e as regras de negócio consolidados em
-  `CONTRATO_SOBERANO.md`, no `docs/PRD.md` e nas SPECs continuam sendo a
-  referência de o que o negócio precisa — mesmo quando `tear-v2-app` decide
-  modelar isso de forma diferente (ver `DOMAIN_MODEL.md` para as divergências
-  já conhecidas, ex.: `Campanha` sem vínculo com `MesReferencia`).
-- O sistema GAS **não será evoluído como produto principal** a partir desta
-  decisão — novas capacidades de negócio devem ser construídas em
-  `tear-v2-app`, não no GAS. Correções de bug e dívidas técnicas já
-  registradas no GAS continuam válidas até a eventual substituição.
+Papel:
+- nova plataforma operacional;
+- evolução futura do TEAR.
 
-## Prioridade atual (2026-07-20)
+## Diferença principal
 
-Consolidar documentação, arquitetura e mapa do sistema antes de retomar
-desenvolvimento de novas features. Ver `ARCHITECTURE.md`, `DOMAIN_MODEL.md`
-e `BUSINESS_FLOWS.md` nesta mesma pasta.
+O legado era orientado a planilhas. O TEAR V2 é orientado a domínio:
+
+```
+Influenciadora
+↓
+Campanha
+↓
+Participação
+↓
+Briefing
+↓
+Material
+↓
+Aprovação
+↓
+Pagamento
+```
+
+## Regra fundamental
+
+O TEAR V2 não replica a planilha. Ele transforma o conhecimento operacional
+existente em um sistema estruturado.
+
+---
+
+## Decisão de governança (2026-07-20)
+
+**`tear-v2-app` é o sucessor planejado do TEAR legado — não é protótipo
+descartável nem esforço paralelo permanente.**
+
+- O Sistema A (GAS) permanece a operação atual; nenhuma migração de dados
+  foi iniciada, e nenhuma data foi definida para isso. Ele não será evoluído
+  como produto principal a partir desta decisão — novas capacidades de
+  negócio devem ser construídas no Sistema B.
+- O Sistema A continua sendo a referência de domínio: o vocabulário e as
+  regras de negócio de `CONTRATO_SOBERANO.md`, `docs/PRD.md` e das SPECs
+  seguem valendo como fonte do que o negócio precisa, mesmo quando o
+  Sistema B modela isso de forma diferente (ver `DOMAIN_MODEL.md` para
+  divergências já conhecidas).
+- Prioridade atual: consolidar documentação, arquitetura e mapa do sistema
+  (`ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `BUSINESS_FLOWS.md`, nesta pasta)
+  antes de retomar desenvolvimento de novas features.
 
 ## Pendências de governança conhecidas (não resolvidas por este documento)
 
