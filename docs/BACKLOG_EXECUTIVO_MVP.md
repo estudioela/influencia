@@ -120,7 +120,20 @@ para `/participacoes/:id` (HU-1.2, próxima história).
   ativas mostra os cards corretos, ordenados, sem exigir clique;
   influenciadora sem nenhuma participação vê a mensagem única do estado A.
 
-### HU-1.2 — Portal: painel único de Participação (Campanhas)
+### HU-1.2 — Portal: painel único de Participação (Campanhas) ✅
+
+**Implementada em 2026-07-20, junto com HU-1.3 e HU-1.5** (mesma tela,
+não fazia sentido separar em três entregas). `PortalParticipacaoPage.tsx`
+em `/participacoes/:participacaoId` (dentro do `PortalShell`): cabeçalho
+com campanha/marca/período/resumo de entregáveis contratados (tipos
+zerados aparecem apagados, não somem) + seção de Briefing (HU-1.3) +
+placeholder "em breve" para Materiais (HU-1.4, fora desta onda — bloqueada
+por EPIC 4) + seção de Pagamento (HU-1.5). Sem backend novo — reaproveita
+`GET /me/participacoes/{id}` (já criado na HU-1.1),
+`GET /participacoes/{id}/briefings` e `GET /participacoes/{id}/pagamento`
+(ambos já com escopo de posse via policy). Participação de outra
+parceira ou inexistente → 403/404 da API → redireciona para o Dashboard
+(sem mensagem que revele existência). Frontend tsc/lint/build limpos.
 
 - **Objetivo:** tela `/campanhas/:participacaoId` com cabeçalho
   (campanha, marca, período, resumo de entregáveis contratados) e três
@@ -142,7 +155,17 @@ para `/participacoes/:id` (HU-1.2, próxima história).
   mostra os 3 blocos; acessar a de outra parceira retorna 404 genérico e
   redireciona ao Dashboard.
 
-### HU-1.3 — Portal: leitura de Briefing por tipo de conteúdo
+### HU-1.3 — Portal: leitura de Briefing por tipo de conteúdo ✅
+
+**Implementada junto com HU-1.2** (ver nota lá). Bloco fixo
+Feed→Reels→Stories→TikTok→UGC (só tipos com quantidade contratada > 0);
+tipo sem briefing publicado mostra aviso apagado; tipo com briefing
+mostra orientações, prazo + contagem relativa ("faltam N dias"/"hoje"/
+"atrasado há N dias", lógica pura, sem dado novo) e entregáveis
+esperados quando preenchido. Progresso "X de Y enviados" (cruza com
+Materiais) **não implementado** — depende da mesma taxonomia
+Material×Briefing ainda não resolvida (EPIC 4), mesma simplificação já
+registrada na HU-1.1.
 
 - **Objetivo:** dentro do painel da HU-1.2, um bloco por tipo contratado
   (ordem fixa Feed→Reels→Stories→TikTok→UGC), com orientação, prazo +
@@ -202,7 +225,14 @@ para `/participacoes/:id` (HU-1.2, próxima história).
   projeto. Recomendação de sequenciamento: EPIC 4 primeiro, HU-1.4 depois
   — ver `docs/PLANO_EXECUCAO_MVP.md`.
 
-### HU-1.5 — Portal: consulta de Pagamento
+### HU-1.5 — Portal: consulta de Pagamento ✅
+
+**Implementada junto com HU-1.2** (ver nota lá). Última seção do painel:
+valor formatado, badge de status (reaproveita `pagamentoStatusTone` já
+existente), sem nenhuma ação — mesmo padrão de leitura das demais
+seções. Distinção visual `aprovado`×`pago` (débito já registrado na
+auditoria de UX) **não resolvida** aqui — os dois seguem com o mesmo
+tom verde, fora do escopo mínimo desta história.
 
 - **Objetivo:** última seção do painel — valor, badge de status
   (`pendente`/`aprovado`/`pago`, com distinção visual entre `aprovado` e
