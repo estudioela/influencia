@@ -7,6 +7,7 @@ use App\Models\ParticipacaoNaCampanha;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -70,6 +71,48 @@ class MaterialTest extends TestCase
             'participacao_id' => $participacao->id,
             'tipo' => 'REELS',
             'status' => 'PENDENTE',
+        ]);
+    }
+
+    public function test_admin_pode_enviar_material_com_drive_configurado(): void
+    {
+        $resource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        openssl_pkey_export($resource, $chavePrivada);
+        config([
+            'services.google_drive.client_email' => 'service-account@tear-test.iam.gserviceaccount.com',
+            'services.google_drive.private_key' => $chavePrivada,
+            'services.google_drive.root_folder_id' => 'root-folder-id',
+        ]);
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'fake-token'], 200),
+            'www.googleapis.com/drive/v3/files*' => Http::sequence()
+                ->push(['files' => []], 200) // busca pasta da parceira: não encontrada
+                ->push(['id' => 'pasta-parceira'], 200) // cria pasta da parceira
+                ->push(['files' => []], 200) // busca pasta da campanha: não encontrada
+                ->push(['id' => 'pasta-campanha'], 200) // cria pasta da campanha
+                ->push(['files' => []], 200) // busca pasta do tipo: não encontrada
+                ->push(['id' => 'pasta-tipo'], 200), // cria pasta do tipo
+            'www.googleapis.com/upload/drive/v3/files*' => Http::response([
+                'id' => 'arquivo-drive-1',
+                'webViewLink' => 'https://drive.google.com/file/d/arquivo-drive-1/view',
+            ], 200),
+        ]);
+
+        $this->autenticarComoAdmin();
+        $participacao = ParticipacaoNaCampanha::factory()->create();
+
+        $response = $this->postJson("/api/participacoes/{$participacao->id}/materiais", [
+            'tipo' => 'REELS',
+            'arquivo' => UploadedFile::fake()->create('video.mp4', 500),
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('data.drive_file_url', 'https://drive.google.com/file/d/arquivo-drive-1/view');
+        $this->assertDatabaseHas('materiais', [
+            'participacao_id' => $participacao->id,
+            'drive_file_id' => 'arquivo-drive-1',
+            'drive_file_url' => 'https://drive.google.com/file/d/arquivo-drive-1/view',
         ]);
     }
 
