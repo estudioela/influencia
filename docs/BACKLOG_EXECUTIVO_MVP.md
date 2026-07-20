@@ -231,7 +231,15 @@ Fonte: `CONSOLIDACAO_REGRAS_CRITICAS_P0_TEAR_V2.md` (P0-1 já implementado,
 fora deste backlog), `PLANO_IMPLEMENTACAO_SNAPSHOT_MENSAL.md`,
 `ANALISE_MODELO_PAGAMENTO_RECORRENTE_TEAR_V2.md`.
 
-### HU-2.1 — P0-5: cálculo automático da data de aprovação do briefing
+### HU-2.1 — P0-5: cálculo automático da data de aprovação do briefing ✅
+
+**Implementada em 2026-07-20.** Migration `data_aprovacao_interna`
+(date, nullable, sempre fora do fillable); `Briefing::calcularDataAprovacaoInterna()`
++ hook `saving` recalcula a cada `prazo` novo/alterado; exposta em
+`BriefingResource`; `BriefingFormPage.tsx` mostra o valor calculado como
+texto somente-leitura ao editar. 6 testes novos (dia útil, sexta/sábado/
+domingo, recálculo na edição, payload com o campo ignorado). Suíte
+135/135 verde, pint limpo; frontend tsc/lint/build limpos.
 
 - **Objetivo:** ao definir/editar a data de postagem de um `Briefing`,
   calcular `data_aprovacao_interna` = postagem − 7 dias, com ajuste de
