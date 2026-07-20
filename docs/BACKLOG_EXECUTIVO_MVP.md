@@ -738,6 +738,17 @@ Fonte: `AUDITORIA_UX_PORTAL_INFLUENCIADORA.md` §8, §10;
   fora do novo domínio); vínculo material↔briefing testado ponta a ponta.
 - **Critério de aceite:** a definir junto com a decisão do PO — não
   presumir aqui.
+- **Frontend implementado em 2026-07-20:** `MateriaisPage.tsx` e
+  `lib/materiais.ts` ajustados ao contrato aprovado em
+  `docs/DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` — `Material.tipo` agora é
+  o union de 5 valores (espelhando `Briefing.tipo`, só leitura); formulário
+  de envio troca o antigo select de "Tipo" por um select de "Briefing"
+  (via `listBriefings`), enviando `briefing_id` no upload em vez de
+  `tipo`; se a participação não tem briefing publicado, mostra mensagem
+  orientando a publicar um briefing antes, sem quebrar a tela. Backend
+  correspondente implementado em paralelo por outro agente. Trabalho
+  técnico entregue (typecheck/lint/build verdes); decisão de negócio e
+  critério de aceite formal seguem registrados acima como já estavam.
 
 ---
 
