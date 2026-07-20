@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CadastroPublicoController;
 use App\Http\Controllers\Api\CampanhaController;
 use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\MaterialController;
+use App\Http\Controllers\Api\MedidaController;
 use App\Http\Controllers\Api\PagamentoController;
 use App\Http\Controllers\Api\ParceiraController;
 use App\Http\Controllers\Api\ParticipacaoController;
@@ -31,6 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
 
     Route::apiResource('parceiras', ParceiraController::class)->except(['destroy']);
+
+    Route::get('/parceiras/{parceira}/medidas', [MedidaController::class, 'index']);
+    Route::post('/parceiras/{parceira}/medidas', [MedidaController::class, 'store']);
 
     Route::get('/marcas', [MarcaController::class, 'index']);
     Route::get('/marcas/{marca}', [MarcaController::class, 'show']);

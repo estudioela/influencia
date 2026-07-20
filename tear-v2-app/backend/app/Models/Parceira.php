@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'nome',
@@ -67,6 +68,16 @@ class Parceira extends Model
     public function aprovadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'aprovado_por');
+    }
+
+    public function medidas(): HasMany
+    {
+        return $this->hasMany(MedidaInfluenciadora::class)->orderByDesc('id');
+    }
+
+    public function medidaAtual(): ?MedidaInfluenciadora
+    {
+        return $this->medidas()->first();
     }
 
     /**
