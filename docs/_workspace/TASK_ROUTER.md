@@ -1059,3 +1059,40 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       existe mas falta `User::parceira()` inverso. Upload de material,
       aprovação (com cálculo de data tipo RN-04) e pagamento por
       participação também ficam para depois.
+  - **Módulo Portal da Influenciadora — Sprint 2.1, primeiro acesso e perfil
+    (2026-07-20):** primeira fatia do backlog acima — só dashboard inicial e
+    perfil, por escopo explícito do responsável do projeto (campanhas,
+    briefing, materiais e pagamentos ficam para a próxima entrega, o backlog
+    acima permanece válido para o restante). Relatório completo:
+    `docs/RELATORIO_SPRINT_2_1_PORTAL_INFLUENCIADORA.md`.
+    - **Débito fechado antes de expor a tela de perfil:** `ParceiraPolicy`
+      não tinha método `update` — `PATCH /parceiras/{id}` aceitava qualquer
+      autenticado (débito já registrado no relatório da Sprint 1, §4 item 1).
+      Corrigido: `update()` = dono (`user_id === user.id`), `ADMIN` continua
+      liberado por `Gate::before`. Dois testes existentes que exercitavam
+      essa rota sem posse nem papel precisaram passar a autenticar como
+      ADMIN (não testavam o cenário pretendido — nenhum comportamento de
+      produto mudou).
+    - **Backend:** `GET /me/parceira` (resolve sempre `request->user()->
+      parceira`, nunca aceita ID). Nenhuma tabela/entidade nova — perfil e
+      medidas reaproveitam `PATCH /parceiras/{id}` e `GET/POST /parceiras/
+      {id}/medidas` já existentes (este último já autorizava por posse desde
+      a Sprint 1, sem gate de papel — influenciadora já podia gravar as
+      próprias medidas antes desta entrega, só não havia UI).
+    - **Frontend:** `PortalShell` (nav Painel/Perfil, sem itens
+      administrativos) montado em `App.tsx` quando `role === 'INFLUENCIADORA'`
+      (ramificação de 3 vias: sem sessão → Login; influenciadora → Portal;
+      demais papéis → `AppShell` inalterado). `ResetPasswordPage`
+      (`/definir-senha`, fora da árvore autenticada) fecha o ciclo de convite
+      que a Sprint 1 deixou pela metade (endpoint backend já existia, sem
+      página). `PortalDashboardPage` (saudação, status, próximos passos
+      dinâmico conforme perfil completo/incompleto). `PortalPerfilPage`
+      (dados pessoais com consentimento LGPD obrigatório + medidas
+      versionadas, dois formulários independentes).
+    - **Validação:** 3 testes novos de isolamento entre duas influenciadoras
+      reais (`PortalIsolamentoTest`) + 3 de `/me/parceira`
+      (`MeParceiraTest`), suíte completa 117/117 verde, pint/tsc/oxlint/vite
+      build limpos. Jornada ponta a ponta percorrida no navegador (convite →
+      definir senha → login → dashboard → perfil, dados pessoais e medidas
+      salvos e persistidos, CEP auto-preenchido) com uma Parceira real criada
+      e aprovada na sessão.
