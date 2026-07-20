@@ -102,11 +102,25 @@ export default function PortalPerfilPage() {
 
   function updatePerfilField(field: keyof ParceiraFormValues, value: string) {
     setPerfilForm((current) => ({ ...current, [field]: value }));
+    setPerfilSucesso(false);
   }
 
   function updateMedidaField(field: keyof MedidaFormValues, value: string) {
     setMedidaForm((current) => ({ ...current, [field]: value }));
+    setMedidaSucesso(false);
   }
+
+  useEffect(() => {
+    if (!perfilSucesso) return;
+    const timer = window.setTimeout(() => setPerfilSucesso(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [perfilSucesso]);
+
+  useEffect(() => {
+    if (!medidaSucesso) return;
+    const timer = window.setTimeout(() => setMedidaSucesso(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [medidaSucesso]);
 
   async function handleSubmitPerfil(event: FormEvent) {
     event.preventDefault();
@@ -176,7 +190,17 @@ export default function PortalPerfilPage() {
 
       <form className={styles.form} onSubmit={handleSubmitPerfil} noValidate>
         <section className={styles.group}>
-          <h3 className={styles.groupTitle}>Dados pessoais</h3>
+          <h3 className={styles.groupTitle}>Contato e recebimento</h3>
+          <TextField
+            label="Chave PIX"
+            value={perfilForm.chave_pix}
+            onChange={(event) => updatePerfilField('chave_pix', event.target.value)}
+            error={perfilFieldErrors.chave_pix}
+            required
+          />
+          <p className={styles.fieldHint}>
+            confira com atenção — é para aqui que o pagamento vai.
+          </p>
           <TextField
             label="Nome"
             value={perfilForm.nome}
@@ -204,13 +228,6 @@ export default function PortalPerfilPage() {
             value={perfilForm.instagram}
             onChange={(event) => updatePerfilField('instagram', event.target.value)}
             error={perfilFieldErrors.instagram}
-            required
-          />
-          <TextField
-            label="Chave PIX"
-            value={perfilForm.chave_pix}
-            onChange={(event) => updatePerfilField('chave_pix', event.target.value)}
-            error={perfilFieldErrors.chave_pix}
             required
           />
         </section>

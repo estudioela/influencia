@@ -218,7 +218,18 @@ para `/participacoes/:id` (HU-1.2, próxima história).
 - **Critério de aceite:** badge de pagamento reflete o estado real, com
   tom visualmente distinto entre aprovado e pago.
 
-### HU-1.6 — Portal: revisão de UX do Perfil
+### HU-1.6 — Portal: revisão de UX do Perfil ✅
+
+**Implementada em 2026-07-20.** `PortalPerfilPage`: grupo "Dados pessoais"
+renomeado para "Contato e recebimento", com `chave_pix` movida para o
+topo do grupo (era o último campo) e texto auxiliar "confira com
+atenção — é para aqui que o pagamento vai." logo abaixo; ordem final =
+Contato/PIX → Endereço (inalterado) → Medidas (form separado,
+inalterado). Mensagens de sucesso (perfil e medidas) agora somem
+sozinhas após 4s ou na próxima edição de qualquer campo do respectivo
+form, via `useEffect`+`setTimeout`. Sem mudança de validação, LGPD ou
+endpoints. tsc/lint/build limpos (lint só com o warning pré-existente
+de `src/lib/auth.tsx:72`).
 
 - **Objetivo:** reordenar o formulário existente — grupo "Contato e
   recebimento" primeiro (com `chave_pix` no topo e texto auxiliar de
