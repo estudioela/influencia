@@ -17,6 +17,11 @@
   gap: var(--space-4);
 }
 
+.headerActions {
+  display: flex;
+  gap: var(--space-3);
+}
+
 .title {
   font-size: 36px;
   color: var(--color-on-surface);

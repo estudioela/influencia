@@ -1,0 +1,96 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Parceira;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class ParceiraAprovacaoTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function autenticarComoAdmin(): User
+    {
+        Role::findOrCreate('ADMIN', 'web');
+
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+
+        Sanctum::actingAs($admin);
+
+        return $admin;
+    }
+
+    public function test_admin_pode_aprovar_parceira_pendente(): void
+    {
+        $admin = $this->autenticarComoAdmin();
+        $parceira = Parceira::factory()->create();
+
+        $response = $this->patchJson("/api/parceiras/{$parceira->id}/aprovar");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.status', 'Ativa');
+        $this->assertDatabaseHas('parceiras', [
+            'id' => $parceira->id,
+            'status' => 'Ativa',
+            'aprovado_por' => $admin->id,
+        ]);
+        $this->assertNotNull($parceira->fresh()->aprovado_em);
+    }
+
+    public function test_usuario_sem_role_admin_nao_pode_aprovar(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $parceira = Parceira::factory()->create();
+
+        $response = $this->patchJson("/api/parceiras/{$parceira->id}/aprovar");
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('parceiras', [
+            'id' => $parceira->id,
+            'status' => 'Inativa',
+        ]);
+    }
+
+    public function test_visitante_nao_autenticado_nao_pode_aprovar(): void
+    {
+        $parceira = Parceira::factory()->create();
+
+        $this->patchJson("/api/parceiras/{$parceira->id}/aprovar")->assertUnauthorized();
+    }
+
+    public function test_aprovar_parceira_ja_ativa_retorna_conflito(): void
+    {
+        $this->autenticarComoAdmin();
+        $parceira = Parceira::factory()->create(['status' => 'Ativa']);
+
+        $response = $this->patchJson("/api/parceiras/{$parceira->id}/aprovar");
+
+        $response->assertStatus(409);
+    }
+
+    public function test_lista_pode_filtrar_por_status_pendente(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        Parceira::factory()->count(2)->create(['status' => 'Inativa']);
+        Parceira::factory()->create(['status' => 'Ativa']);
+
+        $response = $this->getJson('/api/parceiras?status=Inativa');
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+    }
+
+    public function test_filtro_de_status_invalido_e_rejeitado(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $response = $this->getJson('/api/parceiras?status=Qualquer');
+
+        $response->assertUnprocessable();
+    }
+}

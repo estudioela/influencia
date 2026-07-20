@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getParceira, type Parceira } from '../lib/parceiras';
+import { aprovarParceira, getParceira, type Parceira } from '../lib/parceiras';
+import { useAuth } from '../lib/auth';
 import StatusBadge from '../components/StatusBadge';
-import { LinkButton } from '../components/Button';
+import Button, { LinkButton } from '../components/Button';
 import styles from './ParceiraProfilePage.module.css';
 
 function Field({ label, value }: { label: string; value: string | null }) {
@@ -16,8 +17,11 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export default function ParceiraProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [parceira, setParceira] = useState<Parceira | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAprovando, setIsAprovando] = useState(false);
+  const [aprovacaoErro, setAprovacaoErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -26,6 +30,20 @@ export default function ParceiraProfilePage() {
       .catch(() => setError('Não foi possível carregar esta parceira.'));
   }, [id]);
 
+  async function handleAprovar() {
+    if (!parceira) return;
+    setIsAprovando(true);
+    setAprovacaoErro(null);
+    try {
+      const atualizada = await aprovarParceira(parceira.id);
+      setParceira(atualizada);
+    } catch {
+      setAprovacaoErro('Não foi possível aprovar esta parceira. Tente novamente.');
+    } finally {
+      setIsAprovando(false);
+    }
+  }
+
   if (error) {
     return <p className={styles.error}>{error}</p>;
   }
@@ -33,6 +51,8 @@ export default function ParceiraProfilePage() {
   if (!parceira) {
     return <p className={styles.loading}>Carregando…</p>;
   }
+
+  const podeAprovar = user?.role === 'ADMIN' && parceira.status === 'Inativa';
 
   return (
     <div className={styles.page}>
@@ -43,10 +63,19 @@ export default function ParceiraProfilePage() {
             <StatusBadge status={parceira.status} />
           </div>
         </div>
-        <LinkButton to={`/parceiras/${parceira.id}/editar`} variant="secondary">
-          editar
-        </LinkButton>
+        <div className={styles.headerActions}>
+          {podeAprovar && (
+            <Button onClick={handleAprovar} isLoading={isAprovando} loadingText="aprovando…">
+              aprovar
+            </Button>
+          )}
+          <LinkButton to={`/parceiras/${parceira.id}/editar`} variant="secondary">
+            editar
+          </LinkButton>
+        </div>
       </header>
+
+      {aprovacaoErro && <p className={styles.error}>{aprovacaoErro}</p>}
 
       <section className={styles.group}>
         <h3 className={styles.groupTitle}>Identificação</h3>

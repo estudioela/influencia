@@ -35,6 +35,16 @@ class Parceira extends Model
         'status' => 'Inativa',
     ];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'aprovado_em' => 'datetime',
+        ];
+    }
+
     protected static function booted(): void
     {
         static::saving(function (Parceira $parceira) {
@@ -52,5 +62,21 @@ class Parceira extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function aprovadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'aprovado_por');
+    }
+
+    /**
+     * Transição dedicada Inativa -> Ativa (RN-01). Único ponto de escrita de status.
+     */
+    public function aprovar(User $admin): void
+    {
+        $this->status = 'Ativa';
+        $this->aprovado_por = $admin->id;
+        $this->aprovado_em = now();
+        $this->save();
     }
 }

@@ -1,20 +1,32 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { listParceiras, type Parceira } from '../lib/parceiras';
+import { Link, useSearchParams } from 'react-router-dom';
+import { listParceiras, type Parceira, type ParceiraStatus } from '../lib/parceiras';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { LinkButton } from '../components/Button';
 import styles from './ParceirasListPage.module.css';
 
 export default function ParceirasListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = searchParams.get('status') === 'Inativa' ? 'Inativa' : null;
+
   const [parceiras, setParceiras] = useState<Parceira[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listParceiras()
+    setParceiras(null);
+    listParceiras(statusFilter ? { status: statusFilter as ParceiraStatus } : undefined)
       .then(setParceiras)
       .catch(() => setError('Não foi possível carregar as parceiras. Tente novamente.'));
-  }, []);
+  }, [statusFilter]);
+
+  function selecionarFiltro(novoStatus: 'Inativa' | null) {
+    if (novoStatus) {
+      setSearchParams({ status: novoStatus });
+    } else {
+      setSearchParams({});
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -26,11 +38,43 @@ export default function ParceirasListPage() {
         <LinkButton to="/parceiras/nova">nova parceira</LinkButton>
       </header>
 
+      <div className={styles.filterTabs} role="tablist" aria-label="Filtrar por status">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={statusFilter === null}
+          className={[styles.filterTab, statusFilter === null ? styles.filterTabActive : '']
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => selecionarFiltro(null)}
+        >
+          todas
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={statusFilter === 'Inativa'}
+          className={[styles.filterTab, statusFilter === 'Inativa' ? styles.filterTabActive : '']
+            .filter(Boolean)
+            .join(' ')}
+          onClick={() => selecionarFiltro('Inativa')}
+        >
+          novas inscrições
+        </button>
+      </div>
+
       {error && <p className={styles.error}>{error}</p>}
 
       {parceiras === null && !error && <p className={styles.loading}>Carregando…</p>}
 
-      {parceiras?.length === 0 && (
+      {parceiras?.length === 0 && statusFilter === 'Inativa' && (
+        <EmptyState
+          title="Nenhuma inscrição pendente"
+          message="Não há novas inscrições aguardando aprovação no momento."
+        />
+      )}
+
+      {parceiras?.length === 0 && statusFilter === null && (
         <EmptyState
           title="Nenhuma parceira cadastrada"
           message="Você ainda não possui parceiras cadastradas."

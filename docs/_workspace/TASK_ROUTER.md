@@ -959,3 +959,21 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Pendência:** decidir se este roteador passa a cobrir `tear-v2-app` (nova
   seção por módulo, no mesmo padrão do §3) ou se recebe um roteador próprio
   — não decidido nesta sessão, só registrado o achado para não se perder.
+- **Fluxo administrativo de aprovação de parceiras (2026-07-20):** primeiro
+  fluxo operacional do admin implementado (cadastro público → admin lista
+  pendentes → abre perfil → aprova → status muda para `Ativa`). Reaproveita
+  o enum binário já existente (`Ativa`/`Inativa`, sem novo estado
+  "pendente" — `Inativa` já cumpre esse papel) para não reabrir o mapeamento
+  fechado do ADR-001 nem exigir ADR novo. Adicionado apenas: colunas
+  `aprovado_por`/`aprovado_em` (auditoria, migration aditiva), método
+  `Parceira::aprovar(User $admin)` (único ponto de escrita de status, RN-01),
+  endpoint `PATCH /api/parceiras/{id}/aprovar` protegido por
+  `role:ADMIN` (primeiro uso do `spatie/laravel-permission` já instalado
+  mas até então sem nenhuma policy/gate aplicada), filtro
+  `GET /api/parceiras?status=`, e nas telas: toggle "novas inscrições" em
+  `ParceirasListPage`, botão "aprovar" em `ParceiraProfilePage` (visível só
+  para `role === 'ADMIN'`) e card "Aprovações" do `Dashboard` com contagem
+  real. Débito conhecido, não endereçado aqui (fora de escopo desta
+  entrega): as demais rotas de `parceiras` (`index`/`show`/`update`)
+  continuam sem gate de role — qualquer usuário autenticado ainda lê/edita
+  qualquer parceira.

@@ -21,5 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
+    Route::patch('/parceiras/{parceira}/aprovar', [ParceiraController::class, 'aprovar'])
+        ->middleware('role:ADMIN');
+
     Route::apiResource('parceiras', ParceiraController::class)->except(['destroy']);
 });

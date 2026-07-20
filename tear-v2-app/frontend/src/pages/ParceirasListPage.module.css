@@ -28,6 +28,32 @@
   padding: var(--space-3) var(--space-4);
 }
 
+.filterTabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-outline);
+}
+
+.filterTab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-caption);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.filterTabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
 .loading {
   color: var(--color-on-surface-variant);
 }

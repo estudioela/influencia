@@ -7,13 +7,24 @@ use App\Http\Requests\Parceira\StoreParceiraRequest;
 use App\Http\Requests\Parceira\UpdateParceiraRequest;
 use App\Http\Resources\ParceiraResource;
 use App\Models\Parceira;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
 
 class ParceiraController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return ParceiraResource::collection(Parceira::orderBy('nome')->paginate(20));
+        $request->validate([
+            'status' => ['sometimes', Rule::in(['Ativa', 'Inativa'])],
+        ]);
+
+        return ParceiraResource::collection(
+            Parceira::when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
+                ->orderBy('nome')
+                ->paginate(20)
+        );
     }
 
     public function store(StoreParceiraRequest $request): ParceiraResource
@@ -31,6 +42,19 @@ class ParceiraController extends Controller
     public function update(UpdateParceiraRequest $request, Parceira $parceira): ParceiraResource
     {
         $parceira->update($request->validated());
+
+        return new ParceiraResource($parceira);
+    }
+
+    public function aprovar(Request $request, Parceira $parceira): ParceiraResource|JsonResponse
+    {
+        if ($parceira->status === 'Ativa') {
+            return response()->json([
+                'message' => 'Parceira já está ativa.',
+            ], 409);
+        }
+
+        $parceira->aprovar($request->user());
 
         return new ParceiraResource($parceira);
     }

@@ -6,6 +6,7 @@ export type Parceira = {
   id: number;
   nome: string;
   status: ParceiraStatus;
+  aprovado_em: string | null;
   email: string | null;
   telefone: string | null;
   instagram: string | null;
@@ -38,10 +39,24 @@ export type ParceiraFormValues = {
 };
 
 type ParceiraResponse = { data: Parceira };
-type ParceirasListResponse = { data: Parceira[] };
+type ParceirasListResponse = { data: Parceira[]; meta?: { total: number } };
 
-export async function listParceiras(): Promise<Parceira[]> {
-  const response = await apiClient.get<ParceirasListResponse>('/parceiras');
+export type ListParceirasParams = {
+  status?: ParceiraStatus;
+};
+
+export async function listParceiras(params?: ListParceirasParams): Promise<Parceira[]> {
+  const response = await apiClient.get<ParceirasListResponse>('/parceiras', { params });
+  return response.data.data;
+}
+
+export async function countParceiras(params?: ListParceirasParams): Promise<number> {
+  const response = await apiClient.get<ParceirasListResponse>('/parceiras', { params });
+  return response.data.meta?.total ?? response.data.data.length;
+}
+
+export async function aprovarParceira(id: number): Promise<Parceira> {
+  const response = await apiClient.patch<ParceiraResponse>(`/parceiras/${id}/aprovar`);
   return response.data.data;
 }
 
