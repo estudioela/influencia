@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'reels_qtd',
     'carrossel_qtd',
     'stories_qtd',
+    'tiktok_qtd',
+    'ugc_qtd',
     'status',
 ])]
 class ParticipacaoNaCampanha extends Model
@@ -40,7 +42,25 @@ class ParticipacaoNaCampanha extends Model
             'reels_qtd' => 'integer',
             'carrossel_qtd' => 'integer',
             'stories_qtd' => 'integer',
+            'tiktok_qtd' => 'integer',
+            'ugc_qtd' => 'integer',
         ];
+    }
+
+    /**
+     * Quantidade contratada para um tipo de conteúdo de Briefing (RN-06).
+     * FEED generaliza o "Carrossel" da V1 — não há coluna própria de feed.
+     */
+    public function quantidadeContratadaPara(string $tipo): int
+    {
+        return match ($tipo) {
+            'FEED' => $this->carrossel_qtd,
+            'REELS' => $this->reels_qtd,
+            'STORIES' => $this->stories_qtd,
+            'TIKTOK' => $this->tiktok_qtd,
+            'UGC' => $this->ugc_qtd,
+            default => 0,
+        };
     }
 
     public function campanha(): BelongsTo
@@ -53,9 +73,9 @@ class ParticipacaoNaCampanha extends Model
         return $this->belongsTo(Parceira::class);
     }
 
-    public function briefing(): HasOne
+    public function briefings(): HasMany
     {
-        return $this->hasOne(Briefing::class, 'participacao_id');
+        return $this->hasMany(Briefing::class, 'participacao_id');
     }
 
     public function materiais(): HasMany

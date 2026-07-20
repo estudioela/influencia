@@ -41,7 +41,7 @@ class RbacIsolamentoTest extends TestCase
 
         $this->getJson("/api/parceiras/{$parceiraB->id}")->assertForbidden();
         $this->getJson("/api/campanhas/{$campanha->id}")->assertForbidden();
-        $this->getJson("/api/participacoes/{$participacaoB->id}/briefing")->assertForbidden();
+        $this->getJson("/api/participacoes/{$participacaoB->id}/briefings")->assertForbidden();
         $this->getJson("/api/participacoes/{$participacaoB->id}/materiais")->assertForbidden();
         $this->getJson("/api/participacoes/{$participacaoB->id}/pagamento")->assertForbidden();
 

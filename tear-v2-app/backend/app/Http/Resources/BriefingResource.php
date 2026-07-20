@@ -15,9 +15,12 @@ class BriefingResource extends JsonResource
         return [
             'id' => $this->id,
             'participacao_id' => $this->participacao_id,
+            'tipo' => $this->tipo,
             'orientacoes' => $this->orientacoes,
             'prazo' => $this->prazo?->toDateString(),
+            'referencias' => $this->referencias,
             'entregaveis_esperados' => $this->entregaveis_esperados,
+            'observacoes' => $this->observacoes,
         ];
     }
 }

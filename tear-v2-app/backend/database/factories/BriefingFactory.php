@@ -18,6 +18,7 @@ class BriefingFactory extends Factory
     {
         return [
             'participacao_id' => ParticipacaoNaCampanha::factory(),
+            'tipo' => 'FEED',
             'orientacoes' => fake()->paragraph(),
             'prazo' => fake()->dateTimeBetween('now', '+1 month')->format('Y-m-d'),
             'entregaveis_esperados' => fake()->sentence(),

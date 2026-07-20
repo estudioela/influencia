@@ -8,21 +8,20 @@ use App\Http\Requests\Briefing\UpdateBriefingRequest;
 use App\Http\Resources\BriefingResource;
 use App\Models\Briefing;
 use App\Models\ParticipacaoNaCampanha;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BriefingController extends Controller
 {
-    public function show(ParticipacaoNaCampanha $participacao): BriefingResource
+    public function index(ParticipacaoNaCampanha $participacao): AnonymousResourceCollection
     {
         $this->authorize('view', $participacao);
 
-        $briefing = $participacao->briefing()->firstOrFail();
-
-        return new BriefingResource($briefing);
+        return BriefingResource::collection($participacao->briefings()->get());
     }
 
     public function store(StoreBriefingRequest $request, ParticipacaoNaCampanha $participacao): BriefingResource
     {
-        $briefing = $participacao->briefing()->create($request->validated());
+        $briefing = $participacao->briefings()->create($request->validated());
 
         return new BriefingResource($briefing);
     }

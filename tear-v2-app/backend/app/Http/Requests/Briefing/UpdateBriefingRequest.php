@@ -19,7 +19,9 @@ class UpdateBriefingRequest extends FormRequest
         return [
             'orientacoes' => ['sometimes', 'string'],
             'prazo' => ['sometimes', 'date'],
+            'referencias' => ['nullable', 'array'],
             'entregaveis_esperados' => ['nullable', 'string'],
+            'observacoes' => ['nullable', 'string'],
         ];
     }
 }

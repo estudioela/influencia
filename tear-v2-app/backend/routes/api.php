@@ -52,8 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/participacoes/{participacao}', [ParticipacaoController::class, 'update'])
         ->middleware('role:ADMIN');
 
-    Route::get('/participacoes/{participacao}/briefing', [BriefingController::class, 'show']);
-    Route::post('/participacoes/{participacao}/briefing', [BriefingController::class, 'store'])
+    Route::get('/participacoes/{participacao}/briefings', [BriefingController::class, 'index']);
+    Route::post('/participacoes/{participacao}/briefings', [BriefingController::class, 'store'])
         ->middleware('role:ADMIN');
     Route::patch('/briefings/{briefing}', [BriefingController::class, 'update'])
         ->middleware('role:ADMIN');

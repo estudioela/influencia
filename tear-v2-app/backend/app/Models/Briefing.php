@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'participacao_id',
+    'tipo',
     'orientacoes',
     'prazo',
+    'referencias',
     'entregaveis_esperados',
+    'observacoes',
 ])]
 class Briefing extends Model
 {
@@ -26,6 +29,7 @@ class Briefing extends Model
     {
         return [
             'prazo' => 'date',
+            'referencias' => 'array',
         ];
     }
 

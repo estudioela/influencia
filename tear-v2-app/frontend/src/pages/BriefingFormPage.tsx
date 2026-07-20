@@ -3,17 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import {
   createBriefing,
-  getBriefing,
+  listBriefings,
   updateBriefing,
   type Briefing,
   type BriefingFormValues,
+  type TipoConteudo,
 } from '../lib/briefings';
 import TextField from '../components/TextField';
 import TextareaField from '../components/TextareaField';
+import SelectField from '../components/SelectField';
 import Button from '../components/Button';
 import styles from './BriefingFormPage.module.css';
 
+const TIPOS: TipoConteudo[] = ['FEED', 'REELS', 'STORIES', 'TIKTOK', 'UGC'];
+
 const EMPTY_FORM: BriefingFormValues = {
+  tipo: 'FEED',
   orientacoes: '',
   prazo: '',
   entregaveis_esperados: '',
@@ -25,7 +30,8 @@ export default function BriefingFormPage() {
   const { participacaoId } = useParams<{ participacaoId: string }>();
   const navigate = useNavigate();
   const [form, setForm] = useState<BriefingFormValues>(EMPTY_FORM);
-  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [existentes, setExistentes] = useState<Briefing[]>([]);
+  const [editando, setEditando] = useState<Briefing | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,20 +39,30 @@ export default function BriefingFormPage() {
 
   useEffect(() => {
     if (!participacaoId) return;
-    getBriefing(participacaoId)
-      .then((existing) => {
-        setBriefing(existing);
-        if (existing) {
-          setForm({
-            orientacoes: existing.orientacoes,
-            prazo: existing.prazo,
-            entregaveis_esperados: existing.entregaveis_esperados ?? '',
-          });
-        }
-      })
-      .catch(() => setFormError('Não foi possível carregar o briefing.'))
+    listBriefings(participacaoId)
+      .then(setExistentes)
+      .catch(() => setFormError('Não foi possível carregar os briefings desta participação.'))
       .finally(() => setIsLoading(false));
   }, [participacaoId]);
+
+  function iniciarEdicao(item: Briefing) {
+    setEditando(item);
+    setForm({
+      tipo: item.tipo,
+      orientacoes: item.orientacoes,
+      prazo: item.prazo,
+      entregaveis_esperados: item.entregaveis_esperados ?? '',
+    });
+    setFieldErrors({});
+    setFormError(null);
+  }
+
+  function iniciarNovo() {
+    setEditando(null);
+    setForm(EMPTY_FORM);
+    setFieldErrors({});
+    setFormError(null);
+  }
 
   function updateField<K extends keyof BriefingFormValues>(
     field: K,
@@ -63,21 +79,19 @@ export default function BriefingFormPage() {
     setIsSubmitting(true);
 
     try {
-      if (briefing) {
-        await updateBriefing(briefing.id, form);
+      if (editando) {
+        const atualizado = await updateBriefing(editando.id, form);
+        setExistentes((atual) => atual.map((b) => (b.id === atualizado.id ? atualizado : b)));
       } else {
-        await createBriefing(participacaoId, form);
+        const criado = await createBriefing(participacaoId, form);
+        setExistentes((atual) => [...atual, criado]);
       }
-      navigate(-1);
+      iniciarNovo();
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 422) {
         const errors = error.response.data.errors as Record<string, string[]>;
         const mapped: FieldErrors = {};
         for (const key of Object.keys(errors)) {
-          if (key === 'participacao_id') {
-            setFormError(errors[key][0]);
-            continue;
-          }
           mapped[key as keyof BriefingFormValues] = errors[key][0];
         }
         setFieldErrors(mapped);
@@ -96,9 +110,40 @@ export default function BriefingFormPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h2 className={styles.title}>{briefing ? 'Editar briefing' : 'Novo briefing'}</h2>
+        <h2 className={styles.title}>Briefing da participação</h2>
       </header>
+
+      {existentes.length > 0 && (
+        <ul className={styles.list}>
+          {existentes.map((item) => (
+            <li key={item.id}>
+              <button type="button" onClick={() => iniciarEdicao(item)}>
+                {item.tipo} — {item.orientacoes.slice(0, 60)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        <h3>{editando ? `Editar briefing (${editando.tipo})` : 'Novo briefing'}</h3>
+
+        {!editando && (
+          <SelectField
+            label="Tipo de conteúdo"
+            value={form.tipo}
+            onChange={(event) => updateField('tipo', event.target.value as TipoConteudo)}
+            error={fieldErrors.tipo}
+            required
+          >
+            {TIPOS.map((tipo) => (
+              <option key={tipo} value={tipo}>
+                {tipo}
+              </option>
+            ))}
+          </SelectField>
+        )}
+
         <TextareaField
           label="Orientações"
           value={form.orientacoes}
@@ -129,14 +174,19 @@ export default function BriefingFormPage() {
           </p>
         )}
 
-        <Button
-          type="submit"
-          isLoading={isSubmitting}
-          loadingText="salvando…"
-          className={styles.submit}
-        >
-          salvar
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            loadingText="salvando…"
+            className={styles.submit}
+          >
+            salvar
+          </Button>
+          <Button type="button" onClick={() => navigate(-1)}>
+            voltar
+          </Button>
+        </div>
       </form>
     </div>
   );
