@@ -49,12 +49,12 @@ function App() {
           <Route path="/participacoes/:participacaoId/briefing" element={<BriefingFormPage />} />
           <Route path="/participacoes/:participacaoId/materiais" element={<MateriaisPage />} />
           <Route path="/participacoes/:participacaoId/pagamento" element={<PagamentoPage />} />
-          <Route path="/colaboracoes" element={<PlaceholderPage title="Colaborações" />} />
-          <Route path="/briefings" element={<PlaceholderPage title="Briefings" />} />
-          <Route path="/materiais" element={<PlaceholderPage title="Materiais" />} />
-          <Route path="/aprovacoes" element={<PlaceholderPage title="Aprovações" />} />
+          <Route path="/colaboracoes" element={<Navigate to="/campanhas" replace />} />
+          <Route path="/briefings" element={<Navigate to="/campanhas" replace />} />
+          <Route path="/materiais" element={<Navigate to="/campanhas" replace />} />
+          <Route path="/aprovacoes" element={<Navigate to="/campanhas" replace />} />
+          <Route path="/pagamentos" element={<Navigate to="/campanhas" replace />} />
           <Route path="/logistica" element={<PlaceholderPage title="Logística" />} />
-          <Route path="/pagamentos" element={<PlaceholderPage title="Pagamentos" />} />
           <Route path="/documentos" element={<PlaceholderPage title="Documentos" />} />
           <Route path="/historico" element={<PlaceholderPage title="Histórico" />} />
           <Route path="/perfil" element={<PlaceholderPage title="Perfil" />} />
