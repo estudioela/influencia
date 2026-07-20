@@ -930,3 +930,32 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   e segue sendo a referência visual Stitch oficial. `UI_FINAL_REVIEW.md`
   também já não existe (a nota anterior dizia "mantido"); a PR #40 já foi
   revisada e mergeada em `origin/main` (merge commit `c96e618`).
+
+---
+
+## 15. Implementação paralela `tear-v2-app` (Laravel + React) — achado de governança (2026-07-20)
+
+- **O que é:** um segundo sistema, independente do descrito neste roteador
+  (GAS + Google Sheets, `src/`, `clasp`), vive em `tear-v2-app/` —
+  `tear-v2-app/backend` (Laravel 12 + Sanctum + Spatie Permission) e
+  `tear-v2-app/frontend` (React 19 + Vite + TypeScript). Nasceu nesta mesma
+  branch (`feat/ui-design-system-ela`) em 7 commits (`ee3557f`…`f85264b`,
+  2026-07-19), sem nenhuma SPEC, ADR ou entrada neste roteador cobrindo-o —
+  achado de auditoria ao iniciar o fechamento do fluxo de cadastro de
+  influenciadora nesse stack.
+- **Não substitui nem estende as SPECs acima:** este roteador segue sendo a
+  fonte de verdade do sistema GAS (em produção). `tear-v2-app` é um esforço
+  paralelo; as regras de negócio RN-01/RN-02/RN-03 e RF-001–RF-004 do
+  `docs/PRD.md` (§6.1/§7/§9) foram reaproveitadas como referência por serem
+  agnósticas de stack, mas nenhuma SPEC formal foi aberta.
+- **Estado em 2026-07-20 (fechamento do cadastro de influenciadora):**
+  model `Parceira` (nasce `Inativa`, RN-01), CRUD administrativo
+  (`ParceiraController`, atrás de `auth:sanctum`) e agora rota pública de
+  cadastro (`POST /api/parceiras/cadastro`, sem auth, `throttle:6,1`) via
+  `CadastroPublicoController`, com página pública `/cadastro` no frontend
+  (`PublicCadastroPage.tsx`). RN-02 (endereço automático por CEP) **não
+  implementado** — débito registrado, decisão do responsável do projeto em
+  2026-07-20 de deixar para uma entrega futura.
+- **Pendência:** decidir se este roteador passa a cobrir `tear-v2-app` (nova
+  seção por módulo, no mesmo padrão do §3) ou se recebe um roteador próprio
+  — não decidido nesta sessão, só registrado o achado para não se perder.
