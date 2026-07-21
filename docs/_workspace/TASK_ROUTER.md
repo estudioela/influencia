@@ -1096,3 +1096,46 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       definir senha → login → dashboard → perfil, dados pessoais e medidas
       salvos e persistidos, CEP auto-preenchido) com uma Parceira real criada
       e aprovada na sessão.
+  - **Módulo Portal da Influenciadora — Sprint 2.2, campanhas/briefing/
+    materiais/pagamento (2026-07-21):** fecha o restante do backlog descrito
+    acima (nenhuma entidade/migration nova, só telas e rotas de leitura +
+    ação para o dono da participação). Implementado em 5 commits
+    (`794c3f0`…`dd35440`), sem relatório dedicado nesta sessão — registrado
+    aqui por ser a fonte de verdade única do estado do projeto.
+    - **`PortalCampanhasListPage`/`PortalCampanhaDetailPage`:**
+      `GET /campanhas` já filtrava por posse desde o módulo de Campanhas
+      (`CampanhaController::index`, `whereHas('participacoes', parceira_id
+      = user.parceira.id AND status ATIVA)` quando o papel não é `ADMIN`) —
+      reaproveitado sem mudança de backend. Tela nova só consome a API já
+      existente.
+    - **Briefing por tipo:** `PortalCampanhaDetailPage` lista os briefings
+      da própria participação (`GET /participacoes/{id}/briefings`, já
+      autorizado por `ParticipacaoNaCampanhaPolicy::view` = dono da
+      participação `ATIVA`), agrupados por `tipo` com badge.
+    - **Envio de material:** mesma tela ganhou formulário de upload
+      (`POST /participacoes/{id}/materiais`, rota já aberta ao dono desde o
+      módulo de Materiais — sem gate de role, só `authorize('view',
+      $participacao)`); reaproveita `uploadMaterial` já usado pelo admin.
+    - **Status de pagamento:** `GET /participacoes/{id}/pagamento`
+      (`PagamentoController::show`, mesma policy de posse) exibido como
+      tabela somente leitura — nenhuma ação de aprovação/edição exposta ao
+      papel `INFLUENCIADORA` (continua `role:ADMIN`).
+    - **Máscaras de digitação e CEP:** débito P1 do relatório da Sprint 1
+      fechado nesta mesma leva — `lib/mascaras.ts` (telefone/CNPJ/CEP) e
+      `lib/cep.ts` (busca ViaCEP on-blur, só preenche campos ainda vazios)
+      aplicados em `PublicCadastroPage` e `PortalPerfilPage`.
+    - **Achado de cobertura fechado nesta sessão (2026-07-21):** as 4 rotas
+      de leitura reaproveitadas acima (`campanhas.show`/`index`,
+      `briefings.index`, `pagamento.show`) tinham a checagem de posse
+      correta no código desde que foram escritas, mas só `Material` tinha
+      teste automatizado provando isolamento entre influenciadoras
+      (`MaterialTest`). Adicionados 3 testes em `PortalIsolamentoTest`
+      (campanha/briefing/pagamento de participação alheia → 403),
+      fechando a mesma cobertura para as 3 abas que faltavam. Suíte
+      completa 127/127 verde, pint limpo, `tsc -b && vite build`/`oxlint`
+      limpos (único warning pré-existente em `auth.tsx:72`, não tocado).
+    - **Backlog restante do Portal:** nenhum item novo identificado nesta
+      sessão além do já registrado em §14 do
+      `HANDOFF_PRODUCTIZACAO_TEAR_V2.md` (RBAC de leitura administrativo,
+      locale `pt_BR`, credenciais reais do Google Drive — bloqueio externo,
+      não de código).
