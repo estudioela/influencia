@@ -29,6 +29,8 @@ class MaterialController extends Controller
 
     public function store(StoreMaterialRequest $request, ParticipacaoNaCampanha $participacao): MaterialResource
     {
+        $this->authorize('view', $participacao);
+
         $file = $request->file('arquivo');
         $tipo = $request->validated('tipo');
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Material;
+use App\Models\Parceira;
 use App\Models\ParticipacaoNaCampanha;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,6 +49,71 @@ class MaterialTest extends TestCase
         ]);
 
         $response->assertForbidden();
+    }
+
+    public function test_influenciadora_dona_da_participacao_ativa_pode_enviar_material(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $parceira = Parceira::factory()->create(['status' => 'Ativa']);
+        $parceira->vincularUsuario($user);
+        $participacao = ParticipacaoNaCampanha::factory()->create([
+            'parceira_id' => $parceira->id,
+            'status' => 'ATIVA',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/participacoes/{$participacao->id}/materiais", [
+            'tipo' => 'REELS',
+            'arquivo' => UploadedFile::fake()->create('video.mp4', 500),
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('materiais', [
+            'participacao_id' => $participacao->id,
+            'tipo' => 'REELS',
+        ]);
+    }
+
+    public function test_influenciadora_nao_pode_enviar_material_de_participacao_alheia(): void
+    {
+        $user = User::factory()->create();
+        $parceira = Parceira::factory()->create(['status' => 'Ativa']);
+        $parceira->vincularUsuario($user);
+
+        $participacaoAlheia = ParticipacaoNaCampanha::factory()->create(['status' => 'ATIVA']);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/participacoes/{$participacaoAlheia->id}/materiais", [
+            'tipo' => 'REELS',
+            'arquivo' => UploadedFile::fake()->create('video.mp4', 500),
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('materiais', 0);
+    }
+
+    public function test_influenciadora_nao_pode_enviar_material_de_participacao_cancelada(): void
+    {
+        $user = User::factory()->create();
+        $parceira = Parceira::factory()->create(['status' => 'Ativa']);
+        $parceira->vincularUsuario($user);
+        $participacao = ParticipacaoNaCampanha::factory()->create([
+            'parceira_id' => $parceira->id,
+            'status' => 'CANCELADA',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson("/api/participacoes/{$participacao->id}/materiais", [
+            'tipo' => 'REELS',
+            'arquivo' => UploadedFile::fake()->create('video.mp4', 500),
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('materiais', 0);
     }
 
     public function test_admin_pode_enviar_material_sem_drive_configurado(): void

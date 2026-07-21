@@ -64,8 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
 
     Route::get('/participacoes/{participacao}/materiais', [MaterialController::class, 'index']);
-    Route::post('/participacoes/{participacao}/materiais', [MaterialController::class, 'store'])
-        ->middleware('role:ADMIN');
+    Route::post('/participacoes/{participacao}/materiais', [MaterialController::class, 'store']);
     Route::patch('/materiais/{material}/aprovar', [MaterialController::class, 'aprovar'])
         ->middleware('role:ADMIN');
     Route::patch('/materiais/{material}/reprovar', [MaterialController::class, 'reprovar'])
