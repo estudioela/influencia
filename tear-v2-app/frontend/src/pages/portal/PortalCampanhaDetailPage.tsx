@@ -10,6 +10,7 @@ import {
   type Material,
   type MaterialTipo,
 } from '../../lib/materiais';
+import { getPagamento, pagamentoStatusTone, type Pagamento } from '../../lib/pagamentos';
 import Badge from '../../components/Badge';
 import SelectField from '../../components/SelectField';
 import Button from '../../components/Button';
@@ -30,6 +31,9 @@ export default function PortalCampanhaDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [pagamento, setPagamento] = useState<Pagamento | null | undefined>(undefined);
+  const [pagamentoError, setPagamentoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -55,6 +59,13 @@ export default function PortalCampanhaDetailPage() {
   }
 
   useEffect(carregarMateriais, [participacaoId]);
+
+  useEffect(() => {
+    if (!participacaoId) return;
+    getPagamento(participacaoId)
+      .then(setPagamento)
+      .catch(() => setPagamentoError('Não foi possível carregar o pagamento desta participação.'));
+  }, [participacaoId]);
 
   async function handleUpload(event: FormEvent) {
     event.preventDefault();
@@ -279,6 +290,43 @@ export default function PortalCampanhaDetailPage() {
                 enviar material
               </Button>
             </form>
+          )}
+        </section>
+      )}
+
+      {minhaParticipacao !== null && (
+        <section className={styles.group}>
+          <h3 className={styles.groupTitle}>Pagamento</h3>
+
+          {pagamentoError && <p className={styles.error}>{pagamentoError}</p>}
+
+          {pagamento === undefined && !pagamentoError && (
+            <p className={styles.loading}>Carregando…</p>
+          )}
+
+          {pagamento === null && (
+            <p className={styles.descricao}>
+              Nenhum pagamento registrado ainda para esta participação.
+            </p>
+          )}
+
+          {pagamento && (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Valor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{`R$ ${pagamento.valor.toFixed(2)}`}</td>
+                  <td>
+                    <Badge label={pagamento.status} tone={pagamentoStatusTone(pagamento.status)} />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           )}
         </section>
       )}
