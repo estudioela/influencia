@@ -58,6 +58,41 @@ lint/build limpos, validados nesta sessão.
   `restore-db.sh` (Postgres via `pg_dump`/`psql` dentro do
   docker-compose, prontos para agendar via cron do host).
 
+### 0.1 Segunda rodada (mesma sessão de produtização)
+
+- **Observabilidade — Laravel Pulse** (`/pulse`, restrito a `ADMIN` via o
+  `Gate::before` já existente, sem tocar rota de negócio nenhuma):
+  exceções, slow requests/queries/jobs/outgoing-requests, filas, cache,
+  top usuários por volume. `composer.json`: `laravel/pulse` em `require`
+  (não `require-dev` — é runtime). Testes:
+  `tests/Feature/PulseAccessTest.php` (guest/não-admin bloqueados, admin
+  acessa).
+- **Correlação de logs por request**: `app/Http/Middleware/RequestId.php`
+  — gera/propaga `X-Request-Id`, injeta no contexto de todo log da
+  requisição. Registrado em `bootstrap/app.php` (mesmo padrão de baixo
+  risco do `SecurityHeaders`). Teste: `tests/Feature/RequestIdTest.php`.
+- **Auditoria de dependências automatizada**: CI agora roda
+  `composer audit` (limpo) e `npm audit --omit=dev --audit-level=high`
+  (limpo — a única vulnerabilidade encontrada, em `concurrently`/
+  `shell-quote`, é devDependency de tooling local, não entra no build de
+  produção, por isso `--omit=dev`). `.github/dependabot.yml` — updates
+  semanais automatizados de composer/npm/Docker/GitHub Actions.
+- **`docker-compose.yml`**: healthcheck em todo serviço HTTP (`app` via
+  `nc` na porta do PHP-FPM, `nginx`/`frontend` via `wget --spider`);
+  `nginx` agora espera `app` ficar `healthy` antes de subir.
+- **CD**: `.github/workflows/tear-v2-docker.yml` — builda e publica
+  imagens Docker (backend/frontend) no GHCR, mas **só a partir de
+  `main`** (nunca em branch de feature, pra não competir com o CI de PR
+  nem publicar imagem de trabalho em andamento).
+- **Documentação operacional**: `tear-v2-app/docs/DEPLOY.md` (runbook de
+  primeiro deploy, deploys subsequentes, rollback, backup) e
+  `tear-v2-app/docs/MONITORING.md` (o que observar, como, e o que falta).
+- **Script de uptime**: `tear-v2-app/scripts/healthcheck.sh` — checa
+  `/up` e `/api/health`, alerta opcional via Slack webhook.
+
+Backend após esta rodada: 110/110 testes verdes (104 + 6 novos), Pint
+limpo, `composer audit` limpo.
+
 ---
 
 ## 1. Bloqueios P0 (antes de operar como produto)
@@ -90,9 +125,15 @@ indisponibilidade sob uso real — não em polimento.
 | Code-splitting / lazy loading de rotas no frontend (`React.lazy`) — hoje bundle único (~333KB/103KB gzip, ainda pequeno mas vai crescer) | Baixo risco técnico, mas exige tocar `App.tsx`/roteamento, que é onde o Agente A mais frequentemente adiciona páginas novas — deixado para não competir por esse arquivo. |
 | Error Boundary React global — hoje um erro de render derruba a árvore inteira sem fallback | Mesmo motivo acima (`App.tsx` ou componente raiz de rotas). |
 | Padronizar tratamento de erro de fetch entre páginas (ex.: `Dashboard.tsx` falha silenciosamente com `.catch(() => setX(null))`, enquanto `MateriaisPage.tsx` já tem UI de erro consistente) | Arquivo de página de feature — Agente A. |
-| Monitoramento de erro frontend (Sentry ou equivalente) | Decisão de fornecedor + variável de ambiente nova; documentado, não decidido aqui — impacto de custo/produto que cabe ao responsável do projeto. |
+| ~~Observabilidade de backend (exceções, slow query, filas)~~ | ✅ **resolvido nesta sessão** — Laravel Pulse em `/pulse`, ver §0.1. |
+| ~~Correlação de logs por request~~ | ✅ **resolvido nesta sessão** — `RequestId` middleware, ver §0.1. |
+| ~~Auditoria de dependências no CI~~ | ✅ **resolvido nesta sessão** — `composer audit` + `npm audit`, ver §0.1. |
+| Monitoramento de erro **frontend** (Sentry ou equivalente) — Pulse cobre só o backend | Decisão de fornecedor + variável de ambiente nova (DSN); documentado, não decidido aqui — impacto de custo/produto que cabe ao responsável do projeto. |
+| Alertas proativos (Slack/e-mail) quando uma exceção ou fila trava | `scripts/healthcheck.sh` já alerta uptime via Slack; falta o mesmo para exceções/filas do Pulse — decisão de canal pendente. |
 | Consolidar os dois health-checks redundantes (`/up` nativo do Laravel vs. `GET /api/health` customizado) com propósitos diferentes (liveness vs. readiness — ex.: `/api/health` checando conexão real com o banco) | Pequena mudança em `routes/api.php` — mesmo motivo do P0-1, deixado como recomendação. |
 | Definir uso real de filas ou remover o worker/`QUEUE_CONNECTION=database` (hoje configurado mas nenhum `Job`/`Listener` existe) | O `docker-compose.yml` já inclui um container `queue` pronto para quando isso for decidido; não custa deixá-lo rodando ocioso. |
+| `concurrently`/`shell-quote` — vulnerabilidade alta conhecida (GHSA-395f-4hp3-45gv), devDependency de `npm run dev:all` local | Fix exigiria downgrade quebrando (`concurrently@9.2.4`, contradiz `^10.0.3` hoje fixado) — sem impacto em produção (não entra no build), documentado e excluído do gate de CI via `--omit=dev`. Reavaliar quando `concurrently` publicar um 10.x corrigido. |
+| Redis para cache/queue/sessão (hoje `database`) | Só compensa com volume real de tráfego — `PULSE_INGEST_DRIVER=redis` também ganharia se isso acontecer. Não antecipar sem necessidade. |
 
 ---
 
@@ -163,6 +204,8 @@ de esforço adicional, pronto para uso.
 - [x] Backup de banco (script pronto, P0-5) — [ ] agendado no host real de produção
 - [x] Filas com worker pronto no `docker-compose.yml` — [ ] decidir uso real ou remover (P1)
 - [x] Cache configurado (`database`, já em uso por `GoogleDriveService`)
+- [x] Healthcheck em todo serviço HTTP do `docker-compose.yml`
+- [x] Auditoria automatizada de dependências no CI (`composer audit`, `npm audit`) + Dependabot
 
 ### Banco
 - [x] Todas as 19 migrations têm `down()` implementado
@@ -187,18 +230,23 @@ de esforço adicional, pronto para uso.
 - [ ] Padronizar tratamento de erro nas páginas restantes (P1)
 - [ ] Lazy loading de rotas (P1)
 - [ ] Error Boundary global (P1)
-- [ ] Monitoramento de erro (Sentry ou equivalente) (P1)
+- [ ] Monitoramento de erro (Sentry ou equivalente) (P1) — Pulse cobre exceções de **backend**, frontend ainda sem cobertura
 
 ### Backend
 - [x] Respostas de API em JSON consistente (`shouldRenderJsonWhen`)
 - [x] Health check disponível (`/up` nativo + `/api/health` customizado)
 - [ ] Consolidar os dois health-checks com propósitos claros (P1)
-- [ ] Correlação de request ID em logs (P2)
+- [x] Correlação de request ID em logs (`RequestId` middleware + `X-Request-Id`)
+- [x] Observabilidade de performance/exceções/filas (Laravel Pulse, `/pulse`, restrito a `ADMIN`)
 
 ### Deploy
 - [x] CI configurado e validado (backend + frontend, P0-4)
 - [x] Dockerfiles + docker-compose para homologação/produção
+- [x] Healthcheck em todo serviço do `docker-compose.yml`
 - [x] Template de variáveis de produção (`.env.production.example`)
+- [x] CD — build/push de imagens Docker para GHCR (só a partir de `main`)
+- [x] Documentação operacional (`docs/DEPLOY.md`, `docs/MONITORING.md`)
+- [x] Script de uptime check com alerta Slack opcional (`scripts/healthcheck.sh`)
 - [ ] Domínio e hosting de produção definidos (decisão externa, P0-9)
 - [ ] Primeiro deploy de homologação executado
 - [ ] Primeiro deploy de produção executado
