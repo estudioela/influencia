@@ -197,7 +197,7 @@ de esforço adicional, pronto para uso.
 
 ### Infraestrutura
 - [x] Logs configurados (`daily` em produção, `.env.production.example`)
-- [ ] Retenção de log revisada (`LOG_DAILY_DAYS`, avaliar se 14 dias padrão basta)
+- [x] Retenção de log explícita (`LOG_DAILY_DAYS=30` em `.env.production.example`, era default implícito de 14)
 - [x] Storage/uploads com limite de tamanho (50MB)
 - [ ] Storage/uploads com whitelist de mime (P0-8)
 - [ ] Scheduler — não necessário até haver rotina periódica real (P2)
