@@ -1251,6 +1251,72 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       2 Briefings) já existem no banco local — reaproveitar em vez de
       recriar. Senha de `marina.duarte@example.com` foi redefinida para
       `password` nesta sessão (dev/QA apenas).
+  - **QA operacional pré-Go-Live, sessão concluída (2026-07-21):** retomada
+    exata do ponto acima. Cobriu todos os fluxos restantes: Parceiras
+    (CRUD/aprovação/convite/reenvio), Aprovações e Materiais (upload,
+    aprovar, reprovar), Pagamentos (criar, aprovar, regra de bloqueio por
+    material não aprovado), Documentos/Histórico/Perfil (admin), e a
+    jornada completa do Portal da Influenciadora (cadastro público →
+    aprovação → primeiro acesso/definir senha → login → esqueci senha →
+    campanhas → briefing → upload → pagamentos → perfil → logout), incluindo
+    um smoke test ponta a ponta com identidade única (parceira "Beatriz
+    Souza QA Portal", id=3, participação id=2 na Campanha id=1).
+    - **P0 de segurança encontrado e corrigido (`0a2bc5b`):** `POST
+      /api/parceiras` (autenticado) não tinha `role:ADMIN` nem policy de
+      `create` — qualquer usuário autenticado, inclusive uma
+      INFLUENCIADORA, podia criar registros de `Parceira` arbitrários via
+      API, contornando o fluxo de cadastro. Corrigido restringindo a rota a
+      ADMIN (mesmo padrão de `/marcas` e `/campanhas`); testes que
+      assumiam acesso irrestrito foram migrados para o endpoint público
+      `POST /parceiras/cadastro` (mesma lógica de validação, é o local
+      correto para essa cobertura). Suíte 148/148 verde, pint limpo.
+    - **P1 confirmado e ampliado (não corrigido, não bloqueia produção):**
+      o erro genérico "Não foi possível enviar o material"/"...atualizar o
+      pagamento" que não repassa o motivo real do backend (já registrado
+      na sessão anterior só para upload de materiais) também ocorre em
+      **Pagamentos** — confirmado com um 409 real ("Pagamento não pode ser
+      aprovado: há material da participação ainda não aprovado") mascarado
+      pela mesma mensagem genérica no frontend. Mesmo padrão, dois pontos
+      de origem; vale um fix único (propagar `error.response.data.message`
+      quando existir) em vez de dois patches pontuais.
+    - **P2 novos (cosméticos/não bloqueantes):**
+      - Valores monetários exibidos sem formatação pt-BR (`R$ 2273.98` em
+        vez de `R$ 2.273,98`) em Campanha (coluna Valor) e Pagamento.
+      - Template de e-mail transacional (convite/definir senha) mistura
+        "Regards," em inglês no corpo majoritariamente em português
+        (visto no e-mail de convite enviado via `MAIL_MAILER=log`).
+      - `GET /marcas` e `GET /marcas/{marca}` dependem só da
+        `MarcaPolicy` para bloquear não-ADMIN (funciona hoje, mas sem
+        `role:ADMIN` explícito na rota como as demais escritas de
+        `/marcas`/`/campanhas` — frágil a regressão futura caso a Policy
+        mude sem repor a restrição na rota). Recomendação de hardening,
+        não é um gap ativo hoje (achado do subagente de auditoria de
+        rotas, verificado).
+    - **Não reproduzido nesta sessão:** o bug de navegação client-side
+      registrado na sessão anterior (primeiro clique no menu lateral após
+      `navigate()` de página inteira) — testado explicitamente logo após
+      login (full page navigate) e não ocorreu. Mantido como observação
+      não determinística, sem repro nesta rodada.
+    - **Infra-dependente, reconfirmado (fora do controle de código):**
+      Google Drive real não configurado neste ambiente dev → upload de
+      material retorna 503 tanto no admin quanto no Portal (mensagem
+      backend correta: "Envio de materiais está temporariamente
+      indisponível"); `MAIL_MAILER=log` → e-mails (convite, redefinição de
+      senha) não chegam a caixas de entrada reais. Ambos já listados no
+      checklist de infra da sessão anterior; nenhum é bug de código.
+    - **Cobertura de testes (achado do subagente, verificado):** backend
+      bem coberto para os fluxos de negócio (Parceiras, Materiais,
+      Pagamentos, Briefings, isolamento entre influenciadoras). Documentos
+      e Perfil (admin) sem teste porque são `PlaceholderPage` ainda não
+      implementadas — comportamento esperado, confirmar com PO se entram
+      no MVP do Go-Live ou ficam para depois. Frontend não tem nenhum
+      teste automatizado (0 arquivos `*.test.*`) — toda a camada React
+      depende de QA manual como esta.
+    - **Veredito: APTO PARA GO-LIVE** (código), condicionado à preparação
+      de infraestrutura já listada (credenciais Google Drive, SMTP/SES
+      real, `APP_ENV=production` e variáveis relacionadas, banco de
+      produção). Nenhum P0 de código restante. P1/P2 acima são polimento,
+      não bloqueiam a entrada em produção.
   - **Auditoria estática final de prontidão para Go-Live — Agente B
     (2026-07-21):** agente independente, sem sobreposição com a QA manual
     acima (não abriu navegador, não alterou código). Varredura estática
