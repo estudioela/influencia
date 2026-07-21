@@ -18,6 +18,8 @@ import AppShell from './components/AppShell';
 import PortalShell from './components/PortalShell';
 import PortalDashboardPage from './pages/portal/PortalDashboardPage';
 import PortalPerfilPage from './pages/portal/PortalPerfilPage';
+import PortalCampanhasListPage from './pages/portal/PortalCampanhasListPage';
+import PortalCampanhaDetailPage from './pages/portal/PortalCampanhaDetailPage';
 import PlaceholderPage from './components/PlaceholderPage';
 import { useAuth } from './lib/auth';
 import styles from './App.module.css';
@@ -41,6 +43,8 @@ function App() {
       {user && user.role === 'INFLUENCIADORA' && (
         <Route element={<PortalShell />}>
           <Route path="/" element={<PortalDashboardPage />} />
+          <Route path="/campanhas" element={<PortalCampanhasListPage />} />
+          <Route path="/campanhas/:id" element={<PortalCampanhaDetailPage />} />
           <Route path="/perfil" element={<PortalPerfilPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
