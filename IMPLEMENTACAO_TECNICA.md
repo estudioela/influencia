@@ -35,22 +35,23 @@ anterior existir):
 2. **Provisionamento de infraestrutura** (fora do repo): Droplet
    DigitalOcean, instalação do Coolify, registro DNS do(s) subdomínio(s)
    apontando para o Droplet (só o registro `A`, sem delegar a zona).
-3. **Ajustes de código de aplicação que a nova arquitetura exige** (§6, §8)
-   — precisam existir **antes** do primeiro deploy real, porque alteram
-   comportamento (Shared Drive quebra sem eles) ou adicionam dependência
-   (Resend, Sentry).
-4. **Ajustes de Docker/Compose** (§7) — adaptar o artefato de build para o
+3. **Ajustes de código de aplicação que a nova arquitetura exige** (§2, §5,
+   §10, §11, §13) — precisam existir **antes** do primeiro deploy real,
+   porque alteram comportamento (Shared Drive quebra sem eles) ou adicionam
+   dependência (Resend, Sentry).
+4. **Ajustes de Docker/Compose** (§6) — adaptar o artefato de build para o
    modelo Coolify (remoção de publish de porta onde o Traefik assume o
    roteamento, variáveis de FQDN).
-5. **Configuração do Coolify** (§8) — importar o repositório, apontar para
+5. **Configuração do Coolify** (§7) — importar o repositório, apontar para
    `docker-compose.yml`, configurar domínios/HTTPS/variáveis de ambiente na
    UI, configurar backup agendado do Postgres.
-6. **CI/CD** (§13) — configurar o webhook do GitHub apontando para o
-   Coolify; decidir o destino do workflow de publicação no GHCR (§13).
-7. **Backup offsite + monitoramento** (§11, §12) — só faz sentido depois do
-   ambiente estar de pé.
+6. **CI/CD** (§14) — configurar o webhook do GitHub apontando para o
+   Coolify; decidir o destino do workflow de publicação no GHCR.
+7. **Backup offsite + monitoramento** (§12; monitoramento via dependências
+   de Sentry em §5) — só faz sentido depois do ambiente estar de pé.
 8. **Primeiro deploy de homologação → smoke test → produção**, seguindo
-   `docs/DEPLOY.md` adaptado (§9) e `TEAR_V2.5_GO_LIVE_CHECKLIST.md` §4.
+   `docs/DEPLOY.md` adaptado (linha correspondente em §2) e
+   `TEAR_V2.5_GO_LIVE_CHECKLIST.md` §4.
 
 ---
 
@@ -61,10 +62,10 @@ anterior existir):
 | `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Migrar de "My Drive pessoal" para Shared Drive institucional (§5 do ARQUITETURA) exige os parâmetros `supportsAllDrives=true` (em `files.create`/upload) e `includeItemsFromAllDrives=true`+`corpora=drive`+`driveId` (em `files.list`, usado por `ensureFolder`) nas chamadas REST — **hoje nenhum dos dois existe no código**. Sem isso, `ensureFolder`/`uploadFile` falham silenciosamente (404/"File not found") contra um Shared Drive, mesmo com credenciais corretas. | precisa ajustar |
 | `tear-v2-app/backend/config/mail.php` | Nenhuma mudança de conteúdo — o transporte `resend` **já está definido** no template padrão do Laravel 13. Só confirmar que não foi removido. | já existe |
 | `tear-v2-app/backend/config/services.php` | Nenhuma mudança — `resend.key` e `google_drive.*` já lidos de `env()`. | já existe |
-| `tear-v2-app/backend/bootstrap/app.php` | Duas adições necessárias: (1) `Sentry\Laravel\Integration::handles($exceptions)` dentro do bloco `->withExceptions()` (novo monitoramento, §12); (2) `$middleware->trustProxies(at: [...])` com o IP interno do Traefik/Coolify — sem isso, `Request::ip()` (usado no rate-limit de `/login`) e a detecção de HTTPS ficam incorretas atrás do proxy. | precisa ajustar |
+| `tear-v2-app/backend/bootstrap/app.php` | Duas adições necessárias: (1) `Sentry\Laravel\Integration::handles($exceptions)` dentro do bloco `->withExceptions()` (novo monitoramento, dependência em §5); (2) `$middleware->trustProxies(at: [...])` com o IP interno do Traefik/Coolify — sem isso, `Request::ip()` (usado no rate-limit de `/login`) e a detecção de HTTPS ficam incorretas atrás do proxy (detalhe em §13). | precisa ajustar |
 | `tear-v2-app/backend/composer.json` | Adicionar `resend/resend-laravel` e `sentry/sentry-laravel` a `require` (ver §5 Dependências). | precisa ajustar |
 | `tear-v2-app/backend/.env.production.example` | Trocar bloco de `MAIL_*` genérico por valores default de Resend (`MAIL_MAILER=resend`, remover `MAIL_HOST`/`PORT`/`USERNAME`/`PASSWORD` do caminho obrigatório); adicionar `RESEND_API_KEY`, `SENTRY_LARAVEL_DSN`; `SESSION_DOMAIN=.estudioela.com` (ou o subdomínio exato escolhido) como exemplo real em vez de `.CHANGE_ME.com.br`. | precisa ajustar |
-| `tear-v2-app/frontend/.env.example` | Adicionar `VITE_SENTRY_DSN` (monitoramento de erro frontend, §12 do ARQUITETURA — hoje não existe nenhum). | precisa ajustar |
+| `tear-v2-app/frontend/.env.example` | Adicionar `VITE_SENTRY_DSN` (monitoramento de erro frontend, §11 do ARQUITETURA — hoje não existe nenhum). | precisa ajustar |
 | `tear-v2-app/frontend/src/main.tsx` (ou equivalente ponto de entrada) | Inicializar `Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN, ... })`. | precisa ajustar |
 | `tear-v2-app/docker-compose.yml` | Remover `ports:` publicados em `nginx` (hoje `8000:8080`) e `frontend` (hoje `5173:8080`) — sob Coolify/Traefik o roteamento é por label/FQDN, não por publish de porta de host; decidir modelo do serviço `db` (manter como serviço do compose vs. migrar para recurso nativo "Database" do Coolify, que é o caminho que habilita "backup agendável na própria UI" citado no ARQUITETURA §3-B/§7). | precisa ajustar |
 | `tear-v2-app/scripts/backup-db.sh` | Adicionar upload do dump para Cloudflare R2 (S3-compatible, via `aws s3 cp` ou `rclone`) e um `curl` de ping para Healthchecks.io ao final — nenhum dos dois existe hoje (script só grava local). **Só necessário se o backup continuar via cron/script em vez do recurso nativo do Coolify** — ver decisão pendente em §9. | precisa ajustar |
@@ -115,7 +116,7 @@ já têm placeholder em `.env.production.example` **exceto os marcados**.
 | Pacote | Onde | Motivo | STATUS |
 |---|---|---|---|
 | `resend/resend-laravel` | `backend/composer.json` (`require`) | O transporte `resend` já está mapeado em `config/mail.php`, mas a classe do transporte vem deste pacote — sem ele, `MAIL_MAILER=resend` falha em runtime. | precisa criar (adicionar) |
-| `sentry/sentry-laravel` | `backend/composer.json` (`require`) | Monitoramento de erro backend (§12 do ARQUITETURA). | precisa criar (adicionar) |
+| `sentry/sentry-laravel` | `backend/composer.json` (`require`) | Monitoramento de erro backend (§11 do ARQUITETURA). | precisa criar (adicionar) |
 | `@sentry/react` | `frontend/package.json` (`dependencies`) | Monitoramento de erro frontend — hoje **nenhum** monitoramento de erro existe no frontend (lacuna já registrada no próprio ARQUITETURA §11). | precisa criar (adicionar) |
 | Coolify (software, não dependência do projeto) | instalado no Droplet, fora do repositório | Orquestrador de deploy (§3-B do ARQUITETURA). | precisa criar (infra) |
 | `aws-cli` ou `rclone` (só se backup via script, §9) | binário no host (ou imagem do container de backup), não no `composer.json`/`package.json` | Upload do dump para Cloudflare R2 (S3-compatible). | precisa criar (condicional) |
@@ -150,7 +151,7 @@ mapeamento:
 | Configuração de domínio (FQDN) por serviço exposto (`nginx`→API, `frontend`→SPA) | precisa criar |
 | Ativação de HTTPS automático (Let's Encrypt) por domínio, dentro da UI | precisa criar |
 | Preenchimento das variáveis de ambiente do §4 na UI do Coolify (ou via `.env` gerenciado por ele) | precisa criar |
-| Configuração do webhook de deploy (GitHub → Coolify) | precisa criar — ver §13 |
+| Configuração do webhook de deploy (GitHub → Coolify) | precisa criar — ver §14 |
 | Configuração do recurso Postgres (nativo do Coolify **ou** serviço do compose — decisão §9) + backup agendado na UI | precisa criar |
 
 ---
