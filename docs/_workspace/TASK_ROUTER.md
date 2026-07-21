@@ -1146,7 +1146,16 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       modo de edição. Validado manualmente no navegador (PUT retornou 200,
       redirecionou para o detalhe com os dados salvos); `tsc -b`/`vite
       build`/`oxlint` limpos.
-    - **Backlog restante do Portal:** nenhum item novo identificado além do
-      já registrado em §14 do `HANDOFF_PRODUCTIZACAO_TEAR_V2.md` (RBAC de
-      leitura administrativo, locale `pt_BR`, credenciais reais do Google
-      Drive — bloqueio externo, não de código).
+    - **Verificação de débitos antigos (2026-07-21):** `HANDOFF_PRODUCTIZACAO_TEAR_V2.md`
+      §2/§3 (2026-07-20) listava "RBAC de leitura não existe" e locale
+      `en` como pendências. Ambos já **resolvidos** neste ponto do código,
+      não identificados nesta sessão: todo controller de `tear-v2-app`
+      chama `authorize()` com policy por posse ou por papel
+      (`ParceiraController`, `CampanhaController`, `MarcaController`,
+      `MaterialController`, `PagamentoController`, `BriefingController`,
+      `ParticipacaoController`); `APP_LOCALE=pt_BR` já configurado em
+      `.env`/`.env.example` com `lang/pt_BR/` completo. Único item real
+      ainda pendente e fora do controle de código: credenciais reais do
+      Google Drive (`GOOGLE_DRIVE_CLIENT_EMAIL`/`GOOGLE_DRIVE_PRIVATE_KEY`
+      vazias) — bloqueio externo, não corrigível sem acesso que o agente
+      não possui.
