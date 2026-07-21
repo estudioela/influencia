@@ -48,19 +48,55 @@ docker compose exec app php artisan admin:create \
 Comando idempotente — pode ser rodado de novo com o mesmo e-mail para
 resetar a senha de um admin existente.
 
-## 4. Verificação pós-deploy
+## 4. Smoke test pós-deploy
 
-- `curl -f http://SEU_DOMINIO/up` → 200 (health check nativo do Laravel).
-- `curl -f http://SEU_DOMINIO/api/health` → `{"status":"ok",...}`.
-- Login funcional na SPA (`FRONTEND_URL`/porta do serviço `frontend`).
-- `/pulse` acessível só para usuário com papel `ADMIN` (ver
-  `docs/MONITORING.md`).
-- `docker compose ps` → todos os serviços `healthy` (app, nginx, frontend,
-  db); `queue` sem healthcheck dedicado, mas deve aparecer `Up`, não
-  reiniciando em loop (`docker compose logs queue` se suspeitar de crash
-  loop).
+Rodar sempre, em qualquer deploy (primeiro ou subsequente), antes de
+considerar o release concluído:
 
-## 5. Deploys subsequentes
+1. `docker compose ps` → todos os serviços `healthy` (`app`, `nginx`,
+   `frontend`, `db`); `queue` sem healthcheck dedicado, mas deve aparecer
+   `Up`, não reiniciando em loop (`docker compose logs queue` se suspeitar
+   de crash loop).
+2. `curl -f http://SEU_DOMINIO/up` → 200 (health check nativo do Laravel).
+3. `curl -f http://SEU_DOMINIO/api/health` → `{"status":"ok",...}`.
+4. Login funcional na SPA (`FRONTEND_URL`/porta do serviço `frontend`) com
+   um usuário `ADMIN` real (ver `php artisan admin:create`, §3).
+5. Uma rota autenticada de leitura responde (ex.: `GET /api/parceiras`)
+   sem 500 — confirma que a sessão/cookie/CORS/Sanctum estão coerentes
+   entre `APP_URL`/`FRONTEND_URL`/`SANCTUM_STATEFUL_DOMAINS`.
+6. `/pulse` acessível só para usuário com papel `ADMIN` (403/redirect para
+   qualquer outro papel ou anônimo) — ver `docs/MONITORING.md`.
+7. Resposta de qualquer endpoint carrega o header `X-Request-Id`
+   (confirma que o middleware `RequestId` subiu com o release).
+8. Se o release tocou upload de Material: um envio real de arquivo dentro
+   dos tipos permitidos retorna sucesso (ou 503 esperado, se
+   `GOOGLE_DRIVE_*` ainda não estiver configurado no ambiente — nunca
+   500).
+
+## 5. Critérios para declarar produção saudável
+
+Só declarar o deploy concluído (não só "no ar") quando **todos** os itens
+abaixo forem verdadeiros:
+
+- Smoke test da §4 passou sem nenhum item falho.
+- `docker compose logs app --since 10m` sem exceção não tratada
+  recorrente (uma exceção isolada de um teste manual do smoke test não
+  conta; um padrão repetido, sim).
+- `/pulse` (aba Exceptions/Slow requests) sem taxa de erro anômala nos
+  primeiros minutos de tráfego real — comparar contra o baseline do
+  ambiente anterior, se houver.
+- Nenhum container em `Restarting` (`docker compose ps`) 5 minutos após o
+  `up -d`.
+- Backup de banco válido e recente existe **antes** de considerar o
+  ambiente em produção operando (rodar `./scripts/backup-db.sh` uma vez
+  manualmente se o cron ainda não tiver executado, ver §8).
+- Se o deploy incluiu migration nova: `php artisan migrate:status` dentro
+  do container `app` mostra todas como `Ran`, nenhuma pendente.
+
+Se qualquer item falhar, tratar como deploy não concluído — seguir §7
+(Rollback) em vez de deixar o ambiente em estado parcialmente saudável.
+
+## 6. Deploys subsequentes
 
 ```bash
 git pull
@@ -85,7 +121,7 @@ docker volume rm tear-v2-app_app_public
 docker compose up -d --build
 ```
 
-## 6. Rollback
+## 7. Rollback
 
 Sem migration destrutiva conhecida no histórico atual (auditoria de
 `database/migrations`, ver `TEAR_V2.5_GO_LIVE_CHECKLIST.md` §Banco) — toda
@@ -102,7 +138,7 @@ Sempre rodar `./scripts/backup-db.sh` **antes** de qualquer rollback que
 envolva `migrate:rollback` — reverter migration não restaura dado
 apagado por ela.
 
-## 7. Backup
+## 8. Backup
 
 ```bash
 ./scripts/backup-db.sh                # ./backups/tear_AAAAMMDD_HHMMSS.sql.gz
@@ -117,7 +153,7 @@ Exemplo de crontab (diário às 3h, retendo os últimos 14 arquivos):
 0 3 * * * cd /caminho/para/tear-v2-app && ./scripts/backup-db.sh && find ./backups -name '*.sql.gz' -mtime +14 -delete
 ```
 
-## 8. O que este runbook não cobre (decisão externa, fora de escopo de código)
+## 9. O que este runbook não cobre (decisão externa, fora de escopo de código)
 
 - Escolha de provedor de hosting/domínio.
 - Certificado HTTPS / reverse proxy externo ao `docker-compose.yml` (o

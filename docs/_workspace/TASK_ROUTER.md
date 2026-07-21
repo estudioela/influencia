@@ -1379,3 +1379,31 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       `SANCTUM_STATEFUL_DOMAINS`, `VITE_API_URL`); deploy (build frontend,
       migrations, `admin:create` para o primeiro ADMIN). Detalhe completo:
       `docs/HANDOFF_FINAL.md`.
+  - **Preparação de Release Engineering — sessão Agente B (2026-07-21,
+    continuação):** mandato era auditar config de produção, produzir
+    checklist (Banco/Storage/Email/Laravel/Frontend) e escrever
+    `RUNBOOK_DE_DEPLOY.md`. Achado ao iniciar: praticamente todo o
+    material já existia de sessões anteriores do mesmo dia —
+    `TEAR_V2.5_GO_LIVE_CHECKLIST.md` (checklist completo) e
+    `tear-v2-app/docs/DEPLOY.md` (runbook: pré-requisitos, deploy,
+    rollback, backup). Criar um `RUNBOOK_DE_DEPLOY.md` novo duplicaria
+    `DEPLOY.md` quase por completo (`CLAUDE.md`, "Não criar documentação
+    duplicada") — decisão: não criar arquivo novo, estender o runbook
+    existente com as duas peças que faltavam (`DEPLOY.md` §4 "Smoke test
+    pós-deploy" formalizado em 8 passos, §5 "Critérios para declarar
+    produção saudável", ambos ausentes antes; seções seguintes
+    renumeradas §6-9).
+    - **Concorrência detectada durante a sessão:** enquanto este agente
+      auditava, uma sessão paralela ("Engenheiro de Release e Deploy",
+      mesma branch/working dir, sem worktree) editava e commitou
+      `TEAR_V2.5_GO_LIVE_CHECKLIST.md` +
+      `tear-v2-app/backend/.env{,.production}.example` em tempo real
+      (commit `794c849` — fechou P0-1/P0-8 como resolvidos e corrigiu o
+      mesmo comentário falso sobre fallback do Drive já registrado em
+      `docs/HANDOFF_FINAL.md`). Este agente evitou tocar nesses 3
+      arquivos para não colidir com a escrita concorrente; só editou
+      `tear-v2-app/docs/DEPLOY.md`, não tocado pela outra sessão — sem
+      conflito. **Nota operacional para sessões futuras:** este ambiente
+      não isola sessões paralelas em worktrees; duas sessões "Agente B"
+      simultâneas na mesma working dir é um risco real de write race,
+      não hipotético — id do commit concorrente serve de evidência.
