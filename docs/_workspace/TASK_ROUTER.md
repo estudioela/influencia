@@ -1407,3 +1407,51 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       não isola sessões paralelas em worktrees; duas sessões "Agente B"
       simultâneas na mesma working dir é um risco real de write race,
       não hipotético — id do commit concorrente serve de evidência.
+  - **Smoke test final da jornada crítica ponta a ponta (2026-07-21,
+    sessão QA operacional):** os 13 passos do fluxo crítico (cadastro
+    público → aprovação → primeiro acesso → definir senha → login →
+    campanhas → briefing → upload de material → aprovação de material →
+    pagamentos → histórico → perfil → logout) executados via browser real
+    (Playwright) contra o ambiente de dev local já em pé (`php artisan
+    serve`/Vite), com uma identidade nova de ponta a ponta ("QA Smoke Test
+    20260721", `Parceira` id=4, participação id=3 na `Campanha QA Verao
+    2026`). Nenhum bug bloqueante encontrado; nenhuma correção de código
+    necessária nesta sessão.
+    - **Confirmado, não é bug:** upload de Material retornou 503
+      ("Envio de materiais está temporariamente indisponível") — sem
+      Google Drive real configurado, como já documentado (`HANDOFF_FINAL.md`,
+      P1 de erro genérico reconfirmado). Sem Material persistido, a etapa
+      "aprovação de material" não foi executável neste ambiente — não
+      contornado via `tinker` para não mascarar o comportamento real de
+      produção sem credenciais.
+    - **Achado esclarecido (não é bug):** aprovar um Pagamento de uma
+      participação sem nenhum Material (nem pendente) teve sucesso
+      imediato (`PENDENTE → APROVADO → PAGO`), aparentemente contradizendo
+      o P0 de bloqueio por material não aprovado fechado em sessão
+      anterior. Não é regressão: `PagamentoController::existeMaterialNaoAprovado`
+      só bloqueia quando existe Material com status `!= APROVADO`; o caso
+      vácuo (zero materiais) aprova normalmente — comportamento
+      explicitamente documentado no próprio código (comentário do método,
+      "mesma regra do legado"). O 409 relatado na sessão de QA anterior
+      ocorreu com um Material real pendente, cenário diferente deste.
+    - **Confirmado, sem mudança:** `Histórico` e `Perfil` (admin) seguem
+      `PlaceholderPage`; checkbox de consentimento LGPD não vem
+      pré-marcado após reload (exige reconfirmação a cada salvamento —
+      comportamento esperado do `accepted` do Laravel, não testado a
+      fundo antes mas consistente com o padrão do restante do formulário).
+    - **P2 cosmético novo, não corrigido (fora de escopo — captura apenas
+      melhoria, não bug bloqueante):** `ParceiraProfilePage` exibe
+      Telefone e CNPJ sem a máscara aplicada no cadastro (`11987654321`
+      em vez de `(11) 98765-4321`) — a máscara só existe no formulário de
+      entrada, não na exibição. Mesma categoria dos P2 de formatação
+      monetária já registrados (não pt-BR em Campanha/Pagamento,
+      reconfirmados ainda presentes nesta sessão).
+    - **Nenhum sinal de escrita concorrente** detectado durante esta
+      sessão (`git fetch`/`status` antes e depois, sem commits novos
+      aparecendo; banco de dev usado de forma aditiva, sem `migrate:fresh`
+      nem reset).
+    - **Veredito desta rodada:** nenhum P0/P1 novo. Jornada crítica
+      íntegra ponta a ponta. Confirma o veredito de
+      `docs/HANDOFF_FINAL.md`/sessões anteriores: **APTO PARA GO-LIVE**
+      (código), condicionado à infraestrutura já listada (Google Drive,
+      SMTP, Postgres, variáveis de produção).
