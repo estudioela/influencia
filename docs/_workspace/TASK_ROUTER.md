@@ -1134,8 +1134,19 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       fechando a mesma cobertura para as 3 abas que faltavam. Suíte
       completa 127/127 verde, pint limpo, `tsc -b && vite build`/`oxlint`
       limpos (único warning pré-existente em `auth.tsx:72`, não tocado).
-    - **Backlog restante do Portal:** nenhum item novo identificado nesta
-      sessão além do já registrado em §14 do
-      `HANDOFF_PRODUCTIZACAO_TEAR_V2.md` (RBAC de leitura administrativo,
-      locale `pt_BR`, credenciais reais do Google Drive — bloqueio externo,
-      não de código).
+    - **Débito fechado nesta sessão (2026-07-21):** `ParceiraFormPage`
+      (tela administrativa de editar parceira) nunca enviava
+      `consentimento_aceito` — débito registrado em
+      `RELATORIO_SPRINT_2_1_PORTAL_INFLUENCIADORA.md` §5 desde 2026-07-20 e
+      não corrigido até agora. `UpdateParceiraRequest` exige esse campo
+      (`required|accepted`) desde a Sprint 1, então **todo `PUT
+      /parceiras/{id}` feito pelo admin retornava 422** — a tela de editar
+      parceira estava quebrada em produção para o próprio admin. Corrigido
+      com o mesmo checkbox já usado em `PortalPerfilPage`, visível só no
+      modo de edição. Validado manualmente no navegador (PUT retornou 200,
+      redirecionou para o detalhe com os dados salvos); `tsc -b`/`vite
+      build`/`oxlint` limpos.
+    - **Backlog restante do Portal:** nenhum item novo identificado além do
+      já registrado em §14 do `HANDOFF_PRODUCTIZACAO_TEAR_V2.md` (RBAC de
+      leitura administrativo, locale `pt_BR`, credenciais reais do Google
+      Drive — bloqueio externo, não de código).
