@@ -1205,3 +1205,49 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       escopo atual, não há nenhum P0 de código restante bloqueando a
       entrada em produção do Portal da Influenciadora. Único bloqueio real
       é a preparação de infraestrutura (lista acima).
+  - **QA operacional pré-Go-Live, sessão interrompida por limite de contexto
+    (2026-07-21):** validação manual dos dois perfis via navegador
+    (`admin@tear.test`/`marina.duarte@example.com`, dados de teste criados
+    via tinker: 1 Campanha/Participação ATIVA/Briefing). Sessão foi
+    interrompida no meio do fluxo — cobriu login (admin, credenciais
+    inválidas) e Campanhas → Briefing (admin) antes de parar; **não chegou**
+    a Parceiras, Aprovações, Materiais, Pagamentos, Documentos/Histórico
+    (admin) nem a nenhum fluxo do Portal da Influenciadora (cadastro,
+    convite, dashboard, perfil, campanhas, upload, pagamento, logout).
+    - **Corrigido (`605de91`):** `lang/pt_BR/validation.php` só tinha
+      `attributes` de Parceira/Marca — nunca atualizado para os campos de
+      Briefing/Campanha/Participação/Pagamento. Erro de validação exibia
+      a chave crua (`"O campo orientacoes é obrigatório."` em vez de
+      "orientações"). Adicionadas as 28 chaves que faltavam. Suíte
+      147/147 verde, pint limpo, verificado no navegador antes do commit.
+    - **Observado, não confirmado como bug (não investigado a fundo por
+      limite de tempo):** no primeiro clique num link do menu lateral
+      (`Campanhas`) logo após um `navigate()` de página inteira (login ou
+      F5), a navegação client-side não ocorreu (URL ficou em `/`); um
+      segundo clique no mesmo link, ou clicar em outro item do menu
+      primeiro, funcionou normalmente. Não reproduzido de forma
+      determinística o suficiente para abrir causa raiz — registrar aqui
+      para quem retomar tentar reproduzir com o DevTools aberto (suspeita:
+      timing de hidratação/attach de listener do React Router logo após
+      navegação completa de página).
+    - **Dado de dev encontrado, não é bug de produto:** usuário seed
+      `influenciadora@tear.test` (`DevUserSeeder`) tem papel
+      `INFLUENCIADORA` mas nenhuma `Parceira` vinculada (`user_id`) — login
+      funcionaria mas o Portal quebraria ao tentar resolver `/me/parceira`.
+      Não testado neste ponto da sessão. Não é um bug real (nenhum fluxo de
+      produto cria User sem Parceira), só uma armadilha do seed para quem
+      for logar como essa conta específica em QA futura — usar
+      `marina.duarte@example.com` (tem Parceira `Ativa`, id=1) ou criar a
+      vinculação antes de testar com a conta seed.
+    - **Próxima sessão deve retomar QA a partir daqui:** Parceiras
+      (CRUD, aprovação, convite, reenvio), Aprovações, Materiais (upload,
+      MIME allowlist já fechada em `28c6ba4`), Pagamentos, Documentos/
+      Histórico (placeholders — confirmar se é esperado ou débito),
+      Perfil admin (placeholder — mesma dúvida), e todo o Portal da
+      Influenciadora ponta a ponta (cadastro → aprovação → convite →
+      primeiro acesso → login → esqueci senha → perfil → campanhas →
+      briefings → upload → pagamentos → histórico → logout). Dados de
+      teste (Campanha id=1 "Campanha QA Verao 2026", Participação id=1,
+      2 Briefings) já existem no banco local — reaproveitar em vez de
+      recriar. Senha de `marina.duarte@example.com` foi redefinida para
+      `password` nesta sessão (dev/QA apenas).
