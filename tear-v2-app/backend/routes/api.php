@@ -42,7 +42,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me/parceira', [ParceiraController::class, 'me']);
 
-    Route::apiResource('parceiras', ParceiraController::class)->except(['destroy']);
+    Route::apiResource('parceiras', ParceiraController::class)->except(['destroy', 'store']);
+    Route::post('/parceiras', [ParceiraController::class, 'store'])->middleware('role:ADMIN');
 
     Route::get('/parceiras/{parceira}/medidas', [MedidaController::class, 'index']);
     Route::post('/parceiras/{parceira}/medidas', [MedidaController::class, 'store']);

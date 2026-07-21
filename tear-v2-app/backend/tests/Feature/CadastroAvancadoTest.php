@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class CadastroAvancadoTest extends TestCase
@@ -27,9 +25,7 @@ class CadastroAvancadoTest extends TestCase
 
     public function test_cnpj_com_digito_verificador_invalido_e_rejeitado(): void
     {
-        Sanctum::actingAs(User::factory()->create());
-
-        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['cnpj' => '11.111.111/1111-11']));
+        $response = $this->postJson('/api/parceiras/cadastro', $this->dadosCadastroValidos(['cnpj' => '11.111.111/1111-11']));
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors('cnpj');
@@ -37,9 +33,7 @@ class CadastroAvancadoTest extends TestCase
 
     public function test_cnpj_valido_e_aceito_e_armazenado_so_com_digitos(): void
     {
-        Sanctum::actingAs(User::factory()->create());
-
-        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['cnpj' => '11.222.333/0001-81']));
+        $response = $this->postJson('/api/parceiras/cadastro', $this->dadosCadastroValidos(['cnpj' => '11.222.333/0001-81']));
 
         $response->assertCreated();
         $response->assertJsonPath('data.cnpj', '11222333000181');
@@ -47,9 +41,7 @@ class CadastroAvancadoTest extends TestCase
 
     public function test_telefone_sem_ddd_e_rejeitado(): void
     {
-        Sanctum::actingAs(User::factory()->create());
-
-        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['telefone' => '988887777']));
+        $response = $this->postJson('/api/parceiras/cadastro', $this->dadosCadastroValidos(['telefone' => '988887777']));
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors('telefone');
@@ -65,9 +57,7 @@ class CadastroAvancadoTest extends TestCase
                 'uf' => 'SP',
             ], 200),
         ]);
-        Sanctum::actingAs(User::factory()->create());
-
-        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['cep' => '01310-100']));
+        $response = $this->postJson('/api/parceiras/cadastro', $this->dadosCadastroValidos(['cep' => '01310-100']));
 
         $response->assertCreated();
         $response->assertJsonPath('data.rua', 'Av. Paulista');
@@ -79,9 +69,7 @@ class CadastroAvancadoTest extends TestCase
         Http::fake([
             'viacep.com.br/*' => Http::response([], 500),
         ]);
-        Sanctum::actingAs(User::factory()->create());
-
-        $response = $this->postJson('/api/parceiras', $this->dadosCadastroValidos(['cep' => '01310-100']));
+        $response = $this->postJson('/api/parceiras/cadastro', $this->dadosCadastroValidos(['cep' => '01310-100']));
 
         $response->assertCreated();
     }
