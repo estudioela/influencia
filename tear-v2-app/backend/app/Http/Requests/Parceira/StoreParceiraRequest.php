@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Parceira;
 
 use App\Rules\Cnpj;
+use App\Rules\NomeParceiraUnico;
 use App\Rules\Telefone;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,6 +17,7 @@ class StoreParceiraRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'nome' => $this->nome !== null ? trim(preg_replace('/\s+/', ' ', (string) $this->nome)) : null,
             'telefone' => $this->telefone !== null ? preg_replace('/\D/', '', (string) $this->telefone) : null,
             'cnpj' => $this->cnpj !== null ? preg_replace('/\D/', '', (string) $this->cnpj) : null,
             'cep' => $this->cep !== null ? preg_replace('/\D/', '', (string) $this->cep) : null,
@@ -28,7 +30,7 @@ class StoreParceiraRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nome' => ['required', 'string', 'max:255', 'unique:parceiras,nome'],
+            'nome' => ['required', 'string', 'max:255', new NomeParceiraUnico],
             'razao_social' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'telefone' => ['required', 'string', new Telefone],

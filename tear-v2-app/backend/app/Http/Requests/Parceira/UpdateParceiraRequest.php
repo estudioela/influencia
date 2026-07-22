@@ -3,9 +3,9 @@
 namespace App\Http\Requests\Parceira;
 
 use App\Rules\Cnpj;
+use App\Rules\NomeParceiraUnico;
 use App\Rules\Telefone;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateParceiraRequest extends FormRequest
 {
@@ -17,6 +17,7 @@ class UpdateParceiraRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'nome' => $this->nome !== null ? trim(preg_replace('/\s+/', ' ', (string) $this->nome)) : null,
             'telefone' => $this->telefone !== null ? preg_replace('/\D/', '', (string) $this->telefone) : null,
             'cnpj' => $this->cnpj !== null ? preg_replace('/\D/', '', (string) $this->cnpj) : null,
             'cep' => $this->cep !== null ? preg_replace('/\D/', '', (string) $this->cep) : null,
@@ -28,12 +29,14 @@ class UpdateParceiraRequest extends FormRequest
      */
     public function rules(): array
     {
+        $parceira = $this->route('parceira');
+
         return [
             'nome' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('parceiras', 'nome')->ignore($this->route('parceira')),
+                new NomeParceiraUnico(is_object($parceira) ? $parceira->id : $parceira),
             ],
             'razao_social' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],

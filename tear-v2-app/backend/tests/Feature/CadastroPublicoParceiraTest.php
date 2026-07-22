@@ -94,6 +94,30 @@ class CadastroPublicoParceiraTest extends TestCase
         $response->assertJsonValidationErrors('nome');
     }
 
+    public function test_cadastro_publico_respeita_nome_unico_ignorando_case_e_espacos(): void
+    {
+        Parceira::factory()->create(['nome' => 'Maria Influenciadora']);
+
+        $response = $this->postJson(
+            '/api/parceiras/cadastro',
+            $this->dadosCadastroValidos(['nome' => '  maria   influenciadora  ']),
+        );
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('nome');
+    }
+
+    public function test_cadastro_publico_normaliza_espacos_do_nome(): void
+    {
+        $response = $this->postJson(
+            '/api/parceiras/cadastro',
+            $this->dadosCadastroValidos(['nome' => '  Maria   Influenciadora  ']),
+        );
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('parceiras', ['nome' => 'Maria Influenciadora']);
+    }
+
     public function test_cadastro_publico_nao_expoe_listagem_nem_edicao(): void
     {
         $this->getJson('/api/parceiras')->assertUnauthorized();
