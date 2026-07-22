@@ -37,7 +37,7 @@ só para não ser confundido com trabalho pendente:
 | Script de deploy atômico (`releases/` + symlink `current`) | `tear-v2-app/scripts/deploy-locaweb.sh` |
 | Suporte a Shared Drive institucional (`supportsAllDrives`, `corpora=drive`) | `tear-v2-app/backend/app/Services/GoogleDriveService.php` |
 | `TRUSTED_PROXIES` condicionado a variável de ambiente (proxy reverso da Locaweb) | `tear-v2-app/backend/bootstrap/app.php` |
-| Backup do banco sem Docker (`pg_dump` direto) + upload ao Drive + alerta de falha por e-mail | `tear-v2-app/scripts/backup-db.sh`, `app/Console/Commands/BackupDatabaseToDrive.php`, `app/Notifications/BackupFalhouNotification.php` |
+| Backup do banco sem Docker (`pg_dump` direto) + upload ao Drive + alerta de falha por e-mail | `tear-v2-app/scripts/backup-db.sh`, `tear-v2-app/backend/app/Console/Commands/BackupDatabaseToDrive.php`, `tear-v2-app/backend/app/Notifications/BackupFalhouNotification.php` |
 | Linhas de crontab prontas para copiar no host | `tear-v2-app/scripts/crontab.example` |
 | Provisionamento do primeiro ADMIN (`php artisan admin:create`, idempotente) | `app/Console/Commands/CreateAdminCommand.php` |
 | Frontend servido pelo Laravel a partir de `public/build` (origem única) | `backend/routes/web.php`, `frontend/vite.config.ts` (`npm run build:locaweb`) |
@@ -289,6 +289,20 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ### Etapa 9 — Cadastrar secrets do GitHub Actions
 
+> **⚠ BLOQUEIO em aberto (achado de `docs/deployment/AUDITORIA_LOCAWEB.md`
+> §4.1/§4.2, 2026-07-22):** esta etapa, como descrita abaixo, presume SSH
+> automatizado por par de chaves. A auditoria do painel confirmou que o
+> plano Locaweb só oferece SSH **desabilitado por padrão, por senha (não
+> por chave), sessão de 3h com renovação manual** — e que "Publicar via
+> Git" do painel é só upload FTP, sem execução remota de comando. Isso
+> quebra a premissa de `SSH_PRIVATE_KEY` abaixo e do disparo 100%
+> automático da Etapa 11. **Não resolvido nesta revisão** — é decisão de
+> arquitetura de deploy (pode exigir novo ADR), não algo que o agente
+> decide sozinho (`AUDITORIA_LOCAWEB.md` §5, item 1: "Quem decide:
+> Responsável do projeto"). Não iniciar a Etapa 9 sem essa decisão
+> tomada primeiro, ou o par de secrets cadastrado não vai funcionar como
+> pressupõe `.github/workflows/tear-v2-deploy.yml`.
+
 - **Objetivo:** permitir que `.github/workflows/tear-v2-deploy.yml`
   publique de fato no host — hoje o workflow já existe e falha rápido e
   visível (`::error::`) exatamente por faltar isto.
@@ -334,6 +348,15 @@ credencial ou decisão que só o responsável do projeto tem.
 ---
 
 ### Etapa 11 — Primeiro deploy (homologação)
+
+> **⚠ Depende da decisão pendente da Etapa 9.** "Disparo automático" e o
+> comando `curl`/SSH abaixo presumem o job de deploy funcionando
+> ponta a ponta — o que está bloqueado pelo mesmo achado de
+> `AUDITORIA_LOCAWEB.md` §4.1/§4.2 (SSH por senha/temporário, sem deploy
+> real via Git). Não executar esta etapa antes da Etapa 9 estar
+> genuinamente concluída (não só com secrets cadastrados, mas com o
+> workflow validado ponta a ponta contra a mecânica real de acesso do
+> plano).
 
 - **Objetivo:** validar o pipeline completo (build do frontend →
   `rsync` → `composer install` → `migrate --force` → cache → symlink
@@ -490,7 +513,83 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ---
 
-## 3. Rollback (qualquer etapa de deploy)
+## 3. GO/NO-GO — critérios de decisão do dia do deploy
+
+Complementa (não substitui) `docs/release/TEAR_V2.5_RELEASE_READINESS.md`
+— aquele documento é uma fotografia de prontidão de **código**, tirada em
+2026-07-21; esta seção é o portão de decisão do **dia da Etapa 17**
+(corte para produção), a ser conferido de novo naquele momento, não só
+lido uma vez.
+
+### ANTES do deploy (pré-requisito para iniciar a Etapa 11)
+
+- [ ] Etapas 1–10 concluídas com todos os critérios de aceite verdadeiros.
+- [ ] Decisão de arquitetura de deploy da Etapa 9 (bloqueio ⚠ acima)
+      formalmente tomada pelo responsável do projeto — não presumida.
+- [ ] `docs/release/TEAR_V2.5_RELEASE_READINESS.md` sem item NO-GO restante
+      que não seja puramente credencial/infraestrutura já coberta pelas
+      Etapas 1–10.
+- [ ] Backup manual de teste (Etapa 13) já validado pelo menos uma vez,
+      mesmo que ainda não agendado em produção.
+- [ ] Sistema legado GAS (`src/`) confirmado no ar e intocado — é o
+      fallback de qualquer abort.
+
+### DURANTE o deploy (Etapas 11–14)
+
+- [ ] Cada etapa validada antes de avançar para a próxima — não
+      paralelizar Etapas 11→12→13→14.
+- [ ] Nenhum tráfego real (usuário final) apontado para o domínio novo
+      antes da Etapa 16 (smoke test) passar por completo.
+- [ ] Qualquer falha de critério de aceite interrompe a sequência
+      imediatamente — ver "Critérios de ABORT" abaixo, não seguir em
+      frente "para ver se resolve depois".
+
+### DEPOIS do deploy (Etapas 16–18)
+
+- [ ] Todos os itens do checklist executável da Etapa 16 (smoke test)
+      verdadeiros — nenhum aceito como "quase".
+- [ ] Etapa 17 (corte) só após Etapa 16 100% verde.
+- [ ] Rotina de operação pós-go-live (§5 abaixo) ativa desde o primeiro
+      dia — não como tarefa de "depois".
+- [ ] Acompanhamento ativo (Pulse, logs, backup) nas primeiras 24–48h,
+      conforme critério de aceite da Etapa 17.
+
+### Critérios de GO
+
+Todos verdadeiros, simultaneamente:
+
+1. Todas as Etapas 1–15 com critério de aceite cumprido (não "parcial").
+2. `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` §1 (bloqueios P0) sem
+   nenhum item de código aberto — hoje já é o caso; só P0-9 (variáveis
+   reais) depende das Etapas 1–10 deste documento.
+3. Smoke test da Etapa 16 100% verde.
+4. Sistema legado GAS permanece disponível como fallback (não é
+   desligado na Etapa 17).
+5. Responsável do projeto ciente e disponível nas primeiras 24–48h
+   pós-corte (Etapa 17), para decidir um rollback rápido se necessário.
+
+### Critérios de ABORT (interromper e reverter, não insistir)
+
+- Qualquer item do smoke test (Etapa 16) falhar e não for corrigível em
+  poucos minutos com causa raiz clara.
+- Erro 500 (não 503) em qualquer rota crítica (login, health, upload de
+  Material) durante o smoke test ou nas primeiras horas de tráfego real.
+- `migrate:status` mostrar pendência não esperada, ou `migrate --force`
+  falhar parcialmente (algumas tabelas alteradas, outras não).
+- Certificado HTTPS inválido ou ausente no domínio de produção.
+- Backup de teste (Etapa 13) falhar sem alerta de e-mail chegando —
+  significa que o mecanismo de alerta em si está quebrado, não só o
+  backup.
+- Qualquer indício de dado de produção (real, não de teste) sendo escrito
+  antes da Etapa 17 formalmente concluída.
+
+**Ação em caso de ABORT:** seguir o procedimento de Rollback (§4 abaixo)
+imediatamente; manter o legado GAS como único sistema real em uso até a
+causa raiz ser corrigida e as Etapas relevantes re-executadas.
+
+---
+
+## 4. Rollback (qualquer etapa de deploy)
 
 ```bash
 # via SSH, dentro de ~/tear/:
@@ -505,7 +604,7 @@ ela. O legado GAS continua no ar durante toda a operação.
 
 ---
 
-## 4. Operação pós-go-live (rotina recorrente)
+## 5. Operação pós-go-live (rotina recorrente)
 
 | Frequência | Ação |
 |---|---|
@@ -517,7 +616,7 @@ ela. O legado GAS continua no ar durante toda a operação.
 
 ---
 
-## 5. Referências
+## 6. Referências
 
 - `docs/deployment/ARQUITETURA_PRODUCAO.md` — decisão de arquitetura
   (não reaberta aqui).
@@ -537,5 +636,12 @@ ela. O legado GAS continua no ar durante toda a operação.
   e o que fica para depois do Go-Live (P1/P2).
 - `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` — histórico completo de
   P0/P1/P2 e o que foi resolvido em cada sessão.
-- `docs/_workspace/TASK_ROUTER.md` §18–§21 — registro de execução desta
+- `docs/release/TEAR_V2.5_RELEASE_READINESS.md` — fotografia de
+  prontidão de código (GO/NO-GO), independente desta implantação;
+  reconferir contra §3 (GO/NO-GO do dia do deploy) antes da Etapa 17.
+- `docs/deployment/AUDITORIA_LOCAWEB.md` — achados reais do painel
+  Locaweb (Etapa 2); origem do bloqueio ⚠ registrado nas Etapas 9 e 11.
+- `docs/_workspace/TASK_ROUTER.md` §18–§24 — registro de execução desta
   fase.
+- `docs/governance/INVENTARIO_DOCUMENTAL.md` — mapa de status (ativo/
+  legado/redundante) de toda a documentação de deployment/release.

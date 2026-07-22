@@ -1895,3 +1895,55 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   Locaweb (hospedagem `estudioela.com`) para fechar a validação técnica da
   Etapa 2 (Composer, quota de disco, conexão Postgres) — em paralelo,
   decidir a estratégia de deploy antes de a execução chegar à Etapa 6.
+
+## 25. Preparação documental do Go-Live — consolidação, não novos arquivos (2026-07-22)
+
+- **Pedido:** revisão completa da documentação de Go-Live e preparo de um
+  runbook + checklist de decisão, "para que o deploy possa começar
+  imediatamente quando a auditoria terminar". Pedido original nomeava
+  arquivos (`ARQUITETURA_PRODUCAO.md`, `TEAR_V2.5_RELEASE_READINESS.md`,
+  `IMPLEMENTACAO_TECNICA.md`) — todos existem de fato, o pedido só usava
+  nomes sem o caminho completo (`docs/deployment/`, `docs/release/`).
+- **Decisão de escopo (emenda do responsável do projeto durante a
+  sessão):** não criar `GO_LIVE_RUNBOOK.md`/`GO_NO_GO_CHECKLIST.md` como
+  arquivos novos — `docs/deployment/PLANO_DE_IMPLANTACAO.md` já é a fonte
+  única de execução do Go-Live (18 etapas, rollback, operação
+  pós-go-live) e criar dois arquivos novos cobrindo o mesmo terreno
+  violaria a regra de "não criar documentação duplicada" (`CLAUDE.md`).
+  Optou-se por **complementar** o documento existente.
+- **Alterado em `PLANO_DE_IMPLANTACAO.md`:**
+  - Novo `## 3. GO/NO-GO — critérios de decisão do dia do deploy`
+    (ANTES/DURANTE/DEPOIS + critérios de GO + critérios de ABORT) —
+    o que realmente faltava; `TEAR_V2.5_RELEASE_READINESS.md` é uma
+    fotografia de prontidão de **código** (2026-07-21), não um portão de
+    decisão para o dia do corte. Seções seguintes renumeradas (§3→§4
+    Rollback, §4→§5 Operação, §5→§6 Referências — nenhuma outra
+    referência no repo apontava para esses números, verificado por grep).
+  - Bloqueio ⚠ documentado nas Etapas 9 e 11: `AUDITORIA_LOCAWEB.md`
+    §4.1/§4.2 (SSH por senha/temporário, "Git" = FTP) quebra a premissa
+    de `SSH_PRIVATE_KEY`/disparo automático dessas etapas — decisão de
+    arquitetura de deploy ainda pendente do responsável do projeto,
+    **não resolvida por este agente** (fora do mandato: "não alterar
+    arquitetura sem ADR").
+  - Referências §6 completadas: faltavam `AUDITORIA_LOCAWEB.md` e
+    `TEAR_V2.5_RELEASE_READINESS.md`, que já eram citados por outros
+    documentos mas não listados aqui.
+  - Corrigido caminho incompleto de `BackupDatabaseToDrive.php` (faltava
+    o prefixo `tear-v2-app/backend/`).
+- **Referências quebradas corrigidas (achado da revisão, FASE 4):**
+  `CONTRATO_SOBERANO.md` era citado sem caminho em `CLAUDE.md` (×2),
+  `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` e
+  `docs/release/TEAR_V2.5_RELEASE_READINESS.md` — o arquivo foi movido
+  para `docs/history/CONTRATO_SOBERANO.md` na reorganização de
+  documentação (`5547042`) e as 4 referências nunca foram atualizadas.
+  Corrigido nos 4 arquivos.
+- **Novo documento criado (autorizado pela emenda — inventário, não
+  runbook):** `docs/governance/INVENTARIO_DOCUMENTAL.md` — status
+  (ativo/legado/redundante) de toda a documentação de
+  deployment/release, com fonte oficial e dependências de cada uma.
+- **Nenhum código alterado, nenhum deploy executado, nenhuma decisão de
+  arquitetura tomada** — conforme mandato desta sessão (Agente B,
+  preparação documental).
+- **Próximo passo:** inalterado — Etapa 2 de `PLANO_DE_IMPLANTACAO.md`
+  (SSH real) e a decisão de estratégia de deploy (Etapa 9, bloqueio ⚠)
+  continuam dependendo do responsável do projeto.

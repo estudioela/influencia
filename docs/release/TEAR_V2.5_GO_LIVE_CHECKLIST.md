@@ -14,7 +14,7 @@ Autor: Agente B (sessão dedicada a produtização, mandato de operação
 autônoma de 2026-07-16, `CLAUDE.md`)
 Escopo: **somente `tear-v2-app/`** (Laravel 13 + React/Vite). Não toca no
 Portal legado GAS (`src/`) nem no domínio soberano
-(`CONTRATO_SOBERANO.md`). Não implementa feature de negócio nova, não
+(`docs/history/CONTRATO_SOBERANO.md`). Não implementa feature de negócio nova, não
 altera RBAC/multi-tenant (isso é do roadmap de produto em
 `docs/planning/TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md`, fora do escopo desta sessão).
 

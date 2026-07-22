@@ -64,7 +64,7 @@ Antes de iniciar qualquer tarefa:
 1. `docs/_workspace/TASK_ROUTER.md` — fonte única de estado (o que está
    `[x]`/`[>]`/`[ ]`, dependências entre SPECs, dívidas registradas).
 2. `docs/PRD.md` (seções indicadas pelo TASK_ROUTER para a SPEC em questão).
-3. `CONTRATO_SOBERANO.md` (domínio soberano — nunca reabrir).
+3. `docs/history/CONTRATO_SOBERANO.md` (domínio soberano — nunca reabrir).
 4. `docs/specs/SPEC-NNN.md` da SPEC em questão.
 5. `docs/adrs/` — ADRs relevantes (listados no TASK_ROUTER §1/§2).
 
@@ -80,7 +80,7 @@ Antes de iniciar qualquer tarefa:
 Quando houver conflito:
 
 - `TASK_ROUTER.md` define estado atual e dependências entre SPECs.
-- `CONTRATO_SOBERANO.md` define domínio soberano (nunca reabrir).
+- `docs/history/CONTRATO_SOBERANO.md` define domínio soberano (nunca reabrir).
 - ADRs definem decisões arquiteturais históricas (nunca reabrir sem novo ADR).
 - `docs/specs/SPEC-NNN.md` define o comportamento esperado da SPEC.
 

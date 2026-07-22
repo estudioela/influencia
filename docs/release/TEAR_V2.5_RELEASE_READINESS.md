@@ -7,7 +7,7 @@ código, não altera arquitetura — mandato de auditoria read-only,
 Branch auditada: `feat/ui-design-system-ela`.
 Escopo: **somente `tear-v2-app/`** (Laravel 12 + Sanctum + Spatie
 Permission / React 19 + Vite + TypeScript). Não cobre o Portal legado GAS
-(`src/`) nem reabre o domínio soberano (`CONTRATO_SOBERANO.md`).
+(`src/`) nem reabre o domínio soberano (`docs/history/CONTRATO_SOBERANO.md`).
 
 Metodologia: verificação direta no código e execução real da suíte de
 testes/lint desta sessão — não é uma repetição do texto de
