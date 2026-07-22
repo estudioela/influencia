@@ -236,39 +236,69 @@ operação/suporte) que não está quantificado aqui.
 
 ## ETAPA 6 — GO / NO GO
 
-## **NO GO**
+A pergunta "o TEAR está pronto para ser um MVP?" mistura, na prática, duas
+perguntas diferentes, que este relatório respondia juntas na sua primeira
+versão. Refinamento pedido pelo responsável do projeto: separar
+explicitamente **Prontidão do Produto** (o software, como está escrito e
+testado, resolve o problema de negócio?) de **Prontidão de Implantação**
+(dá para colocar essa versão do software em produção agora?). As notas da
+ETAPA 5 não mudam — o que muda é como elas são agrupadas para o veredito.
 
-**Justificativa técnica:**
+### 6.1 Prontidão do Produto (Product Readiness)
+
+Eixo formado por Funcionalidade (6), Estabilidade (7), Segurança (6) — na
+parte que é código/config da própria aplicação, não infraestrutura de
+hospedagem —, Documentação (8), Engenharia (7), UX (5) e Manutenibilidade
+(5). Exclui a dimensão Deploy (4), que pertence ao outro eixo por
+definição.
+
+## **GO COM RESSALVAS**
 
 O núcleo funcional do produto (Cadastro → Aprovação → Campanha →
 Participação → Briefing → Materiais → Pagamento) está implementado,
-testado e razoavelmente estável — isso por si só sustentaria um "GO com
-ressalvas" se a única questão fosse maturidade de produto.
+testado e razoavelmente estável. Enquanto software, o TEAR V2.5 já resolve
+o fluxo comercial principal ponta a ponta. As ressalvas são reais e estão
+listadas na ETAPA 1–4 (Histórico 0% implementado, Documentos não portado,
+Logística/menu órfão, zero teste automatizado de frontend, autorização
+duplicada sem convenção escrita), mas nenhuma delas é "o produto não
+funciona" — são lacunas de escopo e débito técnico administráveis, desde
+que aceitas explicitamente pelo responsável do projeto item a item (em
+particular, a decisão sobre Histórico/Documentos entrarem ou não no
+recorte de MVP é uma decisão de escopo do PO, não um veredito técnico que
+este relatório possa dar sozinho).
 
-O que impede o GO hoje não é uma ressalva aceitável de risco — é uma
-**impossibilidade técnica objetiva de deploy**: o plano de hospedagem
-contratado não oferece o banco de dados que o sistema requer (Bloqueador
-#4), e mesmo se esse ponto fosse resolvido agora, o script de restauração
-de backup pressupõe Docker inexistente no host real, e o pipeline de CI
-usa autenticação SSH incompatível com o que a hospedagem aceita. "GO com
-ressalvas" descreveria uma situação em que a equipe *pode* entregar
-aceitando riscos conhecidos; aqui a equipe **não pode entregar
-tecnicamente** enquanto esses quatro itens não forem resolvidos — por
-isso o veredito correto é NO GO, não uma ressalva.
+### 6.2 Prontidão de Implantação (Deployment Readiness)
 
-Adicionalmente, a última etapa do fluxo de negócio pedido nesta auditoria
-(Histórico) tem 0% de implementação em `tear-v2-app` — uma lacuna de
-escopo, não de qualidade, mas que por definição impede classificar o
-fluxo completo como entregue.
+Eixo formado inteiramente pela dimensão Deploy (4/10) e pelos 4
+bloqueadores da ETAPA 3 (Crítico #1–#4): banco de dados de produção
+indefinido, `restore-db.sh` que assume Docker inexistente no host,
+apontamento de domínio não documentado (risco de expor `.env`/`vendor`) e
+pipeline de CI com autenticação SSH incompatível com a hospedagem
+contratada.
 
-Nenhum dos itens acima decorre de dívida técnica de longo prazo: os 3
-bloqueadores técnicos de deploy têm custo estimado de horas a poucos dias
-cada (ver ETAPA 4, itens correlatos), e o Bloqueador #4 é uma decisão de
-infraestrutura pendente do responsável do projeto, não um problema de
-engenharia. Isso significa que o caminho até GO COM RESSALVAS é curto e
-bem definido — não é um NO GO por causa de reescrita ou arquitetura
-malfeita, é um NO GO por pré-requisitos de infraestrutura e escopo ainda
-não fechados.
+## **NO GO**
+
+Aqui não há ressalva possível: o plano de hospedagem contratado não
+oferece o banco de dados que o sistema requer, e mesmo resolvido esse
+ponto, o script de restauração de backup e o pipeline de deploy não
+funcionam no host real como estão hoje. Isso não é um risco que a equipe
+possa optar por aceitar e seguir em frente — é uma **impossibilidade
+técnica objetiva** enquanto os quatro itens não forem resolvidos. Nenhum
+desses itens decorre de dívida técnica de longo prazo: os 3 bloqueadores
+técnicos têm custo estimado de horas a poucos dias cada (ETAPA 4), e o
+bloqueador de banco de dados é uma decisão de infraestrutura pendente do
+responsável do projeto, não um problema de engenharia — o caminho até
+resolver este eixo é curto e bem definido.
+
+### 6.3 Veredito combinado
+
+Separar os dois eixos muda o que "consertar" significa: **o produto não
+precisa de mais trabalho de feature para ser chamado de MVP** (ressalvas
+aceitas cobrem isso); o que falta é infraestrutura. Como a pergunta
+original da missão é sobre aprovar a *entrega* do MVP — não só sua
+maturidade como software — o veredito prático permanece:
+
+## **NO GO** (para entrega/produção hoje), **GO COM RESSALVAS** (para o produto em si)
 
 ---
 
@@ -303,11 +333,20 @@ não fechados.
 - Confirmação de isolamento de ACL dos backups com PII no Google Drive.
 - Avaliar, no momento do Go-Live, se o sistema legado GAS será desligado ou seguirá em produção paralela — e o custo organizacional dessa escolha.
 
-**Recomendação final de aprovação: NO GO.** O produto está funcionalmente
-maduro o suficiente para justificar investimento em destravar a
-infraestrutura, mas não pode ser entregue como MVP hoje devido a um
-bloqueador de infraestrutura externa (banco de dados de produção
-indefinido) e três bloqueadores técnicos de deploy com correção estimada
-em horas a poucos dias. Resolvidos esses quatro itens — e com uma decisão
-explícita sobre Histórico/Documentos — o caminho para **GO COM RESSALVAS**
-está aberto e é de curto prazo.
+**Recomendação final de aprovação — dois vereditos, não um:**
+
+- **Prontidão do Produto: GO COM RESSALVAS.** Como software, o TEAR V2.5
+  já é um MVP funcional — núcleo comercial ponta a ponta testado —, com
+  ressalvas conhecidas e documentadas (Histórico, Documentos, navegação,
+  cobertura de teste de frontend) que cabem ao responsável do projeto
+  aceitar ou não, item a item.
+- **Prontidão de Implantação: NO GO.** A infraestrutura de hospedagem
+  contratada não suporta o deploy como está — banco de dados de produção
+  indefinido e três bloqueadores técnicos de deploy (todos com correção
+  estimada em horas a poucos dias).
+- **Veredito combinado para a entrega em produção: NO GO**, mas por um
+  motivo estritamente de infraestrutura, não de maturidade de produto.
+  Resolvidos os quatro bloqueadores de deploy — e com uma decisão
+  explícita sobre Histórico/Documentos — não é necessário mais trabalho
+  de produto para abrir o caminho a **GO COM RESSALVAS** também no eixo
+  de implantação.
