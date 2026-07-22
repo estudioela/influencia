@@ -2223,3 +2223,56 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   3. Reconciliar `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` com o estado
      real (P1, baixa prioridade) — por instrução do responsável do
      projeto, só ao final desta sessão, se sobrar tempo.
+
+## 31. Reconciliação da especificação funcional — backlog do §29 encerrado (2026-07-22)
+
+- **Reconciliação produzida:** `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md`
+  (commit `209bf32`) — por instrução explícita do responsável do projeto,
+  **não** reescreve `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`; produz só
+  uma tabela de divergências (módulo / especificação atual / implementação
+  atual / status / evidência / ação recomendada), verificada por leitura
+  direta de código (migrations/models/controllers/rotas/testes), sem
+  reprocessar os 13 documentos-fonte originais.
+- **11 divergências encontradas**, 9 classificadas **"Especificação
+  desatualizada"** (spec defasada a favor do sistema, não bug) e 2
+  **"Parcial"**:
+  - Especificação desatualizada: Portal completo da Influenciadora
+    (Campanhas/Briefing/Materiais/Pagamento); RFC-07 (envio de material
+    pelo próprio Portal); congelamento de Participação (`congelado_em`);
+    vínculo estrutural Material↔Briefing + vocabulário unificado; RBAC de
+    leitura granular (verificado nesta sessão, ver §30); comprovante de
+    pagamento (implementado nesta sessão, ver §30); `APP_LOCALE=pt_BR`
+    (spec ainda citava `en`); deduplicação de nome de Parceira (resolvida
+    antes desta sessão); `POST /parceiras/cadastro` administrativo sem
+    `authorize()` (falso positivo — confundia a rota pública,
+    intencionalmente sem `authorize()`, com a administrativa, que já tem
+    `role:ADMIN` + `$this->authorize('create', ...)` + teste verde).
+  - Parcial (decisão já tomada *de fato* pelo código, nunca formalizada
+    como decisão consciente de produto): bloqueio total de edição de
+    Participação após congelamento (`ParticipacaoController::update`,
+    HTTP 409, sem trilha de auditoria — a spec ainda tratava como
+    "nenhuma opção escolhida"); `FEED` sempre lê `carrossel_qtd`
+    (`ParticipacaoNaCampanha::quantidadeContratadaPara`, comentário
+    explícito no código — "não há coluna própria de feed" — a spec ainda
+    tratava como pergunta em aberto).
+- **Fora da tabela, por não serem divergência** (spec e código já
+  concordam, nenhuma mudança de status): recorrência/parcelamento de
+  pagamento, validação de formato do Instagram, Contratos,
+  Produto/Variante/Estoque, Assessorias, Métricas de perfil, Permutas,
+  Portal da Marca (`GESTOR_MARCA`), importação do histórico legado,
+  trilha de auditoria polimórfica — todos seguem exatamente como
+  documentados em `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` §9.
+- **Leitura de certificação funcional do MVP:** o núcleo operacional
+  ponta a ponta (Cadastro → Aprovação → Campanha → Participação →
+  Briefing → Material → Aprovação → Pagamento, incluindo o Portal
+  completo da Influenciadora) está **funcionalmente conforme e testado**
+  — nenhuma das 11 divergências é bloqueador de código. O que falta para
+  "certificar" o MVP são só **2 decisões de produto sem resposta**
+  (recorrência de pagamento; formato do Instagram) e a **ratificação
+  formal** das 2 decisões "Parcial" já implementadas na prática.
+- **Nenhum código alterado nesta entrada** — só o relatório de
+  reconciliação (docs) e a atualização de `ESTADO_SESSAO.md`.
+- **Backlog de `AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md` (§29) —
+  encerrado.** Próximo passo depende do responsável do projeto (decisões
+  acima) ou da retomada do Go-Live (§27/§29, inalterados: PostgreSQL,
+  autenticação SSH do deploy, `restore-db.sh` com Docker, PR #62).

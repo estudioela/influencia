@@ -10,169 +10,188 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-22
-- **HEAD:** `e9574ed` — commitado. **Não verificado se já foi pushado**
-  nesta sessão (não houve `git push` explícito registrado). Working tree
-  com 2 arquivos não rastreados (`??`), não commitados por não ter sido
-  pedido: `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md` e
-  `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`.
+- **HEAD:** `209bf32` — commitado, **pushado ao final desta sessão**
+  (`origin/feat/ui-design-system-ela` estava 6 commits atrás antes do
+  push: 3 de sessão(ões) anterior(es) não refletidos em documentação
+  — `aea82d6`, `9824b7b`, `a241186` — + 3 desta sessão — `fabd5c1`,
+  `7d85989`, `209bf32`). Working tree com 3 arquivos não rastreados
+  (`??`), mantidos assim por instrução explícita do responsável do
+  projeto em sessões anteriores: `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
+  `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`,
+  `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`.
 - **Branch:** `feat/ui-design-system-ela`.
-- **Sistema em foco nesta sessão:** documentação do projeto como um todo
-  (não código) — missão de simplificação documental, instruída pelo
-  responsável do projeto. **A frente de Go-Live/infraestrutura
-  (PostgreSQL, SSH Locaweb) não foi tocada nesta sessão** — segue
-  exatamente como estava no fim da sessão anterior (ver §27 do
-  `TASK_ROUTER.md`), ainda bloqueante para a Etapa 3 do
-  `PLANO_DE_IMPLANTACAO.md`.
-- **Testes:** sem alteração de código nesta sessão (só documentação) —
-  última medição conhecida (sessões anteriores): backend 192/192 verdes,
-  Pint limpo, `tsc -b`/`oxlint`/`vite build` do frontend limpos.
+- **Sistema em foco:** `tear-v2-app/` (Laravel + React) — execução do
+  backlog de certificação funcional do MVP aberto na sessão anterior
+  (`TASK_ROUTER.md` §29), **encerrado nesta sessão**.
+- **Testes:** backend 198/198 verdes (Pint limpo); frontend `tsc -b`/
+  `oxlint`/`vite build` limpos — medido nesta sessão, após as alterações
+  de código.
 
-## 2. Última sessão concluída — auditoria documental completa + Fase 1 (parcial) de simplificação (2026-07-22)
+## 2. Última sessão concluída — Backlog funcional executado + reconciliação da especificação (2026-07-22)
 
-Sessão iniciada com briefing padrão (`/comecar`): estado do repositório
-conferido contra `ESTADO_SESSAO.md` (bateu, com uma divergência trivial e
-esperada — o `HEAD` registrado era um commit anterior ao próprio commit
-que fechou a sessão anterior, o que é normal já que aquele commit não
-pode se autorreferenciar pelo hash).
+Continuação direta da sessão anterior (auditoria funcional do MVP,
+`TASK_ROUTER.md` §29), com plano aprovado pelo responsável do projeto:
+entrega incremental, uma frente por vez, commits pequenos, evitar
+investigações longas em itens que dependem de decisão de negócio.
 
-**Missão executada, em 3 etapas sucessivas por instrução do responsável
-do projeto:**
+**Achado de abertura — drift de documentação, corrigido antes de agir:**
+entre o fim da sessão anterior (HEAD `c7f753e` documentado) e o início
+desta, 3 commits já haviam resolvido parte do backlog sem atualização de
+`ESTADO_SESSAO.md`/`TASK_ROUTER.md`: `aea82d6` (menu de Logística
+destravado), `9824b7b` (dedup de nome de Parceira), `a241186` (histórico
+de alteração exposto para admin). Verificado por `git log --stat` antes
+de reportar qualquer coisa como concluída — detalhe completo em
+`TASK_ROUTER.md` §30.
 
-1. **Auditoria completa (read-only):** os 102 arquivos `.md` do projeto
-   (98 em `docs/` + 4 na raiz) foram classificados em MANTER (47) /
-   CONSOLIDAR (5) / ARQUIVAR (48) / REMOVER (2), com método estrutural
-   (nomes, pastas, cabeçalhos, primeiro parágrafo, cross-reference — sem
-   ler o conteúdo integral, por instrução explícita). Resultado gravado em
-   `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`. Achado central:
-   um cluster de 8 arquivos (`DATA_MODEL.md`, `DATABASE_MODEL.md`,
-   `DOMAIN.md`, `TEAR.md`, `MIGRATION.md`, `SCREEN_MAP.md`,
-   `STITCH_PROTOTYPE.md`, `UX_FLOW.md`, juntos ~32.318 linhas) é ensaio de
-   planejamento gerado por IA **antes** de qualquer código existir,
-   descrevendo um domínio teórico ("Competência"/"Colaboração_Mensal")
-   sem correspondência em nenhum sistema real.
+**Execução do backlog, nesta ordem:**
 
-2. **Plano executivo (read-only):** a partir da auditoria, foi produzido
-   `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md` — priorização
-   por risco/esforço/ganho, definição explícita de fonte de verdade por
-   caso de duplicação, estimativa de impacto agregado, e um roadmap em 4
-   fases. A validação de conteúdo (não só estrutural) dos 10 arquivos
-   envolvidos em CONSOLIDAR/REMOVER, cruzada contra o código real, **corrigiu
-   3 das 5 classificações originais de CONSOLIDAR** — o achado mais
-   relevante: comparação de cores contra `tear-v2-app/frontend/src/index.css`
-   confirmou que `docs/design/stitch-export/DESIGN.md` (não
-   `docs/design/DESIGN_SYSTEM.md`) é a fonte real de tokens de design já
-   implementada. Ver detalhe completo no §28 do `TASK_ROUTER.md` e na
-   íntegra do plano executivo.
+1. **RBAC de leitura granular (P0) — verificado, nenhuma correção
+   necessária.** Todos os controllers administrativos (`ParceiraController`,
+   `MedidaController`, `HistoricoAlteracaoController`, `MarcaController`,
+   `CampanhaController`, `ParticipacaoController`, `BriefingController`,
+   `MaterialController`, `PagamentoController`, `EnvioController`,
+   `MeParticipacaoController`) chamam `$this->authorize(...)` contra
+   Policies reais, com `Gate::before` liberando ADMIN e as Policies
+   restringindo os demais papéis por posse — coberto por teste
+   (`RbacIsolamentoTest`, `PortalIsolamentoTest`). O spec de 07-20 estava
+   desatualizado nesse ponto.
+2. **Comprovante de pagamento (P1) — implementado** (commit `fabd5c1`):
+   `POST /pagamentos/{pagamento}/comprovante` (role:ADMIN), reaproveitando
+   `GoogleDriveService` (mesma abstração de Materiais); `PagamentoResource`
+   expõe `comprovante_url`; UI de upload/link no admin (`PagamentoPage`) e
+   link somente leitura no Portal (`PortalParticipacaoPage`). 2 testes
+   novos.
+3. **Residuais de Cadastro:** dedup de nome já resolvida (commit anterior
+   à sessão); `authorize()` "ausente" em `POST /parceiras/cadastro`
+   administrativo confirmado como **falso positivo** (rota já tem
+   `role:ADMIN` + `$this->authorize('create', ...)` + teste verde);
+   validação de formato do Instagram **não implementada** — decisão de
+   produto sem formato definido em nenhuma fonte, documentada, não
+   resolvida (instrução explícita de não investir em itens de decisão de
+   negócio nesta sessão).
+4. **Reconciliação da especificação funcional** — produzido
+   `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md` (commit
+   `209bf32`, formato tabela, só divergências, sem reescrever o documento
+   original): 11 divergências encontradas entre
+   `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` (2026-07-20) e o código
+   real — quase todas a favor do sistema (spec desatualizada): Portal
+   completo da Influenciadora, envio de material pelo próprio portal,
+   congelamento de participação, vínculo Material↔Briefing, RBAC
+   granular, comprovante de pagamento, locale `pt_BR`, dedup de nome,
+   `authorize()` administrativo (falso positivo). 2 divergências
+   classificadas **Parcial**: bloqueio de edição pós-congelamento e
+   `FEED = carrossel_qtd` já foram decididos *de fato* pelo código, mas
+   nunca ratificados como decisão consciente de produto.
 
-3. **Fase 1 executada, com escopo restrito pelo responsável do projeto**
-   ao cluster de 8 arquivos já validado (não aos outros itens de Fase 1
-   do plano):
-   - Duas rodadas de validação adicional confirmaram confiança alta e
-     ausência de informação exclusiva nos 8 arquivos (incluindo os
-     módulos ainda não implementados no sistema real — Logística,
-     Contratos, Histórico — cujo conteúdo se mostrou igualmente genérico).
-   - `git mv` dos 8 arquivos para `docs/archive/planejamento-pre-codigo/`
-     (histórico preservado, commit `08366b4`) + atualização de
-     `docs/archive/README.md` com a nova seção.
-   - Correção, em commit isolado (`e9574ed`), de uma referência obsoleta
-     encontrada no `README.md` (raiz) que recomendava 2 desses arquivos
-     como leitura de arquitetura — removida, não redirecionada ao
-     archive.
-   - Verificação final (grep no repositório inteiro) confirmou zero
-     referências remanescentes fora de `docs/archive/` e dos próprios
-     relatórios de auditoria/plano.
+**Validação:** backend 198/198 verde, Pint limpo; frontend `tsc -b`/
+`oxlint`/`vite build` limpos — checado a cada unidade de trabalho, antes
+de cada commit.
 
-**Nenhum código de `tear-v2-app/` ou `src/` foi alterado.** Nenhuma
-decisão de arquitetura foi tomada ou reaberta.
+**Commits desta sessão (3, todos pequenos, uma frente por vez):**
+`fabd5c1` (comprovante de pagamento), `7d85989` (docs: registra execução
+do backlog), `209bf32` (docs: reconciliação da especificação).
+
+**Backlog de `AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md` — encerrado**
+nesta sessão. O que resta não é código, é decisão de produto (ver §4).
 
 ## 3. Próxima tarefa recomendada
 
-Há duas frentes em aberto, de naturezas diferentes — a escolha de qual
-priorizar é do responsável do projeto (por regra do próprio `CLAUDE.md`,
-"não trabalhar em múltiplas frentes" ao mesmo tempo):
+**Levar ao responsável do projeto as 2 decisões de produto que hoje são
+o único bloqueador real de certificação funcional do MVP** (não código):
 
-**A. Continuar a simplificação documental** (Fases 2-4 do plano
-executivo, `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`):
-1. Fase 2 — 3 remoções diretas já validadas, baixo risco:
-   `docs/reports/STATUS_MVP_OPERACIONAL_TEAR_V2.md`,
-   `docs/reports/RELATORIO_SPRINT_ESTABILIZACAO_TEAR_V2.md`,
-   `docs/design/DESIGN_SYSTEM.md`.
-2. Fase 1 (restante) — arquivar 3 roadmaps superados +
-   `REPOSITORY_GOVERNANCE_AUDIT.md` + `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`
-   (raiz). `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` precisa de um ADR
-   novo (decisão P0-2) antes de arquivar.
-3. Fase 3 — decisão humana pendente: promover
-   `docs/design/stitch-export/DESIGN.md` a fonte oficial de tokens
-   (atualizar status do ADR-002, hoje "Proposed"); depois, consolidar
-   `UI_RULES.md` no ADR-002 e `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`
-   no `BACKLOG_FUNCIONAL_V2_6.md` (com extração prévia da seção de
-   recorrência de pagamento, ainda ausente do backlog).
-4. Decidir se commita os 2 relatórios de auditoria/plano ainda não
-   rastreados.
+1. **Recorrência/parcelamento de pagamento por Participação** — maior
+   alavancagem pendente; determina se o `Pagamento` continua 1:1 com
+   Participação ou vira uma mudança estrutural (nova tabela,
+   `HasOne`→`HasMany`, rota, frontend, testes).
+2. **Validação de formato do Instagram** — menor impacto, mas também sem
+   definição em nenhuma fonte.
+3. **Ratificar (ou reverter)** as 2 decisões já tomadas *de fato* pelo
+   código, sem decisão formal registrada: bloqueio total de edição de
+   Participação após congelamento (sem trilha de auditoria); `FEED`
+   reaproveitando `carrossel_qtd` (sem coluna própria).
 
-**B. Retomar a frente de Go-Live** (§27 do `TASK_ROUTER.md`, inalterada
-nesta sessão): decidir a estratégia de infraestrutura do PostgreSQL
-(upgrade Hospedagem II/III da Locaweb vs. PostgreSQL externo) — bloqueia
-a Etapa 3 do `PLANO_DE_IMPLANTACAO.md`. Em paralelo, habilitar SSH no
-painel Locaweb para levantar IP/CIDR do proxy reverso e host/porta do
-SMTP (Etapa 2, checklist em `AUDITORIA_LOCAWEB.md` §2.1).
+**Só depois dessas decisões (ou em paralelo, se o responsável preferir
+não bloquear)**, retomar a Frente B (Go-Live) — `TASK_ROUTER.md` §27
+(PostgreSQL indisponível no plano Locaweb, ainda bloqueante) e §29
+(reconciliação pendente do PR #62, incompatibilidade de autenticação SSH
+no pipeline de deploy, `restore-db.sh` ainda com Docker) — nenhum desses
+achados foi corrigido em nenhuma sessão até aqui, só documentado.
+
+Nenhuma outra fila de trabalho de código está aberta — o próximo passo
+de implementação depende das decisões acima ou da retomada do Go-Live.
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Definir estratégia de infraestrutura do PostgreSQL** — bloqueante
-  para a Etapa 3 do Go-Live (inalterado desde a sessão anterior).
-- Habilitar SSH no painel Locaweb (Etapa 2 do Go-Live, inalterado).
-- Apontar o DNS de `estudioela.com` para a Locaweb (Etapa 4, depende da
-  Etapa 2).
-- **Nova, desta sessão:** promover `docs/design/stitch-export/DESIGN.md`
-  a fonte oficial de tokens de design (atualizar status do ADR-002) —
-  evidência técnica já reunida (bate com o CSS real), mas é decisão de
-  marca/produto, não técnica.
-- **Nova, desta sessão:** decidir se/quando prosseguir com as Fases 2-4
-  da simplificação documental (ver §3-A acima), e se commita os 2
-  relatórios ainda não rastreados.
-- Preço do piloto externo (simbólico vs. real reduzido).
-- Separação da marca do produto da marca da agência, antes do registro no
-  INPI.
-- Credenciais reais de produção (Google Drive, SMTP) — ainda não
-  preenchidas.
-- Decisão do que fazer com a branch remota `worktree-spec-mvp-completa`
-  (arquivar/apagar) — já integrada via merge, sem urgência técnica.
+- **Decisão de recorrência de pagamento por Participação** — segue sem
+  resposta, maior alavancagem do que restou do backlog funcional.
+- **Validação de formato do Instagram** — novo item explícito, achado
+  nesta sessão (já estava implícito no spec, agora isolado como decisão
+  própria).
+- **Ratificação das 2 decisões já implementadas de fato** (bloqueio de
+  edição pós-congelamento; `FEED = carrossel_qtd`) — não bloqueiam nada
+  hoje, mas ficam sem dono formal enquanto não confirmadas.
+- Definir estratégia de infraestrutura do PostgreSQL — bloqueante para a
+  Etapa 3 do Go-Live (inalterado, frente pausada há 2 sessões).
+- Decisão real de autenticação de deploy (chave vs. senha vs. híbrido) —
+  `ADR-016` não resolveu essa incompatibilidade (achado de sessão
+  anterior, ainda não corrigido).
+- Reconciliar PR #62 (conflitante) e a branch `worktree-agente-b-deploy-infra`
+  não mesclada (inalterado).
+- Promover `docs/design/stitch-export/DESIGN.md` a fonte oficial de
+  tokens (ADR-002) — inalterado, frente de simplificação documental
+  pausada há 2 sessões.
+- Seguir ou não com as Fases 2-4 da simplificação documental — inalterado.
+- Preço do piloto externo; separação marca produto/agência antes do
+  INPI; credenciais reais de produção; branch remota
+  `worktree-spec-mvp-completa` — inalterados.
 
 ## 5. Riscos ativos
 
-1. **PostgreSQL confirmado indisponível** no plano Hospedagem I da
-   Locaweb — decisão de estratégia de infraestrutura ainda pendente,
-   pode impactar custo e cronograma do Go-Live (inalterado).
-2. Validação comercial concentrada em um único piloto ainda não
-   confirmado.
-3. Bus factor 1 — fundador único operando agência, produto e suporte.
-4. Migração de infraestrutura prevista para novembro coincide com o pico
-   sazonal da Jescri em dezembro.
-5. **Novo, de baixo impacto:** os relatórios de auditoria/plano desta
-   sessão seguem sem commit — se uma sessão futura rodar `git status`
-   sem ler este arquivo primeiro, pode confundi-los com trabalho
-   incompleto; não são.
+1. **Recorrência de pagamento indecidida** — enquanto pendente, qualquer
+   implementação no entorno de Participação/Pagamento corre risco real
+   de retrabalho (inalterado da sessão anterior).
+2. **2 decisões já tomadas pelo código sem ratificação formal**
+   (congelamento, `FEED`) — risco baixo hoje (comportamento já em
+   produção-equivalente e testado), mas sem dono de decisão registrado;
+   se revertidas depois, afeta dado já persistido (novo, desta sessão).
+3. PostgreSQL indisponível no plano atual da Locaweb — impacto em
+   custo/cronograma do Go-Live (inalterado).
+4. Pipeline de deploy com incompatibilidade de autenticação não resolvida
+   (achado de sessão anterior, `TASK_ROUTER.md` §29) — Go-Live falharia
+   na primeira execução real se retomado sem correção.
+5. Validação comercial concentrada em piloto único ainda não confirmado;
+   bus factor 1; migração de infra prevista para novembro coincide com
+   pico sazonal Jescri em dezembro (inalterados).
+
+**Risco encerrado nesta sessão:** RBAC de leitura granular administrativo
+— era listado como risco de segurança latente; verificado e confirmado
+corretamente implementado, não é mais risco ativo.
 
 ## 6. Documentos de leitura obrigatória na próxima sessão
 
-Lista padrão de `CLAUDE.md` §Documentos oficiais. Para continuar a
-simplificação documental, ver também
-`docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md` e
-`docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md` (ainda não
-rastreados pelo git, mas presentes no working tree). Para retomar a
-Etapa 2/3 do Go-Live, ver `docs/deployment/AUDITORIA_LOCAWEB.md` e
-`docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`.
+Lista padrão de `CLAUDE.md` §Documentos oficiais. Para o estado da
+certificação funcional do MVP, ver
+`docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md` (divergências
+spec×código) e `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`
+(backlog original, agora encerrado). Para retomar o Go-Live, ver
+`docs/deployment/AUDITORIA_LOCAWEB.md`,
+`docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`, e `TASK_ROUTER.md`
+§29 para o achado de incompatibilidade de autenticação não resolvida por
+`ADR-016`.
 
 ## 7. IA recomendada para a próxima tarefa
 
-- **Continuação da simplificação documental (Fases 2-4):** **Claude**,
-  pelo mesmo motivo desta sessão — exige leitura comparativa de conteúdo,
-  julgamento sobre perda de conhecimento, e redação de relatório.
-- **Execução de engenharia/terminal** (deploy, scripts, provisionamento de
-  infra do Go-Live): **ChatGPT**, por padrão, pela integração com
-  terminal — salvo instrução em contrário do responsável do projeto.
-- **Design visual/UX:** sem recomendação padrão registrada ainda.
+- **Decisões de produto pendentes (recorrência de pagamento, formato do
+  Instagram, ratificação das 2 decisões já implementadas):** responsável
+  do projeto — não é tarefa de IA.
+- **Retomada do Go-Live (engenharia/infra), se decidido antes das
+  decisões acima:** **ChatGPT**, por padrão, pela integração com
+  terminal — salvo instrução em contrário.
+- **Implementação decorrente de qualquer decisão de produto tomada
+  (ex.: mudança de schema de Pagamento para recorrência):** **ChatGPT**,
+  mesmo motivo.
+- **Nova auditoria/planejamento/reconciliação de documentos:**
+  **Claude**, mesmo motivo das sessões anteriores.
 
 ## 8. Prompt de handoff
 
@@ -180,28 +199,35 @@ Etapa 2/3 do Go-Live, ver `docs/deployment/AUDITORIA_LOCAWEB.md` e
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel+React), plano de
 lançamento comercial em 15/01/2027. Estado e pendências completos em
 docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e, para histórico/decisões
-de SPEC, docs/_workspace/TASK_ROUTER.md (ver §28 para a missão de
-simplificação documental desta sessão, §27 para o bloqueio de PostgreSQL
-no Go-Live). Leitura obrigatória antes de alterar código: ver CLAUDE.md
-§Documentos oficiais.
+de SPEC, docs/_workspace/TASK_ROUTER.md (ver §30/§31 para a execução do
+backlog funcional e a reconciliação da especificação desta sessão, §27
+para o bloqueio de PostgreSQL no Go-Live, ainda pausado, §29 para os
+achados de deploy não resolvidos).
 
-Estado: sessão anterior foi inteiramente sobre documentação (auditoria dos
-102 .md do projeto + plano executivo + Fase 1 parcial: 8 arquivos de
-planejamento pré-código arquivados em docs/archive/planejamento-pre-codigo/,
-commits 08366b4 e e9574ed). Nenhum código foi tocado. A frente de Go-Live
-(PostgreSQL indisponível na Locaweb, SSH pendente) segue exatamente como
-estava, sem novidade.
+Estado: o backlog de certificação funcional do MVP (aberto na sessão
+anterior, docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md) foi
+encerrado nesta sessão. RBAC de leitura granular verificado sem
+necessidade de correção; comprovante de pagamento implementado; residuais
+de Cadastro fechados (dedup já feita, authorize() confirmado como falso
+positivo); validação de formato do Instagram documentada como decisão de
+produto pendente, não implementada. Produzida reconciliação objetiva
+entre a especificação funcional e o código real
+(docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md, 11
+divergências, quase todas a favor do sistema — spec desatualizada, não
+bug). O núcleo operacional do MVP, incluindo o Portal completo da
+Influenciadora, está funcionalmente conforme e testado.
 
-Tarefa desta sessão: decidir entre (A) continuar a simplificação
-documental — Fase 2 (3 remoções já validadas, baixo risco), Fase 1 restante
-(mais 5 arquivamentos), ou Fase 3 (2 consolidações, uma delas com decisão
-pendente sobre promover docs/design/stitch-export/DESIGN.md a fonte oficial
-de tokens) — ver docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md;
-ou (B) retomar o Go-Live: definir estratégia de infraestrutura do
-PostgreSQL e/ou habilitar SSH na Locaweb (AUDITORIA_LOCAWEB.md §2.1).
+Tarefa desta sessão: o que resta para "certificar" o MVP não é código, é
+decisão de produto — 2 decisões sem resposta (recorrência/parcelamento de
+pagamento; formato do Instagram) e 2 decisões já tomadas de fato pelo
+código sem ratificação formal (bloqueio de edição pós-congelamento; FEED
+= carrossel_qtd). Leve essas decisões ao responsável do projeto antes de
+qualquer novo código no entorno de Pagamento/Participação/Cadastro. Sem
+decisão nova, a próxima frente de trabalho é retomar o Go-Live (§27/§29
+do TASK_ROUTER.md) — PostgreSQL, incompatibilidade de autenticação SSH no
+deploy, restore-db.sh com Docker, reconciliação do PR #62.
 
 Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
-uma frente por vez; validar (testes/lint) antes de commit; ao arquivar ou
-remover documentação, seguir o mesmo rigor desta sessão (validar ausência
-de informação exclusiva antes de agir, nunca reduzir só por volume).
+uma frente por vez; validar (testes/lint) antes de commit; TDD para
+qualquer correção de código (ver superpowers:test-driven-development).
 ```
