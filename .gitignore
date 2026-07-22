@@ -30,3 +30,6 @@ sources.json
 
 # Configuração local do Claude Code (permissões por máquina)
 .claude/settings.local.json
+
+# Secrets
+.secrets/
