@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import {
@@ -6,6 +6,7 @@ import {
   getPagamento,
   pagamentoStatusTone,
   updatePagamentoStatus,
+  uploadComprovante,
   type Pagamento,
   type PagamentoStatus,
 } from '../lib/pagamentos';
@@ -38,6 +39,10 @@ export default function PagamentoPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [isAvancando, setIsAvancando] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isEnviandoComprovante, setIsEnviandoComprovante] = useState(false);
+  const [comprovanteError, setComprovanteError] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -90,6 +95,28 @@ export default function PagamentoPage() {
     }
   }
 
+  async function handleEnviarComprovante(event: FormEvent) {
+    event.preventDefault();
+    if (!pagamento) return;
+    const arquivo = fileInputRef.current?.files?.[0];
+    if (!arquivo) {
+      setComprovanteError('Selecione um arquivo.');
+      return;
+    }
+
+    setComprovanteError(null);
+    setIsEnviandoComprovante(true);
+    try {
+      const atualizado = await uploadComprovante(pagamento.id, arquivo);
+      setPagamento(atualizado);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch {
+      setComprovanteError('Não foi possível enviar o comprovante. Tente novamente.');
+    } finally {
+      setIsEnviandoComprovante(false);
+    }
+  }
+
   if (loadError) {
     return <p className={styles.error}>{loadError}</p>;
   }
@@ -115,6 +142,43 @@ export default function PagamentoPage() {
             <Button onClick={handleAvancar} isLoading={isAvancando} loadingText="atualizando…" className={styles.submit}>
               {ACAO_LABEL[pagamento.status]}
             </Button>
+          )}
+
+          {pagamento.comprovante_url && (
+            <a
+              href={pagamento.comprovante_url}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.comprovanteLink}
+            >
+              ver comprovante de pagamento
+            </a>
+          )}
+
+          {isAdmin && (
+            <form className={styles.form} onSubmit={handleEnviarComprovante} noValidate>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="comprovante">
+                  {pagamento.comprovante_url ? 'Substituir comprovante' : 'Anexar comprovante'}
+                </label>
+                <input id="comprovante" type="file" ref={fileInputRef} className={styles.fileInput} />
+              </div>
+
+              {comprovanteError && (
+                <p className={styles.formError} role="alert">
+                  {comprovanteError}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                isLoading={isEnviandoComprovante}
+                loadingText="enviando…"
+                className={styles.submit}
+              >
+                enviar comprovante
+              </Button>
+            </form>
           )}
         </section>
       ) : isAdmin ? (

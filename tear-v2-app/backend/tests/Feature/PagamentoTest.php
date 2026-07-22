@@ -7,6 +7,8 @@ use App\Models\Pagamento;
 use App\Models\ParticipacaoNaCampanha;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -231,5 +233,60 @@ class PagamentoTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.status', 'APROVADO');
+    }
+
+    public function test_admin_pode_anexar_comprovante_de_pagamento(): void
+    {
+        $resource = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        openssl_pkey_export($resource, $chavePrivada);
+        config([
+            'services.google_drive.client_email' => 'service-account@tear-test.iam.gserviceaccount.com',
+            'services.google_drive.private_key' => $chavePrivada,
+            'services.google_drive.root_folder_id' => 'root-folder-id',
+        ]);
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'fake-token'], 200),
+            'www.googleapis.com/drive/v3/files*' => Http::sequence()
+                ->push(['files' => []], 200)
+                ->push(['id' => 'pasta-parceira'], 200)
+                ->push(['files' => []], 200)
+                ->push(['id' => 'pasta-campanha'], 200)
+                ->push(['files' => []], 200)
+                ->push(['id' => 'pasta-comprovantes'], 200),
+            'www.googleapis.com/upload/drive/v3/files*' => Http::response([
+                'id' => 'comprovante-drive-1',
+                'webViewLink' => 'https://drive.google.com/file/d/comprovante-drive-1/view',
+            ], 200),
+        ]);
+
+        $this->autenticarComoAdmin();
+        $pagamento = Pagamento::factory()->create(['status' => 'PAGO']);
+
+        $response = $this->postJson("/api/pagamentos/{$pagamento->id}/comprovante", [
+            'arquivo' => UploadedFile::fake()->create('comprovante.pdf', 200),
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath(
+            'data.comprovante_url',
+            'https://drive.google.com/file/d/comprovante-drive-1/view'
+        );
+        $this->assertDatabaseHas('pagamentos', [
+            'id' => $pagamento->id,
+            'comprovante_drive_file_id' => 'comprovante-drive-1',
+        ]);
+    }
+
+    public function test_usuario_sem_role_admin_nao_pode_anexar_comprovante(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $pagamento = Pagamento::factory()->create();
+
+        $response = $this->postJson("/api/pagamentos/{$pagamento->id}/comprovante", [
+            'arquivo' => UploadedFile::fake()->create('comprovante.pdf', 200),
+        ]);
+
+        $response->assertForbidden();
     }
 }

@@ -212,6 +212,16 @@ export default function PortalParticipacaoPage() {
           <div className={styles.pagamentoBloco}>
             <Badge label={pagamento.status} tone={pagamentoStatusTone(pagamento.status)} />
             <p className={styles.pagamentoValor}>R$ {pagamento.valor.toFixed(2)}</p>
+            {pagamento.comprovante_url && (
+              <a
+                href={pagamento.comprovante_url}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.comprovanteLink}
+              >
+                ver comprovante de pagamento
+              </a>
+            )}
           </div>
         ) : (
           <p className={styles.emBreve}>Nenhum pagamento registrado ainda para esta campanha.</p>

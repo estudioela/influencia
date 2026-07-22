@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
     Route::patch('/pagamentos/{pagamento}', [PagamentoController::class, 'update'])
         ->middleware('role:ADMIN');
+    Route::post('/pagamentos/{pagamento}/comprovante', [PagamentoController::class, 'comprovante'])
+        ->middleware('role:ADMIN');
 
     Route::get('/participacoes/{participacao}/envio', [EnvioController::class, 'show']);
     Route::post('/participacoes/{participacao}/envio', [EnvioController::class, 'store'])

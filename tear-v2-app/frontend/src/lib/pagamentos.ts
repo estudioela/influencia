@@ -21,6 +21,7 @@ export type Pagamento = {
   status: PagamentoStatus;
   aprovado_por: number | null;
   aprovado_em: string | null;
+  comprovante_url: string | null;
 };
 
 type PagamentoResponse = { data: Pagamento };
@@ -55,5 +56,19 @@ export async function updatePagamentoStatus(
   status: PagamentoStatus,
 ): Promise<Pagamento> {
   const response = await apiClient.patch<PagamentoResponse>(`/pagamentos/${id}`, { status });
+  return response.data.data;
+}
+
+export async function uploadComprovante(
+  id: string | number,
+  arquivo: File,
+): Promise<Pagamento> {
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+
+  const response = await apiClient.post<PagamentoResponse>(
+    `/pagamentos/${id}/comprovante`,
+    formData,
+  );
   return response.data.data;
 }

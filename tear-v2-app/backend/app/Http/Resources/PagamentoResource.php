@@ -19,6 +19,7 @@ class PagamentoResource extends JsonResource
             'status' => $this->status,
             'aprovado_por' => $this->aprovado_por,
             'aprovado_em' => $this->aprovado_em?->toIso8601String(),
+            'comprovante_url' => $this->comprovante_drive_file_url,
         ];
     }
 }

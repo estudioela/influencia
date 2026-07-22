@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pagamento\StorePagamentoRequest;
 use App\Http\Requests\Pagamento\UpdatePagamentoRequest;
+use App\Http\Requests\Pagamento\UploadComprovanteRequest;
 use App\Http\Resources\PagamentoResource;
 use App\Models\Pagamento;
 use App\Models\ParticipacaoNaCampanha;
+use App\Services\GoogleDriveService;
 use Illuminate\Http\JsonResponse;
 
 class PagamentoController extends Controller
 {
+    public function __construct(private readonly GoogleDriveService $drive) {}
+
     public function show(ParticipacaoNaCampanha $participacao): PagamentoResource
     {
         $this->authorize('view', $participacao);
@@ -50,6 +54,35 @@ class PagamentoController extends Controller
             }
         }
 
+        $pagamento->save();
+
+        return new PagamentoResource($pagamento);
+    }
+
+    /**
+     * P1 (AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md): anexa o comprovante
+     * de pagamento, mesma abstração (GoogleDriveService) já usada para
+     * upload de Materiais.
+     */
+    public function comprovante(UploadComprovanteRequest $request, Pagamento $pagamento): PagamentoResource|JsonResponse
+    {
+        if (! $this->drive->isConfigured()) {
+            return response()->json([
+                'message' => 'Envio de comprovante está temporariamente indisponível. Tente novamente mais tarde.',
+            ], 503);
+        }
+
+        $file = $request->file('arquivo');
+
+        $pagamento->loadMissing('participacao.parceira', 'participacao.campanha');
+        $participacao = $pagamento->participacao;
+        $parceiraFolder = $this->drive->ensureFolder($this->drive->rootFolderId(), $participacao->parceira->nome);
+        $campanhaFolder = $this->drive->ensureFolder($parceiraFolder, $participacao->campanha->nome);
+        $comprovantesFolder = $this->drive->ensureFolder($campanhaFolder, 'Comprovantes');
+        $uploaded = $this->drive->uploadFile($comprovantesFolder, $file);
+
+        $pagamento->comprovante_drive_file_id = $uploaded['id'];
+        $pagamento->comprovante_drive_file_url = $uploaded['url'];
         $pagamento->save();
 
         return new PagamentoResource($pagamento);

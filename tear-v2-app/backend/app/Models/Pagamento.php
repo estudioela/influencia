@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'participacao_id',
     'valor',
     'status',
+    'comprovante_drive_file_id',
+    'comprovante_drive_file_url',
 ])]
 class Pagamento extends Model
 {
