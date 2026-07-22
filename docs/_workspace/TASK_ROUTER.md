@@ -1947,3 +1947,54 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Próximo passo:** inalterado — Etapa 2 de `PLANO_DE_IMPLANTACAO.md`
   (SSH real) e a decisão de estratégia de deploy (Etapa 9, bloqueio ⚠)
   continuam dependendo do responsável do projeto.
+
+## 26. Encerramento da sessão do PR #62 — divergência com trabalho paralelo descoberta (2026-07-22)
+
+- **Contexto:** esta sessão (Agente B, worktree isolado
+  `agente-b/go-live-runbook`, registrada no §25 acima) commitou (`4f0bdcd`)
+  e abriu o PR #62 contra `feat/ui-design-system-ela`, na base do commit
+  `8d5f316`. Entre o commit do PR e este encerramento, `feat/ui-design-system-ela`
+  recebeu diretamente (fora de PR) o commit `93578f5`
+  ("consolida documentacao pos-auditoria Locaweb") — uma sessão paralela,
+  via subagentes, que corrigiu **a mesma contradição de SSH por chave**
+  em `PLANO_DE_IMPLANTACAO.md`, além de reescrever `ESTADO_SESSAO.md` e
+  adicionar um `TASK_ROUTER.md §25` **próprio, com o mesmo número usado
+  por esta sessão, conteúdo diferente**. Nenhuma das duas sessões tinha
+  visibilidade da outra em tempo real (worktree isolado + branch direta).
+- **Verificado via `gh pr view 62 --json mergeable,mergeStateStatus`:**
+  `mergeable: CONFLICTING`, `mergeStateStatus: DIRTY` — não é um risco
+  teórico, é um conflito de merge real e já existente.
+- **Comparação de conteúdo (arquivos tocados por ambas):**
+  `docs/deployment/PLANO_DE_IMPLANTACAO.md`, `docs/_workspace/ESTADO_SESSAO.md`,
+  `docs/_workspace/TASK_ROUTER.md`, `docs/deployment/AUDITORIA_LOCAWEB.md`.
+  - **Redundante** (mesmo achado, redação diferente): bloqueio de SSH por
+    chave nas Etapas 9/11 — já corrigido em `93578f5`.
+  - **Não duplicado, valor real do PR #62:** seção nova
+    `## 3. GO/NO-GO — critérios de decisão do dia do deploy`
+    (ANTES/DURANTE/DEPOIS + critérios de GO/ABORT); correção das 4
+    referências quebradas a `CONTRATO_SOBERANO.md` (`CLAUDE.md` ×2 +
+    2 docs de release); `docs/governance/INVENTARIO_DOCUMENTAL.md` (novo).
+  - **Não duplicado, valor real de `93578f5`:** correção de referência de
+    etapa errada ("Etapa 6" → "Etapas 9–11"), placeholder de domínio
+    desatualizado em `IMPLEMENTACAO_TECNICA.md`, link quebrado em
+    `MONITORING.md`, checklist técnico Laravel/React × infra real
+    (`AUDITORIA_LOCAWEB.md` §2.1), recomendação de estratégia de deploy
+    híbrida FTP+SSH pontual (`AUDITORIA_LOCAWEB.md` §5.1).
+- **Decisão tomada nesta sessão:** não reconciliar automaticamente (rebase
+  ou fechamento do PR) sem decisão do responsável do projeto — envolve
+  escolher entre redações que descrevem o mesmo achado de forma
+  diferente, fora do que este agente decide sozinho por instrução padrão
+  (`CLAUDE.md`, "conflito insolúvel entre requisitos" é um dos gatilhos
+  explícitos para parar e pedir decisão humana).
+- **`docs/_workspace/ESTADO_SESSAO.md` reescrito por completo** (não só
+  acrescentado) nesta sessão, com a divergência como item de maior
+  prioridade em §1/§4/§5/§6 — não é seguro que a próxima sessão consulte
+  só o `PLANO_DE_IMPLANTACAO.md` de um dos dois branches sem saber que o
+  outro existe.
+- **Nenhum novo commit de conteúdo criado além deste registro de
+  fechamento** — o PR #62 permanece aberto, em draft, sem alteração desde
+  o commit `4f0bdcd`, aguardando decisão de reconciliação.
+- **Próximo passo:** ver `ESTADO_SESSAO.md` §4 (Prioridade 1) — decidir
+  como reconciliar o PR #62 com `feat/ui-design-system-ela` antes de
+  qualquer nova sessão editar `docs/deployment/PLANO_DE_IMPLANTACAO.md`
+  de novo (para não criar uma terceira frente divergente).
