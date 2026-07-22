@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:all": "concurrently \"npm run dev\" \"cd ../backend && php artisan serve\"",
     "build": "tsc -b && vite build",
+    "build:locaweb": "tsc -b && VITE_BUILD_TARGET=locaweb vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },

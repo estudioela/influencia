@@ -6,9 +6,15 @@ GitHub Actions + SSH, zero custo recorrente adicional).
 **Escopo:** `tear-v2-app/` (Laravel + Sanctum + Spatie Permission / React +
 Vite). Não cobre o legado GAS.
 **Natureza deste documento:** mapeamento técnico do que precisa mudar
-para a arquitetura aprovada existir de fato. **Nenhum código foi
-alterado, nenhuma dependência foi instalada, nenhum commit de código foi
-feito nesta revisão.** A execução real é trabalho de uma sessão separada.
+para a arquitetura aprovada existir de fato. Nasceu como mapeamento
+apenas (nenhum código alterado); a partir de 2026-07-22 passou a ser
+executado — ver nota de status em cada item da tabela de §2/§3 e
+`docs/_workspace/TASK_ROUTER.md` §18 para o registro da execução.
+**Decisão de arquitetura fechada nesta execução:** o frontend é servido
+pelo Laravel a partir de `public/build`, origem única — ver ADR-015
+(`docs/adrs/ADR-015-frontend-servido-pelo-laravel-origem-unica.md`), que
+resolve a lacuna que existia entre este documento (já assumia
+`public/build`) e o código (ainda não tinha a fiação).
 
 Arquitetura aprovada, resumida: Locaweb Hospedagem Linux (compartilhada,
 PHP 8.3, sem Docker/root) → PostgreSQL gerenciado pelo próprio plano →

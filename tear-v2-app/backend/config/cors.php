@@ -15,6 +15,9 @@ return [
     |
     */
 
+    // Em produção (ADR-015, origem única) o browser nunca faz requisição
+    // cross-origin — CORS só é exercido em dev local (frontend em :5173,
+    // backend em :8000). Mantido por isso, não por necessidade de produção.
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],

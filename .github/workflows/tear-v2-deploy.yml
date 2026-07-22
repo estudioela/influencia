@@ -1,0 +1,75 @@
+name: TEAR V2 Deploy
+
+# Só builda/publica a partir de `main` (ou manualmente) — nunca em branches
+# de feature. Arquitetura: ADR-015 (origem única — Laravel serve o build do
+# Vite a partir de public/build). Runbook completo:
+# docs/deployment/PLANO_IMPLEMENTACAO.md, Etapa 6.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tear-v2-app/**"
+      - ".github/workflows/tear-v2-deploy.yml"
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    name: Build + Deploy (Locaweb via SSH)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: tear-v2-app/frontend/package-lock.json
+
+      - name: Build frontend (gera tear-v2-app/backend/public/build)
+        working-directory: tear-v2-app/frontend
+        run: |
+          npm ci
+          npm run build:locaweb
+
+      - name: Deploy via SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+        run: |
+          # Secrets ainda não cadastrados (Etapa 1/6 de
+          # docs/deployment/PLANO_IMPLEMENTACAO.md) — falha rápido e visível
+          # em vez de tentar conectar com credenciais vazias.
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_USER" ] || [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_BASE_PATH" ]; then
+            echo "::error::Secrets de deploy (SSH_HOST/SSH_USER/SSH_PRIVATE_KEY/DEPLOY_BASE_PATH) não configurados."
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          RELEASE_ID="$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$DEPLOY_BASE_PATH/releases/$RELEASE_ID'"
+
+          rsync -avz --delete \
+            --exclude='.env' \
+            --exclude='storage' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            tear-v2-app/backend/ \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_BASE_PATH/releases/$RELEASE_ID/"
+
+          scp -i ~/.ssh/deploy_key tear-v2-app/scripts/deploy-locaweb.sh \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_BASE_PATH/releases/$RELEASE_ID/deploy-locaweb.sh"
+
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "bash '$DEPLOY_BASE_PATH/releases/$RELEASE_ID/deploy-locaweb.sh' '$RELEASE_ID' '$DEPLOY_BASE_PATH'"

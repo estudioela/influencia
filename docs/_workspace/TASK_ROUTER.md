@@ -1626,3 +1626,62 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Próximo passo:** decisão de arquitetura acima, depois retomar Etapas
   5/6 de `PLANO_IMPLEMENTACAO.md`. Etapas 1/2/3/4/7+ permanecem bloqueadas
   por credenciais reais (fora do escopo de execução do agente).
+
+## 19. Resolução do bloqueio arquitetural (§18) — ADR-015, Etapas 5/6 executadas (2026-07-22)
+
+- **Decisão do responsável do projeto:** o Laravel serve o frontend a
+  partir de `public/build`, origem única — sem domínio separado para a
+  SPA. Registrada em
+  `docs/adrs/ADR-015-frontend-servido-pelo-laravel.md` (contexto,
+  mecânica, alternativas consideradas e rejeitadas, consequências).
+- **Implementação (Etapas 5/6 de `PLANO_IMPLEMENTACAO.md`):**
+  - `frontend/vite.config.ts` + novo script `npm run build:locaweb`
+    (`frontend/package.json`) — `outDir`/`base` só mudam para
+    `backend/public/build`/`/build/` sob `VITE_BUILD_TARGET=locaweb`;
+    `npm run build` padrão continua gerando `dist/` sem mudança, para não
+    quebrar o `Dockerfile` do frontend (dev local via `docker-compose.yml`)
+    nem a validação do CI de testes.
+  - `backend/routes/web.php` — rota catch-all substitui a antiga view
+    placeholder `welcome` (removida, junto com
+    `resources/views/welcome.blade.php` e `tests/Feature/ExampleTest.php`,
+    ambos scaffold do Laravel sem uso real). Serve
+    `public/build/index.html`; 404 com mensagem clara se o build não
+    existir. Não captura `/api/*`/`/up` — validado por
+    `tests/Feature/SpaCatchAllRouteTest.php` (novo) e manualmente via
+    `php artisan serve`.
+  - `backend/.env.production.example` — `SESSION_DOMAIN` sem ponto
+    inicial (host único); `FRONTEND_URL`/`SANCTUM_STATEFUL_DOMAINS`
+    documentados como a mesma origem de `APP_URL`.
+  - `backend/config/cors.php` — comentário explicando que em produção
+    (origem única) o CORS não é exercido pelo navegador; permanece só
+    para o dev local cross-origin (`:5173` → `:8000`).
+  - `.github/workflows/tear-v2-deploy.yml` (novo) — builda o frontend
+    (`npm run build:locaweb`, gerando `backend/public/build`) e publica
+    `tear-v2-app/backend/` inteiro via rsync/SSH para
+    `releases/<id>/`, chamando `tear-v2-app/scripts/deploy-locaweb.sh`
+    (novo) no host: `composer install --no-dev`, symlink de
+    `.env`/`storage` compartilhados, `migrate --force`, cache de
+    config/rotas/views, swap do symlink `current`. Falha rápido e visível
+    se os secrets de SSH (`SSH_HOST`/`SSH_USER`/`SSH_PRIVATE_KEY`/
+    `DEPLOY_BASE_PATH`) ainda não estiverem cadastrados — não configurados
+    nesta sessão (credenciais reais, fora do alcance do agente).
+  - `.github/workflows/tear-v2-docker.yml` — removido (`IMPLEMENTACAO_TECNICA.md`
+    §9 já previa a aposentadoria; produção não consome mais imagem
+    Docker). `docker-compose.yml` permanece intocado, só para dev local.
+- **Validação:** backend 191/191 testes verdes (475 assertions, +3 novos
+  testes de `SpaCatchAllRouteTest`), Pint limpo; frontend `tsc -b` e
+  `oxlint` limpos (só o warning pré-existente de `auth.tsx:80`, não
+  relacionado); `npm run build` (padrão) confirmado gerando `dist/` sem
+  regressão; `npm run build:locaweb` confirmado gerando
+  `backend/public/build/index.html` com assets sob `/build/`; roteamento
+  ponta a ponta verificado com `php artisan serve` (`/`, `/build/assets/*`,
+  `/api/health`, rota desconhecida da SPA — todas resolvendo como
+  esperado).
+- **Próximo passo:** nenhum bloqueio técnico remanescente nas Etapas 5/6.
+  Etapas 1/2/3/4/7+ de `PLANO_IMPLEMENTACAO.md` continuam bloqueadas por
+  credenciais/acesso reais (Locaweb, banco gerenciado, DNS, Google
+  Workspace) — fora do alcance do agente, aguardando o responsável do
+  projeto. Dívida já registrada e não tocada por esta ADR: `tear-v2-app/docs/DEPLOY.md`
+  e `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` ainda descrevem o fluxo
+  Docker/Coolify anterior (pendência de `IMPLEMENTACAO_TECNICA.md` §2,
+  tratada em sessão própria antes da Etapa 11).
