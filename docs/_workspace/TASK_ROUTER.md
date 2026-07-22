@@ -1998,3 +1998,94 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   (bloqueia Etapa 3); em paralelo, habilitar SSH para fechar a Etapa 2
   (IP/CIDR do proxy reverso, host/porta SMTP — checklist em
   `AUDITORIA_LOCAWEB.md` §2.1).
+
+## 28. Missão de simplificação documental — auditoria completa + Fase 1 executada (2026-07-22)
+
+- **Nova frente** (instrução explícita do responsável do projeto, "TEAR
+  V2.5 — MISSÃO DE SIMPLIFICAÇÃO DOCUMENTAL"): auditoria completa dos 102
+  arquivos `.md` do projeto (98 em `docs/` + 4 na raiz), visando reduzir
+  manutenção sem perder conhecimento. Dois relatórios gerados (**ainda não
+  commitados** — ver pendência abaixo): `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`
+  e `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`.
+- **Classificação inicial** (auditoria estrutural: nomes, pastas,
+  cabeçalhos, cross-reference): MANTER 47 / CONSOLIDAR 5 / ARQUIVAR 48 /
+  REMOVER 2.
+- **Achado estrutural relevante:** um cluster de 8 arquivos (`DATA_MODEL.md`,
+  `DATABASE_MODEL.md`, `DOMAIN.md`, `TEAR.md`, `MIGRATION.md`,
+  `SCREEN_MAP.md`, `STITCH_PROTOTYPE.md`, `UX_FLOW.md` — juntos ~32.318
+  linhas) descreve um domínio teórico (Aggregate Roots "Competência"/
+  "Colaboração_Mensal") gerado antes de qualquer código existir, sem
+  correspondência em nenhum dos dois sistemas reais (confirmado por grep:
+  zero ocorrência dessas entidades em `tear-v2-app/` ou no GAS legado).
+- **Validação de conteúdo contra o código real** (não só estrutural)
+  corrigiu 3 das 5 classificações originais de CONSOLIDAR no plano
+  executivo:
+  - `docs/deployment/IMPLEMENTACAO_TECNICA.md`: CONSOLIDAR→**ARQUIVAR**
+    (`PLANO_DE_IMPLANTACAO.md` já declara mantê-lo como referência técnica
+    detalhada, não substituível).
+  - `docs/design/DESIGN_SYSTEM.md`: CONSOLIDAR→**REMOVER** (paleta
+    `#BC0004`/`#FAF8F6` nunca implementada).
+  - `docs/design/stitch-export/DESIGN.md`: CONSOLIDAR→**MANTER** —
+    confirmado por grep em `tear-v2-app/frontend/src/index.css` como a
+    fonte real de tokens de design já implementada (`#9f0003`/`#cd0005`/
+    `#fef8f8`). **Decisão pendente do responsável do projeto:** promover
+    formalmente este arquivo a fonte oficial via atualização do status do
+    `ADR-002` (hoje "Proposed") — não decidido nesta sessão.
+  - `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`: mantido
+    CONSOLIDAR→`BACKLOG_FUNCIONAL_V2_6.md`, mas risco elevado a
+    médio-alto — a seção de recorrência/parcelamento de pagamento
+    (autodescrita como "decisão de maior alavancagem pendente") não está
+    carregada no backlog vigente; consolidar sem extrair essa seção
+    primeiro perderia uma decisão de negócio real ainda em aberto.
+- **Fase 1 do plano executivo (arquivamento de baixo risco) parcialmente
+  executada**, por decisão explícita do responsável do projeto de
+  restringir o escopo ao cluster já validado:
+  - Validação em duas rodadas adicionais (amostragem de conteúdo cruzada
+    contra `CONTRATO_SOBERANO.md`/ADRs/SPECs/migrations/models/páginas
+    reais + amostragem distribuída específica de `UX_FLOW.md` em 0/25/50/
+    75/100%) confirmou confiança alta e ausência de informação exclusiva
+    nos 8 arquivos, inclusive nas seções que cobrem módulos ainda não
+    implementados no sistema real (Logística, Contratos, Histórico).
+  - Executado: `git mv` dos 8 arquivos para
+    `docs/archive/planejamento-pre-codigo/` (histórico preservado via
+    rename, commit `08366b4`); `docs/archive/README.md` atualizado com a
+    nova seção.
+  - `README.md` (raiz) tinha referência obsoleta a 2 desses arquivos
+    (`DOMAIN.md`, `DATA_MODEL.md`) como leitura recomendada de
+    arquitetura — removida (não redirecionada ao archive, para não
+    indicar material arquivado como leitura obrigatória) em commit
+    isolado `e9574ed`.
+  - Verificação final (grep no repositório inteiro) confirmou nenhuma
+    referência remanescente a `DOMAIN.md`/`DATA_MODEL.md` fora de
+    `docs/archive/` e dos próprios relatórios de auditoria/plano.
+- **Itens do plano ainda não executados** (aguardando decisão/priorização
+  do responsável do projeto):
+  - Fase 1 (restante): 3 roadmaps superados (`ROADMAP_MESTRE_TEAR_V2.md`,
+    `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md`,
+    `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` — este último precisa de um
+    ADR novo extraindo a decisão P0-2 antes de arquivar),
+    `docs/governance/REPOSITORY_GOVERNANCE_AUDIT.md`,
+    `RELATORIO_CONSOLIDACAO_AUDITORIAS.md` (raiz).
+  - Fase 2: 3 remoções diretas já validadas
+    (`docs/reports/STATUS_MVP_OPERACIONAL_TEAR_V2.md`,
+    `docs/reports/RELATORIO_SPRINT_ESTABILIZACAO_TEAR_V2.md`,
+    `docs/design/DESIGN_SYSTEM.md`).
+  - Fase 3: 2 consolidações (`UI_RULES.md`→ADR-002;
+    `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`→`BACKLOG_FUNCIONAL_V2_6.md`,
+    com extração de conteúdo primeiro) — depende de decisão humana sobre
+    a fonte oficial de tokens de design.
+  - Fase 4: arquivamento de docs de deployment/release (recomendado só
+    após o corte de produção do Go-Live) + correções de conteúdo em
+    `README.md`/`PROJECT_GOVERNANCE.md` + remoção de `docs/governance/`
+    da árvore ativa.
+- **Pendência de commit:** `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`
+  e `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md` seguem
+  como arquivos não rastreados (`??`) — não commitados nesta sessão por
+  não ter sido pedido explicitamente; decisão de committar ou não fica
+  para a próxima sessão.
+- **Nenhuma decisão de arquitetura de código foi tomada ou reaberta** —
+  trabalho exclusivamente documental, sem tocar `tear-v2-app/` nem `src/`.
+- **Próximo passo:** decidir se a próxima sessão continua a Fase 2/3/4 da
+  simplificação documental ou retoma a frente de Go-Live (estratégia de
+  infraestrutura do PostgreSQL, §27, ainda em aberto e bloqueante para a
+  Etapa 3).
