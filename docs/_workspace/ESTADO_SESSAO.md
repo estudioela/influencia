@@ -10,224 +10,227 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-22
-- **HEAD:** `209bf32` — commitado, **pushado ao final desta sessão**
-  (`origin/feat/ui-design-system-ela` estava 6 commits atrás antes do
-  push: 3 de sessão(ões) anterior(es) não refletidos em documentação
-  — `aea82d6`, `9824b7b`, `a241186` — + 3 desta sessão — `fabd5c1`,
-  `7d85989`, `209bf32`). Working tree com 3 arquivos não rastreados
-  (`??`), mantidos assim por instrução explícita do responsável do
-  projeto em sessões anteriores: `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
+- **HEAD:** `4f08601` — commitado e pushado nesta sessão
+  (`origin/feat/ui-design-system-ela` em dia). Working tree com os mesmos
+  3 arquivos não rastreados (`??`) de sessões anteriores, mantidos assim
+  por instrução explícita do responsável do projeto:
+  `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
   `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`,
   `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`.
 - **Branch:** `feat/ui-design-system-ela`.
-- **Sistema em foco:** `tear-v2-app/` (Laravel + React) — execução do
-  backlog de certificação funcional do MVP aberto na sessão anterior
-  (`TASK_ROUTER.md` §29), **encerrado nesta sessão**.
-- **Testes:** backend 198/198 verdes (Pint limpo); frontend `tsc -b`/
-  `oxlint`/`vite build` limpos — medido nesta sessão, após as alterações
-  de código.
+- **Sistema em foco:** `tear-v2-app/` (Laravel + React) — **o projeto mudou
+  oficialmente de fase nesta sessão**. Mandato do responsável do projeto:
+  encerra a fase "construir funcionalidades"; entra a fase "certificar o
+  MVP e colocar em produção" (Go-Live). Nenhuma funcionalidade nova deve
+  ser iniciada até o MVP estar online, salvo o que estiver diretamente
+  vinculado ao checklist de Go-Live (ver §3).
+- **Decisão arquitetural reconfirmada como encerrada:** banco relacional,
+  PostgreSQL em produção — não reabrir estudo de alternativas (ex.:
+  MongoDB) nesta fase.
+- **Testes:** não alterados nesta sessão (nenhum código de aplicação
+  tocado, só documentação). Última medição de qualidade segue a da sessão
+  anterior — backend 198/198 verdes, Pint limpo; frontend `tsc -b`/
+  `oxlint`/`vite build` limpos.
 
-## 2. Última sessão concluída — Backlog funcional executado + reconciliação da especificação (2026-07-22)
+## 2. Última sessão concluída — Auditoria funcional completa + mudança oficial de prioridade para Go-Live (2026-07-22)
 
-Continuação direta da sessão anterior (auditoria funcional do MVP,
-`TASK_ROUTER.md` §29), com plano aprovado pelo responsável do projeto:
-entrega incremental, uma frente por vez, commits pequenos, evitar
-investigações longas em itens que dependem de decisão de negócio.
+Sessão iniciada logo após o encerramento do backlog de certificação
+funcional (sessão anterior, `TASK_ROUTER.md` §29-§31). Nesta sessão:
 
-**Achado de abertura — drift de documentação, corrigido antes de agir:**
-entre o fim da sessão anterior (HEAD `c7f753e` documentado) e o início
-desta, 3 commits já haviam resolvido parte do backlog sem atualização de
-`ESTADO_SESSAO.md`/`TASK_ROUTER.md`: `aea82d6` (menu de Logística
-destravado), `9824b7b` (dedup de nome de Parceira), `a241186` (histórico
-de alteração exposto para admin). Verificado por `git log --stat` antes
-de reportar qualquer coisa como concluída — detalhe completo em
-`TASK_ROUTER.md` §30.
-
-**Execução do backlog, nesta ordem:**
-
-1. **RBAC de leitura granular (P0) — verificado, nenhuma correção
-   necessária.** Todos os controllers administrativos (`ParceiraController`,
-   `MedidaController`, `HistoricoAlteracaoController`, `MarcaController`,
-   `CampanhaController`, `ParticipacaoController`, `BriefingController`,
-   `MaterialController`, `PagamentoController`, `EnvioController`,
-   `MeParticipacaoController`) chamam `$this->authorize(...)` contra
-   Policies reais, com `Gate::before` liberando ADMIN e as Policies
-   restringindo os demais papéis por posse — coberto por teste
-   (`RbacIsolamentoTest`, `PortalIsolamentoTest`). O spec de 07-20 estava
-   desatualizado nesse ponto.
-2. **Comprovante de pagamento (P1) — implementado** (commit `fabd5c1`):
-   `POST /pagamentos/{pagamento}/comprovante` (role:ADMIN), reaproveitando
-   `GoogleDriveService` (mesma abstração de Materiais); `PagamentoResource`
-   expõe `comprovante_url`; UI de upload/link no admin (`PagamentoPage`) e
-   link somente leitura no Portal (`PortalParticipacaoPage`). 2 testes
-   novos.
-3. **Residuais de Cadastro:** dedup de nome já resolvida (commit anterior
-   à sessão); `authorize()` "ausente" em `POST /parceiras/cadastro`
-   administrativo confirmado como **falso positivo** (rota já tem
-   `role:ADMIN` + `$this->authorize('create', ...)` + teste verde);
-   validação de formato do Instagram **não implementada** — decisão de
-   produto sem formato definido em nenhuma fonte, documentada, não
-   resolvida (instrução explícita de não investir em itens de decisão de
-   negócio nesta sessão).
-4. **Reconciliação da especificação funcional** — produzido
-   `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md` (commit
-   `209bf32`, formato tabela, só divergências, sem reescrever o documento
-   original): 11 divergências encontradas entre
-   `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` (2026-07-20) e o código
-   real — quase todas a favor do sistema (spec desatualizada): Portal
-   completo da Influenciadora, envio de material pelo próprio portal,
-   congelamento de participação, vínculo Material↔Briefing, RBAC
-   granular, comprovante de pagamento, locale `pt_BR`, dedup de nome,
-   `authorize()` administrativo (falso positivo). 2 divergências
-   classificadas **Parcial**: bloqueio de edição pós-congelamento e
-   `FEED = carrossel_qtd` já foram decididos *de fato* pelo código, mas
-   nunca ratificados como decisão consciente de produto.
-
-**Validação:** backend 198/198 verde, Pint limpo; frontend `tsc -b`/
-`oxlint`/`vite build` limpos — checado a cada unidade de trabalho, antes
-de cada commit.
-
-**Commits desta sessão (3, todos pequenos, uma frente por vez):**
-`fabd5c1` (comprovante de pagamento), `7d85989` (docs: registra execução
-do backlog), `209bf32` (docs: reconciliação da especificação).
-
-**Backlog de `AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md` — encerrado**
-nesta sessão. O que resta não é código, é decisão de produto (ver §4).
+1. **Auditoria funcional completa por navegação real**, não só leitura de
+   código — login e uso de verdade como ADMIN, GESTOR_MARCA e
+   INFLUENCIADORA (via browser MCP), percorrendo Cadastro→Aprovação→
+   Convite→Senha→Login→Participação→Briefing→Upload→Pagamento→
+   Comprovante→Histórico→Congelamento→RBAC cruzado. Primeira tentativa de
+   delegar a um agente em background retornou vazia (0 ações reais) e foi
+   descartada; a segunda execução produziu achados concretos com
+   evidência de código e tela.
+2. **Logística/Envio testado ao vivo** — único módulo que nenhuma sessão
+   anterior havia percorrido de verdade. Fluxo completo (criar envio,
+   endereço lido da Parceira, PENDENTE→EXPEDIDO→ENTREGUE, RBAC
+   `role:ADMIN`) funcionou sem nenhuma divergência. Fecha a última lacuna
+   da certificação funcional do MVP.
+3. **7 achados classificados** (Bug / Regra de Negócio Incompleta /
+   Decisão de Produto Pendente / Problema de UX / Questão de
+   Infraestrutura) — nenhum bloqueia o ciclo certificado:
+   - F1/F2 (Infraestrutura, **bloqueiam produção**): upload de Material e
+     de Comprovante de Pagamento retornam 503 — `GoogleDriveService`
+     sem credenciais, sem fallback local. Já documentado em
+     `PLANO_DE_IMPLANTACAO.md` Etapa 5 e `TEAR_V2.5_GO_LIVE_CHECKLIST.md`
+     P0-9; esta sessão só reconfirmou ao vivo.
+   - F3 (Infraestrutura, **bloqueia produção**): `MAIL_MAILER=log`, e-mail
+     de convite não chega a ninguém real. Já documentado (Etapa 6);
+     reconfirmado ao vivo.
+   - F4 (Regra de Negócio Incompleta/Bug, não bloqueia): papel
+     `GESTOR_MARCA` não funcional — filtros de posse só cobrem ADMIN/
+     INFLUENCIADORA, gestor nunca vê nada. Fora do escopo do ciclo
+     certificado (que não depende de GESTOR_MARCA); fica como Evolução.
+   - F5 (Regra de Negócio Incompleta, não bloqueia): congelamento de
+     Participação bloqueia só campos comerciais — Briefing pode ser
+     criado/editado numa participação já congelada. Estreita o escopo da
+     ratificação pendente já registrada em §29-§31.
+   - F6 (Decisão de Produto Pendente, não bloqueia): Instagram sem
+     validação de formato — pendência já conhecida, reconfirmada ao vivo.
+   - F7 (Problema de UX, não bloqueia): sidebar rotula Briefings/
+     Materiais/Aprovações/Pagamentos como "(em breve)" mesmo já sendo
+     100% funcionais via drill-down Campanha→Participação.
+4. **Conclusão da auditoria:** o núcleo de negócio (Cadastro→...→
+   Histórico) está funcionalmente certificado — **nenhum bloqueador de
+   lógica de aplicação resta**. Os únicos bloqueadores reais para colocar
+   uma influenciadora real em produção são credenciais externas (Google
+   Drive, SMTP) e infraestrutura de hospedagem já mapeada (Postgres na
+   Locaweb, autenticação SSH do deploy, DNS, `restore-db.sh`, PR #62).
+5. **Registro formal em `TASK_ROUTER.md` §32** (mandato de mudança de
+   prioridade + todos os achados F1-F7 + fechamento de Logística),
+   commit `4f08601`, pushado. Nenhum outro arquivo de encerramento criado
+   (instrução explícita do responsável do projeto).
+6. **Nova convenção de relatório de fim de etapa**, exigida pelo
+   responsável do projeto para toda sessão a partir de agora, nesta fase
+   de Go-Live: ao final de cada etapa de trabalho, reportar
+   explicitamente (1) Concluído, (2) Bloqueadores (classificados Crítico/
+   Alto/Médio/Baixo), (3) Próxima prioridade, (4) Checklist de Go-Live
+   (`- [ ] Google Drive` / `SMTP` / `PostgreSQL` / `Deploy` / `HTTPS` /
+   `DNS` / `Backup` / `Monitoramento` / `Piloto` / `MVP Online`). Todos os
+   10 itens do checklist seguem **não concluídos** ao final desta sessão.
 
 ## 3. Próxima tarefa recomendada
 
-**Levar ao responsável do projeto as 2 decisões de produto que hoje são
-o único bloqueador real de certificação funcional do MVP** (não código):
+**Destravar Prioridade 1 do checklist de Go-Live: Google Drive Service
+Account.** É o bloqueador que afeta mais etapas do ciclo certificado
+(Material + Comprovante de Pagamento). Requer decisão/acesso do
+responsável do projeto, não é tarefa de engenharia pura:
 
-1. **Recorrência/parcelamento de pagamento por Participação** — maior
-   alavancagem pendente; determina se o `Pagamento` continua 1:1 com
-   Participação ou vira uma mudança estrutural (nova tabela,
-   `HasOne`→`HasMany`, rota, frontend, testes).
-2. **Validação de formato do Instagram** — menor impacto, mas também sem
-   definição em nenhuma fonte.
-3. **Ratificar (ou reverter)** as 2 decisões já tomadas *de fato* pelo
-   código, sem decisão formal registrada: bloqueio total de edição de
-   Participação após congelamento (sem trilha de auditoria); `FEED`
-   reaproveitando `carrossel_qtd` (sem coluna própria).
+1. Acesso ao Google Workspace `estudioela.com` + Google Cloud Console
+   para seguir `docs/deployment/PLANO_DE_IMPLANTACAO.md` Etapa 5 (criar
+   Shared Drive, habilitar API, criar Service Account, adicionar como
+   Content Manager).
+2. Extrair e entregar 4 valores: `GOOGLE_DRIVE_CLIENT_EMAIL`,
+   `GOOGLE_DRIVE_PRIVATE_KEY`, `GOOGLE_DRIVE_ROOT_FOLDER_ID`,
+   `GOOGLE_DRIVE_BACKUP_FOLDER_ID`.
 
-**Só depois dessas decisões (ou em paralelo, se o responsável preferir
-não bloquear)**, retomar a Frente B (Go-Live) — `TASK_ROUTER.md` §27
-(PostgreSQL indisponível no plano Locaweb, ainda bloqueante) e §29
-(reconciliação pendente do PR #62, incompatibilidade de autenticação SSH
-no pipeline de deploy, `restore-db.sh` ainda com Docker) — nenhum desses
-achados foi corrigido em nenhuma sessão até aqui, só documentado.
+**Em paralelo, mesma prioridade (Prioridade 2 do checklist): SMTP** —
+confirmar com a Locaweb o relay incluso no plano (Etapa 6 do mesmo
+documento) ou decidir outro provedor.
 
-Nenhuma outra fila de trabalho de código está aberta — o próximo passo
-de implementação depende das decisões acima ou da retomada do Go-Live.
+**Só depois** (Prioridade 3): retomar infraestrutura de hospedagem
+(PostgreSQL, deploy, DNS, backup, monitoramento — `TASK_ROUTER.md`
+§27/§29, inalterados) e então o piloto com uma única influenciadora real.
+
+Nenhuma nova funcionalidade deve ser iniciada antes disso, por mandato
+explícito desta sessão (ver §1).
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Decisão de recorrência de pagamento por Participação** — segue sem
-  resposta, maior alavancagem do que restou do backlog funcional.
-- **Validação de formato do Instagram** — novo item explícito, achado
-  nesta sessão (já estava implícito no spec, agora isolado como decisão
-  própria).
-- **Ratificação das 2 decisões já implementadas de fato** (bloqueio de
-  edição pós-congelamento; `FEED = carrossel_qtd`) — não bloqueiam nada
-  hoje, mas ficam sem dono formal enquanto não confirmadas.
+- **Google Drive Service Account** — credencial que a IA não possui e
+  não pode gerar. Bloqueia Material e Comprovante de Pagamento (503 real,
+  confirmado ao vivo nesta sessão).
+- **SMTP de produção** — credencial/decisão de provedor pendente.
+  Bloqueia todo onboarding real de influenciadora (convite não chega).
 - Definir estratégia de infraestrutura do PostgreSQL — bloqueante para a
-  Etapa 3 do Go-Live (inalterado, frente pausada há 2 sessões).
+  Etapa 3 do Go-Live (inalterado, várias sessões).
 - Decisão real de autenticação de deploy (chave vs. senha vs. híbrido) —
-  `ADR-016` não resolveu essa incompatibilidade (achado de sessão
-  anterior, ainda não corrigido).
-- Reconciliar PR #62 (conflitante) e a branch `worktree-agente-b-deploy-infra`
-  não mesclada (inalterado).
+  `ADR-016` não resolveu essa incompatibilidade (inalterado).
+- DNS de `influencia.estudioela.com` não apontado (inalterado).
+- Reconciliar PR #62 (conflitante) e a branch
+  `worktree-agente-b-deploy-infra` não mesclada (inalterado).
+- Decisão de recorrência/parcelamento de pagamento por Participação —
+  não bloqueia o ciclo certificado, mas segue sem resposta (inalterado).
+- Validação de formato do Instagram — decisão de produto pendente, não
+  bloqueia (inalterado).
+- Ratificação formal de 2 decisões já implementadas de fato pelo código
+  (bloqueio de edição pós-congelamento — escopo mais estreito do que se
+  pensava, ver F5; `FEED = carrossel_qtd`) — não bloqueiam, sem dono
+  formal (inalterado).
+- GESTOR_MARCA não funcional (F4) — não bloqueia o ciclo certificado;
+  decisão de produto sobre se/quando esse papel deve funcionar de fato.
 - Promover `docs/design/stitch-export/DESIGN.md` a fonte oficial de
-  tokens (ADR-002) — inalterado, frente de simplificação documental
-  pausada há 2 sessões.
-- Seguir ou não com as Fases 2-4 da simplificação documental — inalterado.
+  tokens (ADR-002) — simplificação documental pausada, baixa prioridade
+  nesta fase de Go-Live.
 - Preço do piloto externo; separação marca produto/agência antes do
-  INPI; credenciais reais de produção; branch remota
-  `worktree-spec-mvp-completa` — inalterados.
+  INPI; branch remota `worktree-spec-mvp-completa` — inalterados.
 
 ## 5. Riscos ativos
 
-1. **Recorrência de pagamento indecidida** — enquanto pendente, qualquer
-   implementação no entorno de Participação/Pagamento corre risco real
-   de retrabalho (inalterado da sessão anterior).
-2. **2 decisões já tomadas pelo código sem ratificação formal**
-   (congelamento, `FEED`) — risco baixo hoje (comportamento já em
-   produção-equivalente e testado), mas sem dono de decisão registrado;
-   se revertidas depois, afeta dado já persistido (novo, desta sessão).
-3. PostgreSQL indisponível no plano atual da Locaweb — impacto em
+1. **Google Drive e SMTP não configurados** — enquanto pendentes, nenhum
+   piloto real é possível: influenciadora não recebe convite, não
+   consegue enviar material, equipe não registra comprovante (novo foco
+   desta sessão, antes disperso em vários documentos).
+2. PostgreSQL indisponível no plano atual da Locaweb — impacto em
    custo/cronograma do Go-Live (inalterado).
-4. Pipeline de deploy com incompatibilidade de autenticação não resolvida
-   (achado de sessão anterior, `TASK_ROUTER.md` §29) — Go-Live falharia
-   na primeira execução real se retomado sem correção.
+3. Pipeline de deploy com incompatibilidade de autenticação não resolvida
+   — Go-Live falharia na primeira execução real se retomado sem correção
+   (inalterado).
+4. DNS de `influencia.estudioela.com` não apontado — bloqueia SSL/domínio
+   de produção (inalterado).
 5. Validação comercial concentrada em piloto único ainda não confirmado;
    bus factor 1; migração de infra prevista para novembro coincide com
    pico sazonal Jescri em dezembro (inalterados).
 
-**Risco encerrado nesta sessão:** RBAC de leitura granular administrativo
-— era listado como risco de segurança latente; verificado e confirmado
-corretamente implementado, não é mais risco ativo.
+**Risco encerrado nesta sessão:** incerteza sobre lacunas na certificação
+funcional — Logística/Envio era o único módulo nunca percorrido ao vivo;
+testado nesta sessão, sem divergência. A certificação funcional do MVP
+está, portanto, completa; o risco remanescente é só de infraestrutura/
+credenciais, não de lógica de aplicação.
 
 ## 6. Documentos de leitura obrigatória na próxima sessão
 
 Lista padrão de `CLAUDE.md` §Documentos oficiais. Para o estado da
-certificação funcional do MVP, ver
-`docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md` (divergências
-spec×código) e `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`
-(backlog original, agora encerrado). Para retomar o Go-Live, ver
-`docs/deployment/AUDITORIA_LOCAWEB.md`,
-`docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`, e `TASK_ROUTER.md`
-§29 para o achado de incompatibilidade de autenticação não resolvida por
-`ADR-016`.
+certificação funcional e a mudança de prioridade desta sessão, ver
+`docs/_workspace/TASK_ROUTER.md` §32. Para destravar Google Drive/SMTP,
+ver `docs/deployment/PLANO_DE_IMPLANTACAO.md` (Etapas 5 e 6) e
+`docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (item P0-9). Para o
+restante do Go-Live, `docs/deployment/AUDITORIA_LOCAWEB.md` e
+`docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`.
 
 ## 7. IA recomendada para a próxima tarefa
 
-- **Decisões de produto pendentes (recorrência de pagamento, formato do
-  Instagram, ratificação das 2 decisões já implementadas):** responsável
-  do projeto — não é tarefa de IA.
-- **Retomada do Go-Live (engenharia/infra), se decidido antes das
-  decisões acima:** **ChatGPT**, por padrão, pela integração com
+- **Obtenção de credenciais (Google Drive, SMTP) e decisões de
+  infraestrutura:** responsável do projeto — não é tarefa de IA.
+- **Configuração/validação técnica assim que as credenciais chegarem
+  (preencher `.env` de produção, testar upload real, testar SMTP real,
+  retomar deploy):** **ChatGPT**, por padrão, pela integração com
   terminal — salvo instrução em contrário.
-- **Implementação decorrente de qualquer decisão de produto tomada
-  (ex.: mudança de schema de Pagamento para recorrência):** **ChatGPT**,
-  mesmo motivo.
-- **Nova auditoria/planejamento/reconciliação de documentos:**
+- **Nova auditoria, QA final, ou relatório de status de Go-Live:**
   **Claude**, mesmo motivo das sessões anteriores.
+- **A partir desta sessão, toda IA que assumir o projeto deve seguir a
+  convenção de relatório de fim de etapa registrada em §2.6** (Concluído/
+  Bloqueadores classificados/Próxima prioridade/Checklist de Go-Live).
 
 ## 8. Prompt de handoff
 
 ```
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel+React), plano de
-lançamento comercial em 15/01/2027. Estado e pendências completos em
-docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e, para histórico/decisões
-de SPEC, docs/_workspace/TASK_ROUTER.md (ver §30/§31 para a execução do
-backlog funcional e a reconciliação da especificação desta sessão, §27
-para o bloqueio de PostgreSQL no Go-Live, ainda pausado, §29 para os
-achados de deploy não resolvidos).
+lançamento comercial em 15/01/2027. O projeto mudou oficialmente de fase
+nesta sessão: sai de "construir funcionalidades" e entra em "certificar o
+MVP e colocar em produção" (Go-Live). Estado e pendências completos em
+docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e docs/_workspace/
+TASK_ROUTER.md §32 (mandato de prioridade + auditoria funcional completa
+desta sessão).
 
-Estado: o backlog de certificação funcional do MVP (aberto na sessão
-anterior, docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md) foi
-encerrado nesta sessão. RBAC de leitura granular verificado sem
-necessidade de correção; comprovante de pagamento implementado; residuais
-de Cadastro fechados (dedup já feita, authorize() confirmado como falso
-positivo); validação de formato do Instagram documentada como decisão de
-produto pendente, não implementada. Produzida reconciliação objetiva
-entre a especificação funcional e o código real
-(docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md, 11
-divergências, quase todas a favor do sistema — spec desatualizada, não
-bug). O núcleo operacional do MVP, incluindo o Portal completo da
-Influenciadora, está funcionalmente conforme e testado.
+Estado: auditoria funcional completa executada por navegação real como
+ADMIN/GESTOR_MARCA/INFLUENCIADORA, incluindo Logística/Envio (única
+lacuna que faltava de sessões anteriores, agora fechada sem divergência).
+Conclusão: o núcleo de negócio (Cadastro→Aprovação→Convite→Senha→Login→
+Participação→Briefing→Upload→Aprovação→Logística→Pagamento→Histórico)
+está funcionalmente certificado — nenhum bloqueador de lógica de
+aplicação resta. Os únicos bloqueadores reais para produção são
+credenciais externas (Google Drive Service Account, SMTP) e
+infraestrutura de hospedagem já mapeada (PostgreSQL na Locaweb,
+autenticação SSH do deploy, DNS, restore-db.sh, PR #62).
 
-Tarefa desta sessão: o que resta para "certificar" o MVP não é código, é
-decisão de produto — 2 decisões sem resposta (recorrência/parcelamento de
-pagamento; formato do Instagram) e 2 decisões já tomadas de fato pelo
-código sem ratificação formal (bloqueio de edição pós-congelamento; FEED
-= carrossel_qtd). Leve essas decisões ao responsável do projeto antes de
-qualquer novo código no entorno de Pagamento/Participação/Cadastro. Sem
-decisão nova, a próxima frente de trabalho é retomar o Go-Live (§27/§29
-do TASK_ROUTER.md) — PostgreSQL, incompatibilidade de autenticação SSH no
-deploy, restore-db.sh com Docker, reconciliação do PR #62.
+Tarefa desta sessão: destravar Google Drive (Prioridade 1 do checklist de
+Go-Live) — precisa que o responsável do projeto acesse o Google Workspace/
+Cloud Console (docs/deployment/PLANO_DE_IMPLANTACAO.md Etapa 5) e entregue
+GOOGLE_DRIVE_CLIENT_EMAIL/_PRIVATE_KEY/_ROOT_FOLDER_ID/_BACKUP_FOLDER_ID.
+Em paralelo, confirmar SMTP de produção (Etapa 6). Só depois retomar
+infraestrutura de hospedagem e o piloto com uma única influenciadora
+real. Nenhuma funcionalidade nova deve ser iniciada antes do MVP estar
+online, por mandato explícito do responsável do projeto.
 
-Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
-uma frente por vez; validar (testes/lint) antes de commit; TDD para
-qualquer correção de código (ver superpowers:test-driven-development).
+Regras: não alterar arquitetura sem ADR; banco permanece relacional
+(PostgreSQL), não reabrir estudo de alternativas; não criar documentação
+duplicada; uma frente por vez; validar (testes/lint) antes de commit;
+toda sessão nesta fase deve reportar ao final: Concluído / Bloqueadores
+(Crítico/Alto/Médio/Baixo) / Próxima prioridade / Checklist de Go-Live
+(ver ESTADO_SESSAO.md §2.6).
 ```
