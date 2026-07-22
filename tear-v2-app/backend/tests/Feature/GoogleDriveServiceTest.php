@@ -106,4 +106,28 @@ class GoogleDriveServiceTest extends TestCase
 
         $this->assertSame('https://drive.google.com/file/d/arquivo-456/view', $resultado['url']);
     }
+
+    public function test_access_token_e_reaproveitado_do_cache_entre_chamadas(): void
+    {
+        // CACHE_STORE=database em produção existe justamente para isto (ver
+        // docs/CONFIGURACAO_PRODUCAO.md §1.5): sem cache, cada operação de
+        // Drive buscaria um token novo, arriscando rate-limit da API do
+        // Google. Duas operações independentes (instâncias novas do
+        // service) devem gerar só 1 chamada ao endpoint de token.
+        $this->configurarCredenciaisFake();
+
+        Http::fake([
+            'oauth2.googleapis.com/token' => Http::response(['access_token' => 'fake-token'], 200),
+            'www.googleapis.com/drive/v3/files*' => Http::response([
+                'files' => [['id' => 'pasta-existente', 'name' => 'Ana Teste']],
+            ], 200),
+        ]);
+
+        (new GoogleDriveService)->ensureFolder('root-folder-id', 'Ana Teste');
+        (new GoogleDriveService)->ensureFolder('root-folder-id', 'Ana Teste');
+
+        Http::assertSentCount(3); // 1 token (cacheado) + 2 buscas de pasta
+        $chamadasDeToken = Http::recorded(fn ($request) => str_contains($request->url(), 'oauth2.googleapis.com/token'));
+        $this->assertCount(1, $chamadasDeToken);
+    }
 }
