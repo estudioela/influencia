@@ -21,15 +21,24 @@ export type MarcaFormValues = {
 };
 
 type MarcaResponse = { data: Marca };
-type MarcasListResponse = { data: Marca[]; meta?: { total: number } };
+type PageMeta = { current_page: number; last_page: number; total: number };
+type MarcasListResponse = { data: Marca[]; meta?: PageMeta };
 
 export type ListMarcasParams = {
   status?: MarcaStatus;
+  page?: number;
 };
 
 export async function listMarcas(params?: ListMarcasParams): Promise<Marca[]> {
   const response = await apiClient.get<MarcasListResponse>('/marcas', { params });
   return response.data.data;
+}
+
+export async function listMarcasPage(
+  params?: ListMarcasParams,
+): Promise<{ data: Marca[]; meta?: PageMeta }> {
+  const response = await apiClient.get<MarcasListResponse>('/marcas', { params });
+  return response.data;
 }
 
 export async function getMarca(id: string | number): Promise<Marca> {

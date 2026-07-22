@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listMarcas, type Marca } from '../lib/marcas';
+import { listMarcasPage, type Marca } from '../lib/marcas';
 import EmptyState from '../components/EmptyState';
 import { LinkButton } from '../components/Button';
 import styles from './MarcasListPage.module.css';
@@ -8,12 +8,18 @@ import styles from './MarcasListPage.module.css';
 export default function MarcasListPage() {
   const [marcas, setMarcas] = useState<Marca[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
 
   useEffect(() => {
-    listMarcas()
-      .then(setMarcas)
+    setMarcas(null);
+    listMarcasPage({ page })
+      .then((response) => {
+        setMarcas(response.data);
+        setLastPage(response.meta?.last_page ?? 1);
+      })
       .catch(() => setError('Não foi possível carregar as marcas. Tente novamente.'));
-  }, []);
+  }, [page]);
 
   return (
     <div className={styles.page}>
@@ -62,6 +68,30 @@ export default function MarcasListPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {marcas !== null && marcas.length > 0 && lastPage > 1 && (
+        <div className={styles.pagination}>
+          <span className={styles.paginationInfo}>
+            página {page} de {lastPage}
+          </span>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page <= 1}
+            onClick={() => setPage((current) => current - 1)}
+          >
+            anterior
+          </button>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page >= lastPage}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            próxima
+          </button>
+        </div>
       )}
     </div>
   );

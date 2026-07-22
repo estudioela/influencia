@@ -67,6 +67,34 @@
   letter-spacing: 0.1em;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
+.paginationInfo {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+}
+
+.paginationButton {
+  background: none;
+  border: 1px solid var(--color-outline-strong);
+  color: var(--color-on-surface);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.paginationButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (min-width: 768px) {
   .header {
     flex-direction: row;
