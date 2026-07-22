@@ -1476,19 +1476,19 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   1675 inserções/74 remoções (`git diff --stat` confirmado). Nenhum dos
   três documentos de planejamento estratégico nem este roteador
   mencionavam essa branch antes desta sessão.
-  - **Merge NÃO executado nesta sessão** — tentativa de `git merge` foi
-    bloqueada pelo classificador de permissão do harness (ação significativa
-    e de reversão custosa: 16 commits, nova regra de negócio, não é
-    documentação). Decisão correta: mesclar 1675 linhas de lógica de negócio
-    dentro de uma tarefa de consolidação de auditoria excederia o escopo
-    autorizado e merece sua própria sessão dedicada (Auditoria → Plano →
-    Execução → Validação → Commit).
-  - **Ação recomendada, pendente de autorização explícita:** dedicar uma
-    sessão a integrar `worktree-spec-mvp-completa` — validar suíte de testes
-    pós-merge, revisar se o código de logística/contrato ainda reflete as
-    regras de negócio vigentes (algumas telas do `tear-v2-app/frontend`
-    evoluíram depois do ponto de divergência), e só então decidir arquivar
-    ou apagar a branch remota.
+  - **Merge NÃO executado nesta sessão** (nota histórica — ver correção
+    abaixo) — tentativa de `git merge` foi bloqueada pelo classificador de
+    permissão do harness (ação significativa e de reversão custosa: 16
+    commits, nova regra de negócio, não é documentação). Decisão correta:
+    mesclar 1675 linhas de lógica de negócio dentro de uma tarefa de
+    consolidação de auditoria excederia o escopo autorizado e merece sua
+    própria sessão dedicada (Auditoria → Plano → Execução → Validação →
+    Commit).
+  - ✅ **Correção (2026-07-22):** o merge foi executado em sessão dedicada
+    subsequente — commit `24f7dfc`, 16 conflitos resolvidos, suíte subiu de
+    151 para 183 testes (todos verdes). Branch `worktree-spec-mvp-completa`
+    já integrada; decisão de arquivar/apagar a branch remota segue em
+    aberto, sem urgência técnica.
 - **Correções aplicadas nesta sessão** (detalhe completo em
   `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`): (1) consentimento LGPD passou a
   ser exigido e registrado no **nascimento do dado** (cadastro público de
@@ -1506,3 +1506,70 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   atualizado nos itens normativos (P0-2, ordem de execução, estimativa de
   esforço, checklist de Deploy), narrativa histórica de sessões anteriores
   preservada sem alteração.
+
+## 17. Consolidação documental pós-merge — 4 documentos do `worktree-spec-mvp-completa` (2026-07-22)
+
+- **Contexto:** o merge (§16) trouxe 4 documentos novos direto para `docs/`
+  raiz (`BACKLOG_EXECUTIVO_MVP.md`, `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`,
+  `PLANO_EXECUCAO_MVP.md`, `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md`) que se
+  sobrepunham em escopo a documentos canônicos de `docs/planning/`. Achado
+  registrado em `ESTADO_SESSAO.md` §5 (risco #1). Diagnóstico completo
+  (leitura integral dos 4 documentos e dos 3 canônicos candidatos) feito
+  antes de qualquer alteração.
+- **Decisão de produto necessária para destravar a consolidação:** CPF como
+  alternativa a CNPJ tinha duas respostas incompatíveis entre os documentos
+  do merge (`HU-3.5`: "não fazer") e o canônico `BACKLOG_FUNCIONAL_V2_6.md`
+  (`CD-01`, MUST: "fazer"). **Decisão do responsável do projeto
+  (2026-07-22): CPF passa a ser suportado, conforme CD-01. HU-3.5 tratada
+  como superada.**
+- **Reorganização executada:**
+  - `docs/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` → movido para
+    `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`, passa a ser a
+    **fonte oficial de especificação funcional**. Justificativa objetiva
+    para substituir o canônico anterior (não só "é maior"): o próprio
+    documento se declara consolidação explícita de 13 fontes incluindo a
+    V2.5 (fonte #2 citada em seu §0); auditoria de conteúdo confirmou 100%
+    do conteúdo de V2.5 presente, zero contradições, mais material que V2.5
+    não tinha (medidas em cm, comprovante de pagamento, viabilidade de
+    importação de histórico, lista única de decisões pendentes).
+  - `docs/planning/ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md` → arquivado em
+    `docs/archive/consolidacao-mvp-completa/` (superado pelo item acima).
+  - `docs/BACKLOG_EXECUTIVO_MVP.md` → arquivado em
+    `docs/archive/consolidacao-mvp-completa/` como registro histórico de
+    execução (não é superset/subset de `BACKLOG_FUNCIONAL_V2_6.md` — são
+    documentos de momentos diferentes, execução vs. planejamento futuro).
+    `BACKLOG_FUNCIONAL_V2_6.md` **permanece a única fonte vigente** de
+    backlog. Nota de supersão de HU-3.5 adicionada ao topo do arquivo.
+  - `docs/PLANO_EXECUCAO_MVP.md` → arquivado em
+    `docs/archive/consolidacao-mvp-completa/`: sua função (sequenciamento/
+    dependências entre tarefas) é a mesma que este roteador já cumpre como
+    fonte única de estado (`CLAUDE.md` §Documentos oficiais); mantê-lo
+    vigente em paralelo criaria duas fontes de verdade para sequenciamento.
+    Ondas 0-2 concluídas; Ondas 3-6 restantes já mapeadas em itens MUST/
+    SHOULD de `BACKLOG_FUNCIONAL_V2_6.md` (LG-01, C-01/C-02, PM-01,
+    H-01/H-02).
+  - `docs/DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` → arquivado em
+    `docs/archive/consolidacao-mvp-completa/`: decisão já implementada
+    (HU-4.1), sem canônico correspondente ativo.
+  - `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` → **não tocado**: par
+    óbvio (`PLANO_EXECUCAO_MVP.md`) tratava de altitude diferente (negócio/
+    calendário de macrofases vs. sequenciamento técnico de histórias), sem
+    duplicidade real.
+- **Correções colaterais aplicadas em `BACKLOG_FUNCIONAL_V2_6.md`** (achado
+  durante a comparação, fora do par comparado): `CD-02` (consentimento LGPD)
+  e `B-01` (Briefing/RN-04) estavam listados como pendentes mas já foram
+  implementados (commits `e0756c0` e `6709ee7`) — status atualizado inline,
+  texto de análise original preservado.
+- **Referências cruzadas corrigidas:** citação interna de
+  `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` (RFC-09/RFC-10) que apontava
+  para o documento que estava sendo superado por ele mesmo; 3 referências em
+  `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` que apontavam para
+  `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md` §11, atualizadas para
+  `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` §3.6/§3.7. Referências em
+  documentos já arquivados (`docs/archive/**`) e em auditorias históricas
+  congeladas (`docs/governance/REPOSITORY_GOVERNANCE_AUDIT.md`) não foram
+  alteradas — são fotografias de um momento específico, não documentação
+  viva.
+- **Resultado:** cada tema tratado pelos 4 documentos do merge agora tem
+  exatamente uma fonte oficial vigente (ver tabela em
+  `docs/archive/README.md` §`consolidacao-mvp-completa/`).

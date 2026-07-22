@@ -26,25 +26,34 @@ Também concluído nesta sessão: due diligence completa do Plano Mestre (painel
 
 **Iniciar a Macrofase A do Plano Mestre (Go Live interno)** — infraestrutura Locaweb: variáveis reais de produção, banco gerenciado, SMTP, Google Drive (ver `docs/deployment/PLANO_IMPLEMENTACAO.md` para o runbook de 12 etapas já detalhado).
 
-Antes disso, recomenda-se resolver o achado da seção 5 abaixo (sobreposição de documentos de planejamento) para não carregar duplicidade para a próxima fase.
+O bloqueio documental que antes precedia esta tarefa foi resolvido nesta sessão (ver §2b) — nada mais pendente antes de iniciar a Macrofase A, exceto as pendências de decisão do responsável do projeto em §4.
+
+## 2b. Consolidação documental concluída nesta sessão (2026-07-22)
+
+Os 4 documentos trazidos pelo merge (§5 da versão anterior deste arquivo) foram reconciliados contra o canon de `docs/planning/`. Decisão de produto que destravava a consolidação: **CPF passa a ser suportado, conforme `BACKLOG_FUNCIONAL_V2_6.md` CD-01; HU-3.5 tratada como superada.** Detalhe completo em `docs/_workspace/TASK_ROUTER.md` §17.
+
+- `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` — nova **fonte oficial** de especificação funcional (superset verificado de `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, que foi arquivado).
+- `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` — **permanece** a única fonte vigente de backlog (CD-02/B-01 corrigidos para ✅ implementado).
+- `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` — não tocado (altitude diferente, sem duplicidade).
+- Arquivados em `docs/archive/consolidacao-mvp-completa/`: `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, `BACKLOG_EXECUTIVO_MVP.md`, `PLANO_EXECUCAO_MVP.md`, `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md`.
+- Referências cruzadas corrigidas em `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` e `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`.
 
 ## 4. Pendências / bloqueios (decisão do responsável do projeto)
 
 - Preço do piloto externo (simbólico vs. real reduzido).
 - Separação da marca do produto da marca da agência, antes do registro no INPI.
 - Credenciais reais de produção (Locaweb, Google Drive, SMTP) — nenhuma preenchida ainda.
-- **Novo:** decidir o que fazer com os 4 documentos trazidos pelo merge para `docs/` raiz (ver §5) — arquivar, mesclar ao canon de `docs/planning/`, ou manter como está.
+- Decisão do que fazer com a branch remota `worktree-spec-mvp-completa` (arquivar/apagar) — já integrada via merge, sem urgência técnica.
 
 ## 5. Riscos ativos
 
-1. **Novo, encontrado nesta sessão:** o merge trouxe 4 documentos novos direto para `docs/` raiz — `BACKLOG_EXECUTIVO_MVP.md`, `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`, `PLANO_EXECUCAO_MVP.md`, `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` — que se sobrepõem em escopo a documentos já canônicos em `docs/planning/` (`BACKLOG_FUNCIONAL_V2_6.md`, `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, `PLANO_MESTRE_ELA_INFLUENCIA.md`). Ainda não lidos/reconciliados nesta sessão — é exatamente o tipo de duplicação documental que o projeto já identificou como dívida recorrente (`docs/governance/REPOSITORY_GOVERNANCE_AUDIT.md`). **Leitura obrigatória na próxima sessão**, ver §6.
-2. Validação comercial concentrada em um único piloto ainda não confirmado.
-3. Bus factor 1 — fundador único operando agência, produto e suporte.
-4. Migração de infraestrutura prevista para novembro coincide com o pico sazonal da Jescri em dezembro.
+1. Validação comercial concentrada em um único piloto ainda não confirmado.
+2. Bus factor 1 — fundador único operando agência, produto e suporte.
+3. Migração de infraestrutura prevista para novembro coincide com o pico sazonal da Jescri em dezembro.
 
 ## 6. Documentos de leitura obrigatória na próxima sessão
 
-Além de `CLAUDE.md` §Documentos oficiais (lista padrão): os 4 documentos novos trazidos pelo merge, citados no risco #1 acima, **antes** de tocar em `docs/planning/` ou de iniciar a Macrofase A — para decidir se há conflito de conteúdo com o canon existente e evitar decidir duas vezes a mesma coisa.
+Lista padrão de `CLAUDE.md` §Documentos oficiais. Nenhuma leitura extra pendente — a dívida documental do risco #1 anterior foi encerrada nesta sessão.
 
 ## 7. IA recomendada para a próxima tarefa
 

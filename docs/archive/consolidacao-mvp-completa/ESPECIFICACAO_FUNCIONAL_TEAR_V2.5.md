@@ -1,3 +1,10 @@
+> **Arquivado em 2026-07-22** — consolidação documental pós-merge
+> `worktree-spec-mvp-completa`. Conteúdo integralmente absorvido (superset
+> verificado linha a linha, sem contradições) por
+> `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`, que passa a ser a
+> fonte oficial de especificação funcional. Este documento não é mais fonte
+> de verdade — ver `docs/archive/README.md`.
+
 # TEAR V2.5 — Especificação Funcional
 
 Data: 2026-07-20

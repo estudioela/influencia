@@ -556,8 +556,8 @@ sistema GAS.*
 | RFC-06 | Bloquear `Pagamento.APROVADO` se existir `Material` da participação não `APROVADO` | P0 — **implementado** | `IMPLEMENTACAO_P0_GATE_PAGAMENTO.md` |
 | RFC-07 | Permitir à influenciadora enviar material pelo próprio Portal (hoje só ADMIN registra em seu nome) | P0 | `AUDITORIA_UX_PORTAL_INFLUENCIADORA.md` §8 |
 | RFC-08 | Registrar `congelado_em` na Participação ao confirmar/ativar, definindo regra de edição pós-congelamento | P0 | `PLANO_IMPLEMENTACAO_SNAPSHOT_MENSAL.md` §2 |
-| RFC-09 | Gerar ficha de retirada de estoque automaticamente ao confirmar o look da campanha | P1 | `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md` §11 |
-| RFC-10 | Bloquear salvamento de escolha de produto sem variante (cor/tamanho) confirmada e disponível | P1 | idem §10 |
+| RFC-09 | Gerar ficha de retirada de estoque automaticamente ao confirmar o look da campanha | P1 | §3.6 (Logística) deste documento |
+| RFC-10 | Bloquear salvamento de escolha de produto sem variante (cor/tamanho) confirmada e disponível | P1 | §3.5 (Produtos) deste documento |
 | RFC-11 | Gerar contrato em PDF a partir de template editável pelo ADMIN sem deploy | P1 | idem §13/§15 |
 | RFC-12 | Permitir upload/registro de comprovante de pagamento | P1 — **gap novo** | esta consolidação, §3.10 |
 | RFC-13 | Importar registros terminais (arquivados) do histórico legado como `origem: legado`, somente leitura | P1 | idem §7, aprofundado em §3.12 |

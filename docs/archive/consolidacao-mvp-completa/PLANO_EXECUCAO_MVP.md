@@ -1,3 +1,12 @@
+> **Arquivado em 2026-07-22** — consolidação documental pós-merge
+> `worktree-spec-mvp-completa`. Registro histórico do sequenciamento por
+> ondas do MVP (Ondas 0-2, concluídas). O sequenciamento/dependências
+> vigentes daqui para frente são rastreados por
+> `docs/_workspace/TASK_ROUTER.md` (fonte única de estado, conforme
+> `CLAUDE.md`), com o backlog correspondente em
+> `docs/planning/BACKLOG_FUNCIONAL_V2_6.md`. Este documento não é mais
+> fonte de verdade — ver `docs/archive/README.md`.
+
 # TEAR V2.5 — Plano de Execução do MVP
 
 Data: 2026-07-20

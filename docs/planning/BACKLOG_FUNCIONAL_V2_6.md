@@ -206,6 +206,8 @@ e riscos.
 
 ### CD-02 · Consentimento LGPD no cadastro público inicial
 **Classificação:** MUST
+**Status (2026-07-22):** ✅ implementado — commit `e0756c0`, consolidação documental
+pós-merge `worktree-spec-mvp-completa` (ver `docs/_workspace/TASK_ROUTER.md` §16).
 
 - **Descrição:** o consentimento já implementado (`consentimentos`) só é
   capturado no fluxo de **edição** (`PATCH /parceiras/{id}` via
@@ -391,6 +393,8 @@ e riscos.
 
 ### B-01 · Arquitetura formal de Briefing por formato (datas e cálculo automático de aprovação)
 **Classificação:** MUST
+**Status (2026-07-22):** ✅ implementado — commit `6709ee7` (HU-2.1/P0-5), consolidação
+documental pós-merge `worktree-spec-mvp-completa` (ver `docs/_workspace/TASK_ROUTER.md` §16).
 
 - **Descrição:** hoje `Briefing` é 1 registro por `tipo` (FEED, etc.) com
   um único campo `prazo` (data), campo livre `referencias` (JSON) e

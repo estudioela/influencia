@@ -1,3 +1,16 @@
+> **Arquivado em 2026-07-22** — consolidação documental pós-merge
+> `worktree-spec-mvp-completa`. Registro histórico de execução do MVP
+> (EPIC 1-6, majoritariamente concluído); o backlog vigente para o que vem
+> depois é `docs/planning/BACKLOG_FUNCIONAL_V2_6.md`. Este documento não é
+> mais fonte de verdade — ver `docs/archive/README.md`.
+>
+> **Nota de decisão (2026-07-22):** a recomendação de **HU-3.5** abaixo
+> ("tratar como já resolvido — não fazer") está **superada**. Decisão do
+> responsável do projeto: CPF passa a ser suportado, conforme
+> `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` CD-01 (MUST). O texto original
+> de HU-3.5 foi preservado abaixo sem alteração, como registro histórico do
+> que foi recomendado nesta sessão — não reflete mais a decisão vigente.
+
 # TEAR V2.5 — Backlog Executivo do MVP
 
 Data: 2026-07-20

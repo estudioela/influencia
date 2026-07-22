@@ -1,3 +1,11 @@
+> **Arquivado em 2026-07-22** — consolidação documental pós-merge
+> `worktree-spec-mvp-completa`. Decisão já implementada (HU-4.1, commits
+> `e6ef1e5`/`d0b0cf3`/`16de894`) — registro histórico, sem canônico
+> correspondente. Não é mais fonte de verdade ativa — ver
+> `docs/archive/README.md`. Consideração para consolidação futura: formalizar
+> como ADR em `docs/adrs/`, já que é decisão de arquitetura de dados (nova
+> FK `Material.briefing_id`).
+
 # TEAR V2.5 — Decisão de Negócio: Taxonomia Material × Briefing
 
 Data: 2026-07-20

@@ -57,3 +57,12 @@ reduzir arquivos soltos):
 | `RELATORIO_ESTADO_ATUAL_TECH_LEAD.md` | Fotografia de estado — Tech Lead |
 | `RELATORIO_ESTADO_TECH_LEAD_TEAR_V2.md` | Auditoria de estado (worktree paralelo) |
 | `ARCHITECTURE_FREEZE_FINAL.md` | Gate de congelamento da Fase 4 (specs), 2026-07-14 |
+
+### `consolidacao-mvp-completa/` — reconciliação dos 4 documentos trazidos pelo merge `worktree-spec-mvp-completa` (2026-07-22)
+
+| Arquivo | Origem/tema | Motivo do arquivamento |
+|---|---|---|
+| `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md` | Especificação funcional (2026-07-20) | Superset verificado linha a linha, sem contradições, em `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` (novo canônico) |
+| `BACKLOG_EXECUTIVO_MVP.md` | Backlog de execução do MVP (2026-07-20) | Registro histórico de execução (EPIC 1-6, majoritariamente concluído); backlog vigente é `docs/planning/BACKLOG_FUNCIONAL_V2_6.md`. HU-3.5 (CPF) marcada como superada por CD-01 |
+| `PLANO_EXECUCAO_MVP.md` | Sequenciamento por ondas do MVP (2026-07-20) | Ondas 0-2 concluídas; sequenciamento vigente rastreado por `docs/_workspace/TASK_ROUTER.md` + `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` |
+| `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` | Decisão Material×Briefing (2026-07-20) | Decisão já implementada (HU-4.1), sem canônico correspondente — registro histórico |
