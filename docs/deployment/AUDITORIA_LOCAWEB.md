@@ -73,12 +73,14 @@ data). Detalhe na §2.
 - Em "Alterar Planos" só aparece **uma** linha de "Hospedagem de Sites"
   (Hospedagem I Linux, R$ 130,80/ano) e **um** registro de domínio
   (`elafashionmkt.com.br`, R$ 64,90/ano) — apesar de existirem duas
-  hospedagens ativas no painel técnico. **Pendência administrativa:**
-  confirmar com o suporte/faturamento da Locaweb se `estudioela.com` está
-  de fato coberto por essa mesma assinatura (bundle) ou se há uma cobrança
-  separada não exibida nessa tela — não é bloqueio técnico, é só uma
-  divergência entre painel técnico e painel de faturamento que vale
-  esclarecer antes do go-live para não haver surpresa de cobrança.
+  hospedagens ativas no painel técnico. **Explicado pelo responsável do
+  projeto (2026-07-22):** `estudioela.com` foi originalmente adquirido/
+  gerenciado no WordPress.com; a hospedagem lá foi cancelada e o domínio
+  trazido para a Locaweb (sem certeza se foi transferência de
+  administração ou só mudança de apontamento) — isso explica a divergência
+  de exibição entre o painel técnico e o de faturamento. O domínio funciona
+  normalmente na Locaweb hoje. **Não é bloqueio técnico nem administrativo
+  — não requer mais investigação.**
 
 ---
 
@@ -129,8 +131,10 @@ em `ARQUITETURA_PRODUCAO.md` §3 e precisam de uma decisão de arquitetura
       FTP-deploy nativo só para os assets estáticos e rodar
       `migrate`/`cache` manualmente via SSH quando necessário, ou (c)
       outra abordagem — decisão de arquitetura, não desta auditoria
-- [ ] Esclarecer com o suporte/faturamento da Locaweb por que
-      `estudioela.com` não aparece como linha separada em "Alterar Planos"
+- [x] ~~Esclarecer com o suporte/faturamento da Locaweb por que
+      `estudioela.com` não aparece como linha separada em "Alterar
+      Planos"~~ — explicado pelo responsável do projeto (domínio migrado
+      do WordPress.com), sem investigação adicional necessária.
 - [ ] Variáveis de ambiente reais (`.env` de produção) — dependem dos
       itens acima
 - [ ] GitHub Secrets para deploy (host/usuário/senha FTP e/ou credenciais
@@ -187,11 +191,13 @@ ativar como camada extra de redundância, já que não tem custo adicional
 aparente — a confirmar se é gratuito no plano atual antes de ativar (não
 habilitado nesta auditoria, por instrução).
 
-### 4.6 Divergência painel técnico × faturamento
+### 4.6 ~~Divergência painel técnico × faturamento~~ — resolvido, não é risco
 `estudioela.com` existe e funciona no painel técnico, mas não aparece como
-linha de cobrança separada em "Alterar Planos" — zero risco técnico
-imediato, mas pode indicar cobrança agrupada, desconto, ou erro de
-exibição que vale esclarecer com o suporte antes do go-live.
+linha de cobrança separada em "Alterar Planos". Explicado pelo responsável
+do projeto: o domínio veio do WordPress.com (hospedagem cancelada lá,
+domínio trazido para a Locaweb) — explica a divergência de exibição.
+Domínio funciona normalmente. Sem risco técnico ou administrativo, não
+requer mais investigação.
 
 ---
 
@@ -201,8 +207,11 @@ exibição que vale esclarecer com o suporte antes do go-live.
 |---|---|---|
 | 1 | Estratégia de deploy dado que "Git" = FTP-only (SSH manual por release vs. FTP + SSH pontual vs. outra) | Responsável do projeto (decisão de arquitetura, pode exigir novo ADR) |
 | 2 | Se o fluxo de deploy vai depender de habilitar SSH manualmente a cada release, ou só para manutenção pontual | Responsável do projeto |
-| 3 | Esclarecer com a Locaweb a cobertura de faturamento de `estudioela.com` | Responsável do projeto (contato com suporte Locaweb) |
-| 4 | Ativar ou não o backup nativo da Locaweb como camada extra | Responsável do projeto |
+| 3 | Ativar ou não o backup nativo da Locaweb como camada extra | Responsável do projeto |
+
+~~Item anterior "esclarecer cobertura de faturamento de `estudioela.com`"~~
+— resolvido pelo responsável do projeto (§1.3): domínio migrado do
+WordPress.com, sem risco administrativo.
 
 **Nenhuma dessas decisões bloqueia o restante da Etapa 2** (SSH, Composer,
 Postgres — itens de validação técnica). Elas bloqueiam especificamente a

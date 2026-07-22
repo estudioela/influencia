@@ -10,68 +10,121 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-22
-- **HEAD:** `24f7dfc148ae823926d3820d6805cd6ed335e85e` (`24f7dfc`)
-- **Branch:** `feat/ui-design-system-ela` — 19 commits à frente de `origin/feat/ui-design-system-ela`, working tree limpa
-- **Sistema em foco:** `tear-v2-app/` (Laravel + React) — plano de lançamento comercial visando 15/01/2027
-- **Fase do Plano Mestre:** Macrofase A (Go Live interno) — ainda **não iniciada tecnicamente**. Esta sessão foi de due diligence de plano, correção de governança e reconciliação de código pendente, não de execução de fase.
-- **Testes:** backend 183/183 verdes (461 assertions), Pint limpo. Frontend: `tsc -b` limpo, `oxlint` só o warning pré-existente não relacionado (`auth.tsx:80`), `vite build` ok.
+- **HEAD:** `22dc446` — commitado e **já pushado** para
+  `origin/feat/ui-design-system-ela` (branch em dia com o remoto).
+- **Branch:** `feat/ui-design-system-ela`, working tree limpa.
+- **Sistema em foco:** `tear-v2-app/` (Laravel + React) — Go-Live interno,
+  seguindo `docs/deployment/PLANO_DE_IMPLANTACAO.md`.
+- **Fase do Plano Mestre:** Macrofase A (Go Live interno) — Etapa 1
+  concluída (domínio `influencia.estudioela.com` travado); **Etapa 2
+  parcialmente validada** nesta sessão (auditoria de painel feita;
+  validação via SSH ainda pendente de ação do responsável do projeto).
+- **Testes:** sem alteração de código nesta sessão — última medição
+  conhecida (sessão anterior): backend 192/192 verdes, Pint limpo,
+  `tsc -b`/`oxlint`/`vite build` do frontend limpos.
 
-## 2. Principal marco concluído nesta sessão
+## 2. Última sessão concluída — auditoria do painel Locaweb (2026-07-22)
 
-**Merge de `worktree-spec-mvp-completa` concluído** (commit `24f7dfc`) — 16 conflitos resolvidos combinando as duas frentes (correções de LGPD/segurança desta sessão + funcionalidades da branch órfã: logística/Envio, reprovação de cadastro, dados contratuais, congelamento de participação, Materiais vinculados a Briefing, Portal reorganizado). Nenhum lado descartado indiscriminadamente. Suíte subiu de 151 para 183 testes, todos verdes. Uma regressão adicional (fora dos 16 conflitos) foi encontrada e corrigida: `PortalCampanhaDetailPage.tsx` chamava a API de upload com assinatura obsoleta — substituída pela página já construída na branch órfã (`PortalParticipacaoPage.tsx`).
+Auditoria read-only completa do painel Locaweb (Central do Cliente +
+Painel de Hospedagens), gerando `docs/deployment/AUDITORIA_LOCAWEB.md`.
+Nenhuma configuração foi alterada (SSH não habilitado, nenhum banco/
+domínio/SSL criado), por instrução explícita do responsável do projeto.
 
-Também concluído nesta sessão: due diligence completa do Plano Mestre (painel de 9 especialistas), consolidação de 3 auditorias externas (`RELATORIO_CONSOLIDACAO_AUDITORIAS.md`), fix de consentimento LGPD no cadastro público, resolução da contradição Docker×Locaweb na documentação de deploy, e institucionalização deste protocolo (`/comecar`, `/fim`).
+**Achados principais:**
+- A conta Locaweb tem **duas hospedagens Linux ativas** —
+  `elafashionmkt.com.br` (agência) e `estudioela.com` (alvo do TEAR) —
+  mesmo plano (Hospedagem I Linux), sem custo adicional. A hospedagem
+  correta para o TEAR já existe e é compatível, **sem necessidade de
+  upgrade, migração ou novo serviço contratado**.
+- Confirmado: PHP 8.3 ativo, PostgreSQL disponível (0/10 usados), Crontab
+  nativo disponível, SSL Let's Encrypt gratuito. DNS de `estudioela.com`
+  ainda não está apontado para a Locaweb.
+- **Dois achados críticos** que corrigem premissas de
+  `ARQUITETURA_PRODUCAO.md` §3 e `PLANO_DE_IMPLANTACAO.md` Etapa 2: (1)
+  SSH vem desabilitado por padrão, sessão de 3h, renovação manual,
+  autenticação por **senha** (não por chave); (2) "Publicar via Git" do
+  painel não é deploy real — é só upload FTP, não executa comandos
+  remotos. Isso afeta diretamente o workflow já commitado em
+  `.github/workflows/tear-v2-deploy.yml`/`scripts/deploy-locaweb.sh`
+  (Etapas 5/6 de sessão anterior), que presumia SSH automatizado por
+  chave — precisa de revisão de estratégia de deploy antes da Etapa 6.
+- `PLANO_DE_IMPLANTACAO.md` Etapa 2 atualizada com nota de status e
+  ponteiro para o relatório. `TASK_ROUTER.md` §24 registra o histórico
+  completo.
+- Commit `22dc446` (docs only) já pushado. Nenhuma nova etapa da
+  implantação foi iniciada, por instrução explícita do responsável do
+  projeto nesta sessão.
 
 ## 3. Próxima tarefa recomendada
 
-**Iniciar a Macrofase A do Plano Mestre (Go Live interno)** — infraestrutura Locaweb: variáveis reais de produção, banco gerenciado, SMTP, Google Drive (ver `docs/deployment/PLANO_IMPLEMENTACAO.md` para o runbook de 12 etapas já detalhado).
-
-O bloqueio documental que antes precedia esta tarefa foi resolvido nesta sessão (ver §2b) — nada mais pendente antes de iniciar a Macrofase A, exceto as pendências de decisão do responsável do projeto em §4.
-
-## 2b. Consolidação documental concluída nesta sessão (2026-07-22)
-
-Os 4 documentos trazidos pelo merge (§5 da versão anterior deste arquivo) foram reconciliados contra o canon de `docs/planning/`. Decisão de produto que destravava a consolidação: **CPF passa a ser suportado, conforme `BACKLOG_FUNCIONAL_V2_6.md` CD-01; HU-3.5 tratada como superada.** Detalhe completo em `docs/_workspace/TASK_ROUTER.md` §17.
-
-- `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` — nova **fonte oficial** de especificação funcional (superset verificado de `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, que foi arquivado).
-- `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` — **permanece** a única fonte vigente de backlog (CD-02/B-01 corrigidos para ✅ implementado).
-- `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` — não tocado (altitude diferente, sem duplicidade).
-- Arquivados em `docs/archive/consolidacao-mvp-completa/`: `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, `BACKLOG_EXECUTIVO_MVP.md`, `PLANO_EXECUCAO_MVP.md`, `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md`.
-- Referências cruzadas corrigidas em `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` e `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`.
+**Fechar a validação técnica da Etapa 2 de `PLANO_DE_IMPLANTACAO.md`:**
+o responsável do projeto habilita o SSH no painel da hospedagem
+`estudioela.com` (ação manual, válida por 3h) para permitir confirmar via
+SSH: `php -v`, `which composer`, `crontab -l`, conexão de teste ao
+PostgreSQL. Em paralelo — mas sem bloquear o item acima — decidir a
+estratégia de deploy dado que SSH é temporário/por senha e o "Git" do
+painel é só FTP (opções detalhadas em `AUDITORIA_LOCAWEB.md` §5, checklist
+de decisão).
 
 ## 4. Pendências / bloqueios (decisão do responsável do projeto)
 
+- Habilitar SSH no painel Locaweb para fechar a validação técnica da
+  Etapa 2 (não pode ser feito pelo agente).
+- Decidir a estratégia de deploy diante da limitação de SSH
+  temporário/por senha e do "Git" ser só FTP (`AUDITORIA_LOCAWEB.md` §5).
+- Apontar o DNS de `estudioela.com` para a Locaweb (Etapa 4 do plano,
+  depende da Etapa 2 estar fechada).
 - Preço do piloto externo (simbólico vs. real reduzido).
-- Separação da marca do produto da marca da agência, antes do registro no INPI.
-- Credenciais reais de produção (Locaweb, Google Drive, SMTP) — nenhuma preenchida ainda.
-- Decisão do que fazer com a branch remota `worktree-spec-mvp-completa` (arquivar/apagar) — já integrada via merge, sem urgência técnica.
+- Separação da marca do produto da marca da agência, antes do registro no
+  INPI.
+- Credenciais reais de produção (Google Drive, SMTP) — ainda não
+  preenchidas.
+- Decisão do que fazer com a branch remota `worktree-spec-mvp-completa`
+  (arquivar/apagar) — já integrada via merge, sem urgência técnica.
 
 ## 5. Riscos ativos
 
-1. Validação comercial concentrada em um único piloto ainda não confirmado.
-2. Bus factor 1 — fundador único operando agência, produto e suporte.
-3. Migração de infraestrutura prevista para novembro coincide com o pico sazonal da Jescri em dezembro.
+1. Estratégia de deploy planejada (`ARQUITETURA_PRODUCAO.md` §3, symlink
+   swap via SSH automatizado) esbarra na limitação real do painel Locaweb
+   (SSH temporário/por senha) — risco novo desta sessão, precisa de
+   decisão antes da Etapa 6.
+2. Validação comercial concentrada em um único piloto ainda não
+   confirmado.
+3. Bus factor 1 — fundador único operando agência, produto e suporte.
+4. Migração de infraestrutura prevista para novembro coincide com o pico
+   sazonal da Jescri em dezembro.
 
 ## 6. Documentos de leitura obrigatória na próxima sessão
 
-Lista padrão de `CLAUDE.md` §Documentos oficiais. Nenhuma leitura extra pendente — a dívida documental do risco #1 anterior foi encerrada nesta sessão.
+Lista padrão de `CLAUDE.md` §Documentos oficiais, mais
+`docs/deployment/AUDITORIA_LOCAWEB.md` (novo, gerado nesta sessão) antes
+de retomar a Etapa 2 ou avançar para a Etapa 6 do
+`PLANO_DE_IMPLANTACAO.md`.
 
 ## 7. IA recomendada para a próxima tarefa
 
-- **Execução de engenharia/terminal** (deploy, scripts, provisionamento de infra): **ChatGPT**, por padrão, pela integração com terminal — salvo instrução em contrário do responsável do projeto.
+- **Execução de engenharia/terminal** (deploy, scripts, provisionamento de
+  infra): **ChatGPT**, por padrão, pela integração com terminal — salvo
+  instrução em contrário do responsável do projeto.
 - **Reconciliação de documentos/planejamento/auditoria:** **Claude**.
 - **Design visual/UX:** sem recomendação padrão registrada ainda.
 
-## 8. Prompt de handoff (modelo — `/comecar` preenche com o estado real no momento)
+## 8. Prompt de handoff
 
 ```
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel+React), plano de
 lançamento comercial em 15/01/2027. Estado e pendências completos em
 docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e, para histórico/decisões
-de SPEC, docs/_workspace/TASK_ROUTER.md (ver §16 para o histórico do merge
-da worktree-spec-mvp-completa). Leitura obrigatória antes de alterar
-código: ver CLAUDE.md §Documentos oficiais.
+de SPEC, docs/_workspace/TASK_ROUTER.md (ver §24 para a auditoria Locaweb
+desta sessão). Leitura obrigatória antes de alterar código: ver CLAUDE.md
+§Documentos oficiais.
 
-Tarefa desta sessão: [preencher — vem da seção 3 acima]
+Tarefa desta sessão: Etapa 2 de docs/deployment/PLANO_DE_IMPLANTACAO.md —
+o responsável do projeto habilita SSH no painel Locaweb (hospedagem
+estudioela.com); validar php -v, composer, crontab -l e conexão ao
+PostgreSQL. Em paralelo, decidir a estratégia de deploy dado que SSH é
+temporário/por senha e "Publicar via Git" do painel é só FTP (ver
+docs/deployment/AUDITORIA_LOCAWEB.md §5 para as opções).
 
 Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
 uma frente por vez; validar (testes/lint) antes de commit.

@@ -1852,3 +1852,46 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   documentação, conforme mandato desta fase.
 - **Próximo passo:** Etapa 2 de `PLANO_DE_IMPLANTACAO.md` — confirmar
   acesso SSH + painel da Locaweb (depende do responsável do projeto).
+
+## 24. Auditoria do painel Locaweb — Etapa 2 parcialmente validada (2026-07-22)
+
+- **Pedido:** auditoria read-only completa do painel Locaweb (sem alterar
+  nada), gerando `docs/deployment/AUDITORIA_LOCAWEB.md`.
+- **Achado estrutural:** a conta Locaweb tem **duas hospedagens Linux
+  ativas** — `elafashionmkt.com.br` (agência) e `estudioela.com` (alvo do
+  TEAR) — mesmo plano (Hospedagem I Linux), mesma data de contratação.
+  Confirma que a hospedagem-alvo já existe e é compatível com o TEAR
+  **sem upgrade de plano nem custo adicional** (mantém a restrição
+  soberana de `ARQUITETURA_PRODUCAO.md` §0).
+- **Confirmado no painel:** PHP 8.3 ativo, PostgreSQL disponível (0/10
+  bancos usados), Crontab nativo disponível, SSL Let's Encrypt gratuito,
+  WAF ativa por padrão, backup nativo não ativado. DNS de `estudioela.com`
+  ainda **não está apontado** para a Locaweb (SSL bloqueado com "DNS
+  Pendente" em consequência).
+- **Dois achados críticos que corrigem premissas de `ARQUITETURA_PRODUCAO.md`
+  §3 e `PLANO_DE_IMPLANTACAO.md` Etapa 2:**
+  1. SSH vem **desabilitado por padrão**, sessão de 3h, renovação manual,
+     autenticação por **senha** (não por chave, ao contrário do que a
+     Etapa 2 do plano assumia). Afeta diretamente o workflow já commitado
+     em `.github/workflows/tear-v2-deploy.yml`/`scripts/deploy-locaweb.sh`
+     (Etapas 5/6, `ac5180f`), que presume SSH automatizado por chave.
+  2. "Publicar via Git" do painel **não é deploy real** — é só um template
+     de GitHub Action que faz upload FTP do `dist/`, sem executar
+     `composer install`/`artisan migrate` remotos.
+- **Nenhuma configuração foi alterada** — SSH não foi habilitado, nenhum
+  banco/domínio/SSL foi criado, conforme instrução explícita do
+  responsável do projeto durante a auditoria.
+- **`PLANO_DE_IMPLANTACAO.md` Etapa 2 atualizada** com nota de status
+  apontando para `AUDITORIA_LOCAWEB.md` — etapa marcada como
+  **parcialmente validada**: compatibilidade de plano confirmada, mas a
+  validação via SSH (`php -v`, `composer`, `crontab -l`, conexão Postgres)
+  continua pendente porque exige habilitação manual do SSH pelo
+  responsável do projeto.
+- **Decisão de arquitetura ainda em aberto** (não resolvida nesta sessão,
+  por instrução — "não iniciar nenhuma nova etapa da implantação"):
+  estratégia de deploy dado que SSH é temporário/por senha e "Git" é só
+  FTP. Detalhe e opções em `AUDITORIA_LOCAWEB.md` §5.
+- **Próximo passo:** responsável do projeto habilita o SSH no painel
+  Locaweb (hospedagem `estudioela.com`) para fechar a validação técnica da
+  Etapa 2 (Composer, quota de disco, conexão Postgres) — em paralelo,
+  decidir a estratégia de deploy antes de a execução chegar à Etapa 6.
