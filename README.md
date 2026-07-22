@@ -321,8 +321,6 @@ O processo de publicação da Web App deve seguir o fluxo operacional definido p
 Antes de implementar qualquer funcionalidade, recomenda-se compreender a arquitetura descrita em:
 
 - `docs/architecture/ARQUITETURA_CAMADAS.md`
-- `docs/domain/DOMAIN.md`
-- `docs/architecture/DATA_MODEL.md`
 
 Novas funcionalidades devem respeitar a arquitetura em camadas adotada pelo projeto.
 
