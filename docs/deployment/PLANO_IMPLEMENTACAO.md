@@ -14,6 +14,15 @@
 > cadastro de chave SSH**; a autenticação é por usuário/senha (a mesma do
 > FTP), com sessão de 3h habilitada manualmente. Ver
 > `PLANO_DE_IMPLANTACAO.md` Etapa 2/9 para o texto corrigido.
+>
+> **Correção factual (2026-07-22, `ADR-016`):** a Etapa 6 abaixo descreve
+> `composer install` rodando no host via SSH e o workflow disparado
+> automaticamente por push em `main` — ambos superados. O host Locaweb foi
+> confirmado sem Composer instalado globalmente; `composer install` passou
+> a rodar só no runner do GitHub Actions, e o disparo do workflow passou a
+> ser manual (`workflow_dispatch`), já que o SSH do plano é temporário
+> (~3h). Ver `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md` e
+> `PLANO_DE_IMPLANTACAO.md` Etapa 11 para a mecânica corrigida.
 
 **Fonte única desta implementação:** `ARQUITETURA_PRODUCAO.md` (revisado,
 decisão definitiva 2026-07-21 — Locaweb Hospedagem Linux, PostgreSQL

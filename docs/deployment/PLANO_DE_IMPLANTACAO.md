@@ -138,19 +138,20 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Como validar (via SSH, depois de habilitar no painel):**
   ```bash
   ssh <usuario>@<host-locaweb>   # autenticação por senha, não por chave
-  php -v            # confirmar PHP 8.3
-  which composer     # confirmar composer disponível (ou subir um .phar)
+  php -v            # confirmar versão do PHP
   crontab -l         # confirmar acesso a crontab
   git --version
   psql --version     # ou testar conexão ao gerenciado
   ```
 - **Critérios de aceite:** SSH conecta (usuário/senha, habilitado no
-  painel); PHP 8.3 confirmado; `composer` disponível; `crontab -e`
-  funciona; conexão de teste ao banco gerenciado bem-sucedida.
-- **Risco a verificar:** limite de CPU/memória do plano pode impedir
-  `composer install --no-dev` completo em um processo — se ocorrer,
-  alternativa é rodar `composer install` no CI e subir `vendor/` já
-  pronto via `rsync` (mudança no workflow, não nesta etapa).
+  painel); PHP confirmado (`^8.3`); `crontab -e` funciona; conexão de
+  teste ao banco gerenciado bem-sucedida. **`which composer` não é mais
+  critério de aceite** — `ADR-016` decidiu que Composer nunca roda no
+  host (auditoria já confirmou, à parte, que está ausente globalmente);
+  `vendor/` é gerado no runner do CI e enviado pronto via `rsync`.
+- **Risco (resolvido, `ADR-016`):** o limite de CPU/memória do plano para
+  `composer install --no-dev` deixou de ser um risco — essa etapa nunca
+  roda no host, só no runner do GitHub Actions.
 
 ---
 
@@ -353,13 +354,15 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ### Etapa 11 — Primeiro deploy (homologação)
 
-- **Objetivo:** validar o pipeline completo (build do frontend →
-  `rsync` → `composer install` → `migrate --force` → cache → symlink
-  `current`) antes de apontar tráfego real.
+- **Objetivo:** validar o pipeline completo (`composer install` +
+  build do frontend, ambos no runner do CI → `rsync` → `migrate --force` →
+  cache → symlink `current`) antes de apontar tráfego real.
 - **Dependências:** Etapas 3, 4, 8, 9, 10 concluídas.
-- **Onde configurar:** disparo automático — push na branch de produção
-  (`main`) com mudanças em `tear-v2-app/**`, ou manual via
-  `workflow_dispatch` em `.github/workflows/tear-v2-deploy.yml`.
+- **Onde configurar:** disparo **manual**, via `workflow_dispatch` em
+  `.github/workflows/tear-v2-deploy.yml` — não há mais disparo automático
+  por push (o SSH do plano Locaweb exige habilitação manual no painel e
+  expira em ~3h, decisão em `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`).
+  Habilitar o SSH no painel antes de acionar o workflow.
 - **Como validar:**
   ```bash
   curl -f https://influencia.estudioela.com/up

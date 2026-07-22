@@ -2,8 +2,19 @@
 
 > **Nota (2026-07-22):** a ordem de execução oficial do Go-Live, com
 > critérios de aceite por etapa, é `docs/deployment/PLANO_DE_IMPLANTACAO.md`.
-> Este runbook continua correto e serve como detalhe narrativo do mesmo
-> fluxo.
+> Este runbook serve como detalhe narrativo do mesmo fluxo, com uma
+> correção pontual — ver nota abaixo.
+>
+> **Correção factual (2026-07-22, `ADR-016`):** §2 e §6 abaixo descrevem
+> `composer install` rodando no host via SSH e o deploy disparado
+> automaticamente por push em `main` — ambos superados. O host Locaweb foi
+> confirmado sem Composer instalado globalmente; `composer install` passou
+> a rodar só no runner do GitHub Actions (`vendor/` chega pronto via
+> `rsync`), e o disparo do workflow passou a ser manual
+> (`workflow_dispatch`), já que o SSH do plano é temporário (~3h). Ver
+> `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md` e
+> `docs/deployment/PLANO_DE_IMPLANTACAO.md` Etapa 11 para a mecânica
+> corrigida.
 
 Runbook operacional. Ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (raiz do
 repositório) para o checklist de prontidão e a lista de pendências P0/P1/P2, e

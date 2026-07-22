@@ -1,15 +1,17 @@
 name: TEAR V2 Deploy
 
-# Só builda/publica a partir de `main` (ou manualmente) — nunca em branches
-# de feature. Arquitetura: ADR-015 (origem única — Laravel serve o build do
-# Vite a partir de public/build). Runbook completo:
-# docs/deployment/PLANO_IMPLEMENTACAO.md, Etapa 6.
+# Só via acionamento manual: o SSH da hospedagem Locaweb é temporário
+# (habilitação manual no painel, ~3h) — não há como um push disparar o
+# deploy de forma confiável, então o disparo automático por push foi
+# removido (achado de auditoria, docs/deployment/AUDITORIA_LOCAWEB.md
+# §4.1). Acionar via workflow_dispatch depois de habilitar o SSH no painel.
+# Arquitetura: ADR-015 (origem única — Laravel serve o build do Vite a
+# partir de public/build). Composer roda só neste runner — o host Locaweb
+# não tem Composer instalado globalmente (achado de auditoria,
+# docs/deployment/AUDITORIA_LOCAWEB.md §1/§4.3); vendor/ é gerado aqui e
+# enviado pronto via rsync, o host nunca executa Composer. Runbook
+# completo: docs/deployment/PLANO_IMPLEMENTACAO.md, Etapa 6.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "tear-v2-app/**"
-      - ".github/workflows/tear-v2-deploy.yml"
   workflow_dispatch: {}
 
 defaults:
@@ -22,6 +24,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_pgsql, fileinfo, zip, intl, gd, imagick, openssl
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('tear-v2-app/backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install backend dependencies (vendor/ vai pronto para o host — Composer não existe lá)
+        working-directory: tear-v2-app/backend
+        run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Setup Node
         uses: actions/setup-node@v4

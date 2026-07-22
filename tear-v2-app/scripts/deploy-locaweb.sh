@@ -1,11 +1,14 @@
 #!/bin/bash
 # Executado NO HOST Locaweb via SSH, chamado por
 # .github/workflows/tear-v2-deploy.yml depois que o rsync já publicou o
-# código (backend/, incluindo o build do frontend em public/build) em
-# <deploy_base_path>/releases/<release_id>/. Completa o deploy atômico:
-# instala dependências PHP, liga .env/storage compartilhados, roda
-# migrations, gera cache de config/rotas/views e troca o symlink `current`
-# (ver Etapa 6 de docs/deployment/PLANO_IMPLEMENTACAO.md).
+# código (backend/, já com vendor/ e o build do frontend em public/build)
+# em <deploy_base_path>/releases/<release_id>/. O host Locaweb não tem
+# Composer instalado globalmente (achado de auditoria,
+# docs/deployment/AUDITORIA_LOCAWEB.md §1/§4.3) — vendor/ é gerado no
+# runner do GitHub Actions e chega pronto via rsync; este script nunca
+# executa Composer. Completa o deploy atômico: liga .env/storage
+# compartilhados, roda migrations, gera cache de config/rotas/views e troca
+# o symlink `current` (ver Etapa 6 de docs/deployment/PLANO_IMPLEMENTACAO.md).
 #
 # Uso: ./deploy-locaweb.sh <release_id> <deploy_base_path>
 set -euo pipefail
@@ -16,7 +19,10 @@ RELEASE_PATH="$BASE_PATH/releases/$RELEASE_ID"
 
 cd "$RELEASE_PATH"
 
-composer install --no-dev --optimize-autoloader --no-interaction
+if [ ! -f vendor/autoload.php ]; then
+  echo "vendor/ ausente na release — composer install deveria ter rodado no runner do GitHub Actions antes do rsync (ver .github/workflows/tear-v2-deploy.yml)." >&2
+  exit 1
+fi
 
 ln -sfn "$BASE_PATH/shared/.env" .env
 # storage/ compartilhado entre releases: sem isto, logs (Pulse depende

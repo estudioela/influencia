@@ -67,26 +67,42 @@ responsabilidade do provedor (escopo exato a confirmar na execução — ver
 Sem containers e sem orquestrador, o deploy é um pipeline direto:
 
 1. CI (testes, já existente em `tear-v2-ci.yml`) roda em cada push/PR.
-2. Um job novo de **build** roda `npm ci && npm run build` no runner do
-   GitHub Actions — o Vite gera os assets estáticos (`public/build`).
-   Node/npm **não é dependência do servidor de produção**.
-3. Um job novo de **deploy** (só em push para a branch de produção)
-   conecta via SSH ao host Locaweb e publica os arquivos (`rsync`/`scp`)
-   em um diretório de release novo (`releases/<id>/`), depois:
-   - `composer install --no-dev --optimize-autoloader`
+2. Um job de **build** (`.github/workflows/tear-v2-deploy.yml`) roda, no
+   runner do GitHub Actions:
+   - `composer install --no-dev --optimize-autoloader --no-interaction`
+     (working-directory `tear-v2-app/backend`) — gera `vendor/` **só no
+     runner**. O host Locaweb não tem Composer instalado globalmente
+     (achado de auditoria confirmado, ver
+     `docs/deployment/AUDITORIA_LOCAWEB.md` §1/§4.3, decisão em
+     `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`) — o host **nunca**
+     executa Composer.
+   - `npm ci && npm run build:locaweb` — o Vite gera os assets estáticos
+     (`public/build`). Node/npm **não é dependência do servidor de
+     produção**.
+3. Um job de **deploy** conecta via SSH ao host Locaweb e publica os
+   arquivos (`rsync`/`scp`, já incluindo `vendor/` e `public/build` vindos
+   do runner) em um diretório de release novo (`releases/<id>/`), depois:
+   - (no host, via `deploy-locaweb.sh`) verifica que `vendor/autoload.php`
+     veio na release (falha rápido e explícito se não vier)
    - `php artisan migrate --force`
    - `php artisan config:cache && php artisan route:cache && php artisan view:cache`
    - swap do symlink `current` → nova release (deploy atômico por
      symlink, mesmo princípio de Capistrano/Deployer, sem precisar de
      container).
 4. Rollback: apontar `current` de volta para a release anterior
-   (`ln -sfn`) — não precisa reconstruir nada.
+   (`ln -sfn`) — não precisa reconstruir nada, cada release já carrega seu
+   próprio `vendor/`.
+
+**Disparo: manual (`workflow_dispatch`), não automático por push** — o SSH
+do plano Locaweb exige habilitação manual no painel e expira em ~3h
+(`AUDITORIA_LOCAWEB.md` §4.1); nada garante que um push encontre essa
+janela aberta. Decisão registrada em `ADR-016`.
 
 Não há zero-downtime "de graça" (o swap de symlink é quase instantâneo,
-mas requests em voo durante `composer install`/migrations podem ver um
-estado transitório) — aceitável para o perfil de tráfego atual (uso
-administrativo interno, não um SaaS público de alto tráfego). Custo
-incremental: **US$0** (usa só SSH, já incluso no plano).
+mas requests em voo durante migrations podem ver um estado transitório) —
+aceitável para o perfil de tráfego atual (uso administrativo interno, não
+um SaaS público de alto tráfego). Custo incremental: **US$0** (usa só SSH,
+já incluso no plano).
 
 ---
 
@@ -275,12 +291,13 @@ produção com segurança dentro do perfil atual do projeto.
 
 | Risco | Mitigação |
 |---|---|
-| Hospedagem compartilhada = limites de CPU/memória/processo fora do controle direto do projeto | Validar na execução (Etapa 1 do plano) se `composer install`/`artisan migrate` rodam dentro dos limites do plano; se não, alternativa é rodar `composer install` localmente/no CI e subir `vendor/` já pronto via deploy |
+| Hospedagem compartilhada = limites de CPU/memória/processo fora do controle direto do projeto | `composer install` já roda só no CI (`ADR-016`), fora deste risco. Validar na execução (Etapa 1 do plano) se `artisan migrate`/cache warmup rodam dentro dos limites do plano no host |
 | Sem zero-downtime real (deploy é symlink swap, não container) | Aceitável para o perfil atual (uso administrativo interno); requests em voo durante `migrate` são a única janela de risco — migrations devem ser aditivas/retrocompatíveis quando possível |
 | Backup dependente só do Google Drive (sem redundância de outro provedor) | Aceitável no estágio atual — Drive já tem redundância própria do Google; redundância adicional (ex.: R2) fica como melhoria opcional (§16) se o risco for reavaliado |
 | SMTP incluso pode ter limite de envio diário mais baixo que um provedor dedicado | Volume atual é baixo (só transacional); monitorar e migrar para provedor dedicado (melhoria opcional) se o volume crescer |
 | Único ponto de falha físico (a hospedagem compartilhada em si) | Backup off-host (Drive) + runbook de restore testado periodicamente |
-| **(Achado de execução, 2026-07-22)** SSH do plano contratado é temporário (3h, renovação manual) e por senha, não por chave; o recurso nativo "Publicar via Git" do painel é só upload FTP, não executa comandos remotos — ambos invalidam a premissa de deploy 100% automatizado por SSH descrita em §3 | Não muda a decisão de hospedagem/banco/storage (§1–§8, ainda válidas). Só a mecânica de deploy de §3 precisa de ajuste — opções e recomendação em `docs/deployment/AUDITORIA_LOCAWEB.md` §5, decisão pendente do responsável do projeto |
+| **(Achado de execução, 2026-07-22)** SSH do plano contratado é temporário (3h, renovação manual) e por senha, não por chave; o recurso nativo "Publicar via Git" do painel é só upload FTP, não executa comandos remotos — ambos invalidam a premissa de deploy 100% automatizado por SSH descrita em §3 | **Resolvido (`ADR-016`, 2026-07-22):** Composer passou a rodar só no runner do CI (nunca no host) e o disparo do workflow passou a ser manual (`workflow_dispatch`) em vez de automático por push — §3 já reflete a mecânica atualizada |
+| **(Achado de auditoria confirmado, 2026-07-22)** Composer não está instalado globalmente no host Locaweb (Rocky Linux 8.10, PHP 8.4.22) — quebra a premissa original de §3 de rodar `composer install` remotamente via SSH | **Resolvido (`ADR-016`):** `vendor/` é gerado no runner do GitHub Actions e enviado pronto via `rsync`; o host só verifica a presença de `vendor/autoload.php` antes de prosseguir |
 
 ---
 

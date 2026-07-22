@@ -91,7 +91,7 @@ data). Detalhe na §2.
 | PHP 8.3 | ✅ Totalmente compatível | Já é a versão ativa nas duas hospedagens |
 | PostgreSQL gerenciado | ✅ Totalmente compatível | Disponível para criação, até 10 bancos |
 | SSH para deploy | ⚠️ Parcialmente compatível | Existe, mas desabilitado por padrão, expira em 3h, renovação manual, autenticação por senha (não por chave) — incompatível com deploy 100% automatizado sem intervenção humana a cada execução |
-| Deploy via Git (GitHub Actions) | ⚠️ Parcialmente compatível | O recurso "Publicar via Git" do painel é só um template de FTP upload (`locaweb/ftp-deploy`), não executa comandos remotos. A estratégia de `ARQUITETURA_PRODUCAO.md` §3 (symlink swap + `composer install`/`migrate` remotos via SSH) **não pode ser feita por esse recurso** — só via SSH manual/scriptado, sujeito à limitação acima |
+| Deploy via Git (GitHub Actions) | ⚠️ Parcialmente compatível | O recurso "Publicar via Git" do painel é só um template de FTP upload (`locaweb/ftp-deploy`), não executa comandos remotos. A estratégia de `ARQUITETURA_PRODUCAO.md` §3 (symlink swap + `migrate` remoto via SSH) **não pode ser feita por esse recurso** — só via SSH manual/scriptado, sujeito à limitação acima. `composer install` deixou de fazer parte do que rodaria remotamente — decisão `ADR-016`, roda só no runner do CI |
 | Crontab (`schedule:run`, `queue:work`, backup) | ✅ Totalmente compatível | Nativo, sem uso ainda |
 | Storage local (disco) | ⚠️ A confirmar | Painel não expõe quota em GB; sem SSH habilitado não dá para checar `df -h` |
 | Google Drive (upload de Material) | ✅ Totalmente compatível | Não depende da Locaweb, é integração externa via Service Account |
@@ -127,10 +127,10 @@ painel:
 | Scheduler (`schedule:run`) | `bootstrap/app.php`/`routes/console.php` (padrão Laravel 12, sem `Kernel.php`) | ✅ CONFIRMADO — Crontab nativo, 0 tarefas hoje | Criar entrada de crontab `* * * * * php artisan schedule:run` |
 | Sessão `database` + cookie same-origin (Sanctum SPA) | `config/session.php`, `.env.production.example` (`SESSION_DOMAIN=influencia.estudioela.com`) | ⚠️ PENDENTE — depende do DNS/subdomínio ainda não criado | Apontar DNS e criar subdomínio antes de validar |
 | `TRUSTED_PROXIES` (proxy reverso Locaweb) | `bootstrap/app.php` (`$middleware->trustProxies(...)`) | ⚠️ PENDENTE — IP/CIDR do proxy não levantado nesta auditoria | Obter IP(s) do proxy via SSH/suporte Locaweb |
-| Composer disponível no servidor | Mitigação de risco em `ARQUITETURA_PRODUCAO.md` §14 | ⚠️ PENDENTE — não checado | `which composer` via SSH, ou seguir mitigação (não depender disso) |
+| Composer disponível no servidor | Mitigação de risco em `ARQUITETURA_PRODUCAO.md` §14 | ✅ RESOLVIDO — confirmado ausente no host (Rocky Linux 8.10, PHP 8.4.22); deixou de ser dependência (`ADR-016`) | Nenhuma — `vendor/` é gerado no runner do CI e enviado via `rsync`, host nunca executa Composer |
 | SMTP relay incluso | `.env.production.example` (`MAIL_MAILER=smtp`, host/porta `CHANGE_ME`) | ⚠️ A CONFIRMAR — seção "Email Locaweb" existe no painel, host/porta não localizados nesta auditoria | Levantar host/porta/credenciais na seção de e-mail do painel |
 | Node/npm só em build time (CI) | `frontend/package.json` (`build:locaweb`), `vite.config.ts` (`outDir: ../backend/public/build`) | ✅ CONFIRMADO no código — bate com a arquitetura, sem Node em runtime no servidor | Nenhuma |
-| Quota de disco/CPU para `composer install --no-dev` | Risco em `ARQUITETURA_PRODUCAO.md` §14 | ⚠️ PENDENTE — sem SSH não há `df -h` nem limites confirmados | Confirmar via SSH/suporte; manter mitigação de rodar `composer install` no CI |
+| Quota de disco/CPU para `composer install --no-dev` | Risco em `ARQUITETURA_PRODUCAO.md` §14 | ✅ RESOLVIDO — deixou de ser risco: `composer install` não roda mais no host em nenhum cenário (`ADR-016`), independente da quota real do plano | Nenhuma |
 
 ---
 
@@ -145,19 +145,20 @@ painel:
 - [ ] Habilitar SSH (ação manual no painel, válida por 3h — decidir se o
       fluxo de deploy vai depender de habilitação manual a cada release ou
       se será feito só para deploys pontuais + tarefas administrativas)
-- [ ] Confirmar disponibilidade de Composer via SSH (`which composer`) —
-      só possível com SSH habilitado
+- [x] ~~Confirmar disponibilidade de Composer via SSH (`which composer`)~~
+      — confirmado ausente no host; deixou de ser bloqueio, `ADR-016`
+      move `composer install` para o runner do CI
 - [ ] Confirmar quota de disco (`df -h` via SSH, ou perguntar ao suporte)
 - [ ] Levantar IP(s)/CIDR do proxy reverso da Locaweb para `TRUSTED_PROXIES`
       (`tear-v2-app/backend/bootstrap/app.php` já lê a variável, só falta o
       valor real — via SSH ou suporte)
 - [ ] Confirmar host/porta do relay SMTP incluso no plano (seção "Email
       Locaweb" do painel, ou suporte)
-- [ ] Decidir estratégia real de deploy dado que "Publicar via Git" é só
-      FTP: (a) manter SSH manual scriptado por release, (b) usar o
-      FTP-deploy nativo só para os assets estáticos e rodar
-      `migrate`/`cache` manualmente via SSH quando necessário, ou (c)
-      outra abordagem — decisão de arquitetura, não desta auditoria
+- [x] ~~Decidir estratégia real de deploy dado que "Publicar via Git" é só
+      FTP~~ — decidido em `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md`:
+      mantém `rsync`/SSH (releases/ + symlink `current`, já implementado),
+      Composer só no CI, disparo do workflow manual (`workflow_dispatch`)
+      em vez de automático por push
 - [x] ~~Esclarecer com o suporte/faturamento da Locaweb por que
       `estudioela.com` não aparece como linha separada em "Alterar
       Planos"~~ — explicado pelo responsável do projeto (domínio migrado
@@ -198,10 +199,14 @@ por sua vez esbarra no risco §4.1.
 Sem SSH habilitado não foi possível confirmar limites de CPU/memória/
 processos simultâneos nem quota de disco. `ARQUITETURA_PRODUCAO.md` §14 já
 previa esse risco e sugeriu, como mitigação, rodar `composer install`
-localmente/CI e subir o `vendor/` pronto — mitigação segue válida e
-provavelmente necessária dado que não há confirmação ainda de que
-`composer install --no-dev` completo rode dentro dos limites do plano de
-entrada.
+localmente/CI e subir o `vendor/` pronto. **Resolvido por `ADR-016`:** essa
+mitigação deixou de ser uma alternativa condicional e virou a implementação
+adotada — `composer install` roda sempre no runner do CI, nunca no host,
+então o limite de CPU/memória do plano para essa etapa específica deixou
+de ser um risco (o host nunca precisa executá-la). Uma auditoria
+subsequente já confirmou, à parte, que o host **não tem Composer instalado
+globalmente** — o que por si só já inviabilizava a mecânica original,
+independente de quota.
 
 ### 4.4 WAF ativa por padrão pode interferir com API/upload
 A "Proteção WAF" (recurso novo da Locaweb) está ativa por padrão nas duas
@@ -240,7 +245,23 @@ requer mais investigação.
 — resolvido pelo responsável do projeto (§1.3): domínio migrado do
 WordPress.com, sem risco administrativo.
 
-### 5.1 Recomendação para o item 1 (estratégia de deploy)
+### 5.1 Recomendação para o item 1 (estratégia de deploy) — decidido em `ADR-016`
+
+**Atualização (`ADR-016`, 2026-07-22): decisão tomada — não é (B) como
+recomendado abaixo.** Uma auditoria subsequente do host confirmou SSH
+**disponível** (ainda que de habilitação manual/temporária, ~3h) e
+Composer **ausente globalmente**. Com SSH confirmado utilizável, a decisão
+foi manter `rsync`/SSH (já implementado, transporte criptografado e
+resumível) em vez de introduzir FTP — a única mudança necessária foi mover
+`composer install` para o runner do CI (elimina o bloqueio confirmado de
+Composer ausente) e tornar o disparo do workflow manual
+(`workflow_dispatch`, em vez de automático por push), já que a janela de
+SSH de 3h não é garantida no momento de um push. Ver `ADR-016` para a
+decisão completa e as alternativas descartadas.
+
+A análise original abaixo (feita quando o SSH parecia desabilitado por
+padrão, antes da confirmação de disponibilidade) permanece como registro
+histórico do raciocínio da época:
 
 Análise comparativa entre 4 alternativas, dado que SSH é temporário/por
 senha e "Publicar via Git" é só FTP:
@@ -271,9 +292,10 @@ pequeno por uma superfície de risco maior (senha de painel em CI); (D) por
 não reduzir esforço operacional, só deslocar a complexidade para
 sincronização manual de timing.
 
-**Esta é uma recomendação, não uma decisão tomada** — implementar a
-mudança em `tear-v2-deploy.yml`/`deploy-locaweb.sh` é trabalho de execução
-de uma etapa futura (Etapas 9–11), não desta auditoria.
+~~**Esta é uma recomendação, não uma decisão tomada**~~ — decidida e
+implementada em `ADR-016` (variante diferente da opção B acima, ver nota
+no início desta seção): `tear-v2-deploy.yml`/`deploy-locaweb.sh` já
+refletem a mecânica adotada.
 
 **Nenhuma dessas decisões bloqueia o restante da Etapa 2** (SSH, Composer,
 Postgres — itens de validação técnica). Elas bloqueiam especificamente a
@@ -293,13 +315,15 @@ a restrição soberana de "zero custo recorrente adicional" de
 
 A única ressalva real é de **mecânica de deploy**, não de capacidade: o
 plano não oferece SSH persistente por chave nem deploy via git real, então
-a automação de deploy planejada em `ARQUITETURA_PRODUCAO.md` §3 precisa
-ser ajustada para lidar com SSH temporário/por senha — isso é decisão de
-arquitetura de deploy, não motivo para trocar de hospedagem ou pagar mais.
+a automação de deploy planejada em `ARQUITETURA_PRODUCAO.md` §3 foi
+ajustada para lidar com SSH temporário/por senha e Composer ausente —
+decisão registrada em `ADR-016`, não motivo para trocar de hospedagem ou
+pagar mais.
 
 **Próximo passo recomendado:** seguir a Etapa 2 do
 `PLANO_DE_IMPLANTACAO.md` habilitando o SSH (ação do responsável do
-projeto no painel) para validar Composer, quota de disco e conexão ao
-Postgres — e, em paralelo, decidir a estratégia de deploy (checklist §5,
-item 1) antes de chegar às Etapas 9–11 (secrets, estrutura de diretórios e
-primeiro deploy).
+projeto no painel) para validar quota de disco, extensões PHP e conexão ao
+Postgres (Composer já não é mais uma validação necessária, `ADR-016`) —
+a estratégia de deploy (checklist §5, item 1) já está decidida; falta
+cadastrar os secrets do GitHub e rodar o primeiro `workflow_dispatch`
+(Etapas 9–11).
