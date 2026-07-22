@@ -1,24 +1,39 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listParceiras, type Parceira, type ParceiraStatus } from '../lib/parceiras';
+import { listParceirasPage, type Parceira, type ParceiraStatus } from '../lib/parceiras';
+import { useAuth } from '../lib/auth';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { LinkButton } from '../components/Button';
 import styles from './ParceirasListPage.module.css';
 
 export default function ParceirasListPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [searchParams, setSearchParams] = useSearchParams();
   const statusFilter = searchParams.get('status') === 'Inativa' ? 'Inativa' : null;
 
   const [parceiras, setParceiras] = useState<Parceira[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
 
   useEffect(() => {
     setParceiras(null);
-    listParceiras(statusFilter ? { status: statusFilter as ParceiraStatus } : undefined)
-      .then(setParceiras)
+    listParceirasPage({
+      ...(statusFilter ? { status: statusFilter as ParceiraStatus } : {}),
+      page,
+    })
+      .then((response) => {
+        setParceiras(response.data);
+        setLastPage(response.meta?.last_page ?? 1);
+      })
       .catch(() => setError('Não foi possível carregar as parceiras. Tente novamente.'));
-  }, [statusFilter]);
+  }, [statusFilter, page]);
 
   function selecionarFiltro(novoStatus: 'Inativa' | null) {
     if (novoStatus) {
@@ -35,7 +50,7 @@ export default function ParceirasListPage() {
           <h2 className={styles.title}>Parceiras</h2>
           <p className={styles.subtitle}>Base de influenciadoras cadastradas.</p>
         </div>
-        <LinkButton to="/parceiras/nova">nova parceira</LinkButton>
+        {isAdmin && <LinkButton to="/parceiras/nova">nova parceira</LinkButton>}
       </header>
 
       <div className={styles.filterTabs} role="tablist" aria-label="Filtrar por status">
@@ -78,7 +93,7 @@ export default function ParceirasListPage() {
         <EmptyState
           title="Nenhuma parceira cadastrada"
           message="Você ainda não possui parceiras cadastradas."
-          action={<LinkButton to="/parceiras/nova">cadastrar primeira parceira</LinkButton>}
+          action={isAdmin ? <LinkButton to="/parceiras/nova">cadastrar primeira parceira</LinkButton> : undefined}
         />
       )}
 
@@ -109,6 +124,30 @@ export default function ParceirasListPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {parceiras !== null && parceiras.length > 0 && lastPage > 1 && (
+        <div className={styles.pagination}>
+          <span className={styles.paginationInfo}>
+            página {page} de {lastPage}
+          </span>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page <= 1}
+            onClick={() => setPage((current) => current - 1)}
+          >
+            anterior
+          </button>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page >= lastPage}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            próxima
+          </button>
+        </div>
       )}
     </div>
   );

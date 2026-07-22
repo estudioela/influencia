@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   campanhaStatusTone,
-  listCampanhas,
+  listCampanhasPage,
   type Campanha,
   type CampanhaStatus,
 } from '../lib/campanhas';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
 import { LinkButton } from '../components/Button';
+import { useAuth } from '../lib/auth';
 import styles from './CampanhasListPage.module.css';
 
 const VALID_STATUS: CampanhaStatus[] = ['PLANEJADA', 'ATIVA', 'ENCERRADA', 'CANCELADA'];
 
 export default function CampanhasListPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [searchParams] = useSearchParams();
   const statusParam = searchParams.get('status');
   const statusFilter = VALID_STATUS.includes(statusParam as CampanhaStatus)
@@ -22,13 +25,22 @@ export default function CampanhasListPage() {
 
   const [campanhas, setCampanhas] = useState<Campanha[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter]);
 
   useEffect(() => {
     setCampanhas(null);
-    listCampanhas(statusFilter ? { status: statusFilter } : undefined)
-      .then(setCampanhas)
+    listCampanhasPage({ ...(statusFilter ? { status: statusFilter } : {}), page })
+      .then((response) => {
+        setCampanhas(response.data);
+        setLastPage(response.meta?.last_page ?? 1);
+      })
       .catch(() => setError('Não foi possível carregar as campanhas. Tente novamente.'));
-  }, [statusFilter]);
+  }, [statusFilter, page]);
 
   return (
     <div className={styles.page}>
@@ -37,7 +49,7 @@ export default function CampanhasListPage() {
           <h2 className={styles.title}>Campanhas</h2>
           <p className={styles.subtitle}>Campanhas em andamento e planejadas, por marca.</p>
         </div>
-        <LinkButton to="/campanhas/nova">nova campanha</LinkButton>
+        {isAdmin && <LinkButton to="/campanhas/nova">nova campanha</LinkButton>}
       </header>
 
       {error && <p className={styles.error}>{error}</p>}
@@ -48,7 +60,7 @@ export default function CampanhasListPage() {
         <EmptyState
           title="Nenhuma campanha cadastrada"
           message="Você ainda não possui campanhas cadastradas."
-          action={<LinkButton to="/campanhas/nova">cadastrar primeira campanha</LinkButton>}
+          action={isAdmin ? <LinkButton to="/campanhas/nova">cadastrar primeira campanha</LinkButton> : undefined}
         />
       )}
 
@@ -84,6 +96,30 @@ export default function CampanhasListPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {campanhas !== null && campanhas.length > 0 && lastPage > 1 && (
+        <div className={styles.pagination}>
+          <span className={styles.paginationInfo}>
+            página {page} de {lastPage}
+          </span>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page <= 1}
+            onClick={() => setPage((current) => current - 1)}
+          >
+            anterior
+          </button>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            disabled={page >= lastPage}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            próxima
+          </button>
+        </div>
       )}
     </div>
   );

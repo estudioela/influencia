@@ -39,15 +39,24 @@ export type ParceiraFormValues = {
 };
 
 type ParceiraResponse = { data: Parceira };
-type ParceirasListResponse = { data: Parceira[]; meta?: { total: number } };
+type PageMeta = { current_page: number; last_page: number; total: number };
+type ParceirasListResponse = { data: Parceira[]; meta?: PageMeta };
 
 export type ListParceirasParams = {
   status?: ParceiraStatus;
+  page?: number;
 };
 
 export async function listParceiras(params?: ListParceirasParams): Promise<Parceira[]> {
   const response = await apiClient.get<ParceirasListResponse>('/parceiras', { params });
   return response.data.data;
+}
+
+export async function listParceirasPage(
+  params?: ListParceirasParams,
+): Promise<{ data: Parceira[]; meta?: PageMeta }> {
+  const response = await apiClient.get<ParceirasListResponse>('/parceiras', { params });
+  return response.data;
 }
 
 export async function countParceiras(params?: ListParceirasParams): Promise<number> {

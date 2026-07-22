@@ -38,16 +38,25 @@ export type CampanhaFormValues = {
 };
 
 type CampanhaResponse = { data: Campanha };
-type CampanhasListResponse = { data: Campanha[]; meta?: { total: number } };
+type PageMeta = { current_page: number; last_page: number; total: number };
+type CampanhasListResponse = { data: Campanha[]; meta?: PageMeta };
 
 export type ListCampanhasParams = {
   marca_id?: number;
   status?: CampanhaStatus;
+  page?: number;
 };
 
 export async function listCampanhas(params?: ListCampanhasParams): Promise<Campanha[]> {
   const response = await apiClient.get<CampanhasListResponse>('/campanhas', { params });
   return response.data.data;
+}
+
+export async function listCampanhasPage(
+  params?: ListCampanhasParams,
+): Promise<{ data: Campanha[]; meta?: PageMeta }> {
+  const response = await apiClient.get<CampanhasListResponse>('/campanhas', { params });
+  return response.data;
 }
 
 export async function countCampanhas(params?: ListCampanhasParams): Promise<number> {
