@@ -1455,3 +1455,54 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
       `docs/reports/HANDOFF_FINAL.md`/sessões anteriores: **APTO PARA GO-LIVE**
       (código), condicionado à infraestrutura já listada (Google Drive,
       SMTP, Postgres, variáveis de produção).
+
+## 16. Due diligence do plano estratégico + consolidação de auditorias externas (2026-07-22)
+
+- **Due diligence do Plano Mestre** (painel de 9 especialistas de IA
+  independentes) e duas auditorias externas adicionais (Manus AI, CPO)
+  revisaram `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` e documentos
+  irmãos. Relatório consolidado: `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`
+  (raiz do repo).
+- **Achado de maior valor prático: branch órfã `worktree-spec-mvp-completa`
+  não reconciliada.** Confirmado por investigação direta (`git log`,
+  `git merge-tree`) nesta sessão: 16 commits únicos desde o ponto de
+  divergência `dd5e297`, **zero conflitos** contra `feat/ui-design-system-ela`
+  (merge-tree limpo). Implementa, já testado, exatamente lacunas apontadas
+  por três auditorias independentes: módulo de logística mínimo viável
+  (`Envio`, model+controller+migration+factory), cálculo automático da data
+  de aprovação do briefing (RN-04), campos contratuais em `Parceira`,
+  congelamento de condições comerciais da Participação, landing page
+  pública de onboarding com fluxo de reprovação de cadastro. 54 arquivos,
+  1675 inserções/74 remoções (`git diff --stat` confirmado). Nenhum dos
+  três documentos de planejamento estratégico nem este roteador
+  mencionavam essa branch antes desta sessão.
+  - **Merge NÃO executado nesta sessão** — tentativa de `git merge` foi
+    bloqueada pelo classificador de permissão do harness (ação significativa
+    e de reversão custosa: 16 commits, nova regra de negócio, não é
+    documentação). Decisão correta: mesclar 1675 linhas de lógica de negócio
+    dentro de uma tarefa de consolidação de auditoria excederia o escopo
+    autorizado e merece sua própria sessão dedicada (Auditoria → Plano →
+    Execução → Validação → Commit).
+  - **Ação recomendada, pendente de autorização explícita:** dedicar uma
+    sessão a integrar `worktree-spec-mvp-completa` — validar suíte de testes
+    pós-merge, revisar se o código de logística/contrato ainda reflete as
+    regras de negócio vigentes (algumas telas do `tear-v2-app/frontend`
+    evoluíram depois do ponto de divergência), e só então decidir arquivar
+    ou apagar a branch remota.
+- **Correções aplicadas nesta sessão** (detalhe completo em
+  `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`): (1) consentimento LGPD passou a
+  ser exigido e registrado no **nascimento do dado** (cadastro público de
+  Parceira), não só na edição — `Parceira::registrarConsentimentoCadastro()`,
+  nova migration aditiva (`consentimento_cadastro_aceito_em`/`_ip`), gate em
+  `StoreParceiraRequest` (rota pública e rota administrativa), checkbox em
+  `PublicCadastroPage.tsx`; suíte 151/151 verde, Pint limpo, `tsc`/build/lint
+  do frontend limpos. (2) Contradição de arquitetura Docker vs. Locaweb
+  resolvida na documentação: `tear-v2-app/docs/DEPLOY.md` reescrito para o
+  fluxo GitHub Actions + SSH + symlink já decidido em
+  `docs/deployment/ARQUITETURA_PRODUCAO.md` (não a alternativa de SFTP "bare
+  metal" sugerida por uma das auditorias externas, que seria uma regressão
+  frente ao runbook atômico já especificado em
+  `docs/deployment/PLANO_IMPLEMENTACAO.md`); `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md`
+  atualizado nos itens normativos (P0-2, ordem de execução, estimativa de
+  esforço, checklist de Deploy), narrativa histórica de sessões anteriores
+  preservada sem alteração.

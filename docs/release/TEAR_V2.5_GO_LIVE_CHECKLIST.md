@@ -9,6 +9,19 @@ Portal legado GAS (`src/`) nem no domínio soberano
 altera RBAC/multi-tenant (isso é do roadmap de produto em
 `docs/planning/TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md`, fora do escopo desta sessão).
 
+> **Nota de consolidação (2026-07-22 — Arquiteto Responsável, devido à
+> due diligence do plano estratégico):** este checklist descreve, nos
+> itens de Infraestrutura/Deploy abaixo, o estado de uma sessão que
+> avaliou Docker/Docker Compose como caminho de produção. A decisão de
+> arquitetura definitiva (`docs/deployment/ARQUITETURA_PRODUCAO.md`,
+> 2026-07-21) optou por hospedagem Locaweb compartilhada, sem Docker/root,
+> pela restrição soberana de custo zero — Docker/`docker-compose.yml`
+> ficam restritos a desenvolvimento local. Os itens P0-2 e P0-9 abaixo e a
+> seção "Deploy" do checklist consolidado (§6) foram atualizados para
+> refletir isso; o restante do documento (histórico do que foi entregue
+> em cada sessão) foi preservado sem alteração. Runbook atualizado:
+> `tear-v2-app/docs/DEPLOY.md`.
+
 Metodologia: auditoria read-only completa (infra, banco, segurança,
 frontend, backend, CI/deploy) + implementação automática dos itens de
 baixo risco que não tocam arquivos que o desenvolvimento de feature
@@ -135,7 +148,7 @@ indisponibilidade sob uso real — não em polimento.
 | # | Item | Status | Por que não foi implementado agora |
 |---|---|---|---|
 | P0-1 | `POST /login` sem rate limiting (força bruta de senha) | ✅ resolvido | `throttle:6,1` (commit `d37526f`). |
-| P0-2 | `DB_CONNECTION=sqlite` em produção — SQLite serializa escrita (lock de arquivo único) e `SESSION_DRIVER`/`CACHE_STORE`/`QUEUE_CONNECTION` todos escrevem no mesmo arquivo a cada request; sob concorrência real (duas influenciadoras enviando material ao mesmo tempo) trava. | ✅ mitigado | `docker-compose.yml` + `.env.production.example` já apontam para Postgres. Falta só: provisionar o Postgres real do ambiente de produção (não local) e rodar `migrate --force` contra ele — decisão de infraestrutura (provedor de hosting) que só o responsável do projeto pode tomar. |
+| P0-2 | `DB_CONNECTION=sqlite` em produção — SQLite serializa escrita (lock de arquivo único) e `SESSION_DRIVER`/`CACHE_STORE`/`QUEUE_CONNECTION` todos escrevem no mesmo arquivo a cada request; sob concorrência real (duas influenciadoras enviando material ao mesmo tempo) trava. | ✅ mitigado | `.env.production.example` já aponta para Postgres. Arquitetura definitiva (2026-07-21): PostgreSQL **gerenciado pelo próprio plano Locaweb**, não um serviço `db` de container. Falta só: confirmar/provisionar a instância no painel Locaweb e rodar `migrate --force` contra ela (Etapa 2 de `docs/deployment/PLANO_IMPLEMENTACAO.md`) — decisão de infraestrutura que só o responsável do projeto pode tomar. |
 | P0-3 | Sem caminho para criar o primeiro usuário ADMIN em produção | ✅ resolvido | `php artisan admin:create` (ver §0). |
 | P0-4 | Sem CI — regressão só é pega manualmente | ✅ resolvido | `.github/workflows/tear-v2-ci.yml` (ver §0). |
 | P0-5 | Sem estratégia de backup de banco | ✅ resolvido (scripts prontos) | Falta agendar via cron real no host de produção quando este existir — item operacional, não de código. |
@@ -197,11 +210,11 @@ indisponibilidade sob uso real — não em polimento.
    acontece, independente do estado do código.
 2. ~~P0-1 e P0-8~~ (rate limit no login, whitelist de mime em upload) —
    **já resolvidos** (`d37526f`, `28c6ba4`), nenhuma ação restante.
-3. **Provisionar Postgres real** e apontar `.env` de produção para ele
-   (resto do P0-2 já está pronto em código).
-4. **Primeiro deploy de homologação** via `docker-compose.yml` — valida
-   o pipeline inteiro (build, migrate, health check, security headers)
-   antes de produção.
+3. **Provisionar o Postgres gerenciado da Locaweb** e apontar `.env` de
+   produção para ele (resto do P0-2 já está pronto em código).
+4. **Primeiro deploy de homologação** via o pipeline GitHub Actions + SSH
+   descrito em `tear-v2-app/docs/DEPLOY.md` — valida o fluxo inteiro
+   (build, migrate, health check, security headers) antes de produção.
 5. **`php artisan admin:create`** no ambiente de homologação — valida o
    fluxo de provisionamento ponta a ponta.
 6. **Deploy de produção**, backup agendado (cron do host chamando
@@ -222,7 +235,7 @@ de decisões externas no passo 1 do §4).
 | P0-8 (whitelist mime upload) | 30 min |
 | P0-2 restante (provisionar Postgres real + apontar `.env`) | 1–3h (depende do provedor escolhido) |
 | P0-9 (preencher `.env` de produção real) | 30 min de execução + tempo de espera por credenciais/domínio (fora do controle de engenharia) |
-| Primeiro deploy de homologação via Docker | 2–4h (inclui debugging de ambiente na primeira vez) |
+| Primeiro deploy de homologação via GitHub Actions + SSH (Locaweb) | 2–4h (inclui debugging de ambiente na primeira vez) |
 | P1 completo (Policies dedicadas, rate limit global, lazy loading, Error Boundary, Sentry, health-check consolidado) | 1–2 dias |
 | P2 completo | Não estimado — evolução futura, sem urgência |
 
@@ -282,11 +295,16 @@ de esforço adicional, pronto para uso.
 
 ### Deploy
 - [x] CI configurado e validado (backend + frontend, P0-4)
-- [x] Dockerfiles + docker-compose para homologação/produção
-- [x] Healthcheck em todo serviço do `docker-compose.yml`
+- [x] Dockerfiles + `docker-compose.yml` — mantidos só para **desenvolvimento
+  local** (arquitetura definitiva de produção é Locaweb sem Docker, ver nota
+  de consolidação no topo deste documento)
+- [ ] Job de deploy via SSH (`tear-v2-deploy.yml`) — precisa criar, ver
+  `docs/deployment/IMPLEMENTACAO_TECNICA.md` §3
 - [x] Template de variáveis de produção (`.env.production.example`)
-- [x] CD — build/push de imagens Docker para GHCR (só a partir de `main`)
-- [x] Documentação operacional (`docs/DEPLOY.md`, `docs/MONITORING.md`)
+- [ ] `tear-v2-docker.yml` (CD para GHCR) — aposentar, produção não consome
+  imagem Docker
+- [x] Documentação operacional (`docs/DEPLOY.md`, `docs/MONITORING.md` —
+  `DEPLOY.md` já atualizado para o fluxo Locaweb/SSH)
 - [x] Script de uptime check com alerta Slack opcional (`scripts/healthcheck.sh`)
 - [ ] Domínio e hosting de produção definidos (decisão externa, P0-9)
 - [ ] Primeiro deploy de homologação executado

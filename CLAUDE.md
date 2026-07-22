@@ -47,7 +47,15 @@ Autorização explícita do responsável pelo projeto, registrada nesta data:
   enquanto vigente; revogável a qualquer momento pelo responsável do projeto.
 
 ## Comandos padrão
+
 Comandos permitidos e fluxo Git.
+
+**Protocolo de sessão:** `/comecar` no início de qualquer sessão (lê
+`docs/_workspace/ESTADO_SESSAO.md` e reporta fase, próxima tarefa,
+pendências, riscos e IA recomendada); `/fim` ao encerrar (reescreve
+`ESTADO_SESSAO.md` com o que mudou). `ESTADO_SESSAO.md` é o snapshot
+rápido; `docs/_workspace/TASK_ROUTER.md` continua sendo o histórico
+completo e a fonte única de estado de longo prazo.
 
 ## Documentos oficiais
 

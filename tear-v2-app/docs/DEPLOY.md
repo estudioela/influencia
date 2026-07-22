@@ -1,47 +1,80 @@
 # Deploy — TEAR V2 (`tear-v2-app`)
 
 Runbook operacional. Ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (raiz do
-repositório) para o checklist de prontidão e a lista de pendências P0/P1/P2.
+repositório) para o checklist de prontidão e a lista de pendências P0/P1/P2, e
+`docs/deployment/ARQUITETURA_PRODUCAO.md` para a decisão de arquitetura por
+trás deste runbook (Locaweb Hospedagem Linux compartilhada, sem Docker/root —
+decisão soberana de custo zero, aprovada e definitiva em 2026-07-21).
+
+> **Nota de consolidação (2026-07-22):** este runbook já descreveu, em versão
+> anterior, um fluxo baseado em Docker Compose. Essa versão ficou obsoleta no
+> mesmo dia em que foi escrita — a arquitetura de produção definitiva optou
+> por hospedagem compartilhada sem Docker/root (restrição soberana de custo
+> zero), tornando o runbook anterior tecnicamente inexecutável no ambiente
+> real. `docker-compose.yml` e os `Dockerfile` continuam existindo no
+> repositório, mas **só para desenvolvimento local** — nenhuma referência de
+> produção deve apontar para eles. `.github/workflows/tear-v2-docker.yml`
+> (build/push de imagem para GHCR) está marcado para aposentar pelo mesmo
+> motivo. Este documento substitui a versão Docker anterior pela versão
+> alinhada à decisão vigente, seguindo o mapeamento técnico já registrado em
+> `docs/deployment/IMPLEMENTACAO_TECNICA.md`.
 
 ## 1. Pré-requisitos
 
-- Docker + Docker Compose no host de destino.
-- Domínio com HTTPS (certificado via reverse proxy do provedor de
-  hosting ou Let's Encrypt — não incluído neste repositório, é decisão de
-  infraestrutura do responsável do projeto).
-- Credenciais reais: Postgres (`DB_PASSWORD`), Google Drive service
-  account (`GOOGLE_DRIVE_*`) se o upload de Material for usar Drive em vez
-  do fallback local.
+- Hospedagem Locaweb Linux já contratada: acesso SSH, Crontab, PHP 8.3,
+  PostgreSQL gerenciado pelo próprio plano, SSL emitido pelo painel, Git.
+- Domínio: subdomínio de `estudioela.com` (ex.: `tear.estudioela.com`),
+  registro DNS isolado apontando para o host Locaweb.
+- Credenciais reais: banco gerenciado (host/porta/usuário/senha do painel),
+  Google Shared Drive + Service Account dedicada (Material + backup),
+  relay SMTP incluso no plano/domínio.
+- Secrets do GitHub Actions: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`,
+  caminho absoluto de deploy no host.
+- Ajustes de código que a arquitetura exige e que precisam existir antes do
+  primeiro deploy real (detalhe em `IMPLEMENTACAO_TECNICA.md` §2): suporte a
+  Shared Drive em `GoogleDriveService.php`, `trustProxies()` em
+  `bootstrap/app.php` (proxy reverso da Locaweb), `scripts/backup-db.sh` sem
+  dependência de `docker compose exec`.
 
-## 2. Primeiro deploy (homologação ou produção)
+## 2. Pipeline de deploy (GitHub Actions + SSH, deploy atômico por symlink)
 
-```bash
-cd tear-v2-app
-cp backend/.env.production.example backend/.env
-# Editar backend/.env: preencher todo campo marcado CHANGE_ME
+Sem containers e sem orquestrador — o deploy é direto:
 
-# Gerar APP_KEY antes da primeira subida (o build ainda não existe na
-# primeira vez, então roda-se via imagem base do Composer/PHP):
-docker compose run --rm app php artisan key:generate --show
-# copiar o valor impresso para APP_KEY= no backend/.env
+1. CI (`tear-v2-ci.yml`, já existente) roda testes/lint em cada push/PR.
+2. Job de **build** (`.github/workflows/tear-v2-deploy.yml`) roda
+   `npm ci && npm run build` no runner — o Vite gera os assets estáticos.
+   Node/npm não são dependência do servidor de produção.
+3. Job de **deploy** (só na branch de produção) conecta via SSH ao host
+   Locaweb e publica os arquivos (`rsync`) em `releases/<id>/`, depois:
+   ```bash
+   cd ~/releases/<id>/
+   composer install --no-dev --optimize-autoloader
+   ln -sfn ~/shared/.env .env
+   php artisan migrate --force
+   php artisan config:cache && php artisan route:cache && php artisan view:cache
+   ln -sfn ~/releases/<id>/ ~/current
+   ```
+4. O `.env` real vive em `~/shared/.env` no host (preservado entre releases,
+   nunca commitado) — gerar a partir de `backend/.env.production.example`,
+   preenchendo todo campo `CHANGE_ME` com os valores reais (banco gerenciado,
+   SMTP incluso, Shared Drive, `TRUSTED_PROXIES`).
+5. Primeiro `APP_KEY`: gerar localmente (`php artisan key:generate --show`)
+   ou uma vez via SSH na primeira release, e copiar para `~/shared/.env`.
 
-docker compose up -d --build
-```
-
-O container `app` roda `migrate --force` automaticamente no boot
-(`backend/docker/entrypoint.sh`) antes de subir o PHP-FPM. Não é
-necessário rodar migration manualmente no primeiro deploy.
+Não há zero-downtime "de graça" — o swap de symlink é quase instantâneo, mas
+requests em voo durante `migrate`/`composer install` podem ver um estado
+transitório. Aceitável para o perfil de tráfego atual (uso administrativo
+interno, não SaaS público de alto tráfego).
 
 ## 3. Provisionar o primeiro Administrador
 
-Não existe seed de admin em produção por padrão (`DevUserSeeder` só roda
-em `local`/`testing` — decisão deliberada, ver código). Depois do
-primeiro deploy:
+Não existe seed de admin em produção por padrão (`DevUserSeeder` só roda em
+`local`/`testing`). Depois do primeiro deploy, via SSH dentro de `~/current/`:
 
 ```bash
-docker compose exec app php artisan admin:create \
+php artisan admin:create \
   --name="Nome Completo" \
-  --email="admin@dominio.com" \
+  --email="admin@estudioela.com"
   # --password é opcional; se omitido, o comando pergunta de forma oculta
 ```
 
@@ -53,25 +86,22 @@ resetar a senha de um admin existente.
 Rodar sempre, em qualquer deploy (primeiro ou subsequente), antes de
 considerar o release concluído:
 
-1. `docker compose ps` → todos os serviços `healthy` (`app`, `nginx`,
-   `frontend`, `db`); `queue` sem healthcheck dedicado, mas deve aparecer
-   `Up`, não reiniciando em loop (`docker compose logs queue` se suspeitar
-   de crash loop).
-2. `curl -f http://SEU_DOMINIO/up` → 200 (health check nativo do Laravel).
-3. `curl -f http://SEU_DOMINIO/api/health` → `{"status":"ok",...}`.
-4. Login funcional na SPA (`FRONTEND_URL`/porta do serviço `frontend`) com
-   um usuário `ADMIN` real (ver `php artisan admin:create`, §3).
-5. Uma rota autenticada de leitura responde (ex.: `GET /api/parceiras`)
-   sem 500 — confirma que a sessão/cookie/CORS/Sanctum estão coerentes
-   entre `APP_URL`/`FRONTEND_URL`/`SANCTUM_STATEFUL_DOMAINS`.
-6. `/pulse` acessível só para usuário com papel `ADMIN` (403/redirect para
+1. `curl -f https://SEU_DOMINIO/up` → 200 (health check nativo do Laravel).
+2. `curl -f https://SEU_DOMINIO/api/health` → `{"status":"ok",...}`.
+3. Certificado HTTPS válido (sem aviso de certificado no navegador).
+4. Via SSH, dentro de `~/current/`: `php artisan migrate:status` mostra
+   todas as migrations como `Ran`, nenhuma pendente.
+5. Login funcional na SPA com um usuário `ADMIN` real (ver §3).
+6. Uma rota autenticada de leitura responde (ex.: `GET /api/parceiras`) sem
+   500 — confirma que sessão/cookie/CORS/Sanctum estão coerentes entre
+   `APP_URL`/`FRONTEND_URL`/`SANCTUM_STATEFUL_DOMAINS`.
+7. `/pulse` acessível só para usuário com papel `ADMIN` (403/redirect para
    qualquer outro papel ou anônimo) — ver `docs/MONITORING.md`.
-7. Resposta de qualquer endpoint carrega o header `X-Request-Id`
-   (confirma que o middleware `RequestId` subiu com o release).
-8. Se o release tocou upload de Material: um envio real de arquivo dentro
-   dos tipos permitidos retorna sucesso (ou 503 esperado, se
-   `GOOGLE_DRIVE_*` ainda não estiver configurado no ambiente — nunca
-   500).
+8. Resposta de qualquer endpoint carrega o header `X-Request-Id` (confirma
+   que o middleware `RequestId` subiu com o release).
+9. Se o release tocou upload de Material: um envio real de arquivo dentro
+   dos tipos permitidos retorna sucesso, ou 503 esperado se
+   `GOOGLE_DRIVE_*` ainda não estiver configurado no ambiente — nunca 500.
 
 ## 5. Critérios para declarar produção saudável
 
@@ -79,88 +109,67 @@ Só declarar o deploy concluído (não só "no ar") quando **todos** os itens
 abaixo forem verdadeiros:
 
 - Smoke test da §4 passou sem nenhum item falho.
-- `docker compose logs app --since 10m` sem exceção não tratada
-  recorrente (uma exceção isolada de um teste manual do smoke test não
-  conta; um padrão repetido, sim).
-- `/pulse` (aba Exceptions/Slow requests) sem taxa de erro anômala nos
-  primeiros minutos de tráfego real — comparar contra o baseline do
-  ambiente anterior, se houver.
-- Nenhum container em `Restarting` (`docker compose ps`) 5 minutos após o
-  `up -d`.
-- Backup de banco válido e recente existe **antes** de considerar o
-  ambiente em produção operando (rodar `./scripts/backup-db.sh` uma vez
-  manualmente se o cron ainda não tiver executado, ver §8).
-- Se o deploy incluiu migration nova: `php artisan migrate:status` dentro
-  do container `app` mostra todas como `Ran`, nenhuma pendente.
+- Logs do host (`storage/logs/laravel.log` dentro de `~/current/`) sem
+  exceção não tratada recorrente nos primeiros minutos de tráfego real.
+- `/pulse` (aba Exceptions/Slow requests) sem taxa de erro anômala.
+- Backup de banco válido e recente existe **antes** de considerar o ambiente
+  em produção operando (rodar `./scripts/backup-db.sh` uma vez manualmente
+  se o cron ainda não tiver executado, ver §8).
+- Crontab do host lista as linhas de `schedule:run` e
+  `queue:work --stop-when-empty` (ver `IMPLEMENTACAO_TECNICA.md` §7).
 
 Se qualquer item falhar, tratar como deploy não concluído — seguir §7
 (Rollback) em vez de deixar o ambiente em estado parcialmente saudável.
 
 ## 6. Deploys subsequentes
 
-```bash
-git pull
-docker compose up -d --build
-```
-
-Isto reconstrói as imagens (`app`, `queue`, `frontend`) com o código
-novo, roda `migrate --force` de novo no boot (idempotente — migrations já
-aplicadas são puladas) e reinicia os containers. `nginx` e `db` não
-precisam rebuild a menos que `docker/nginx.conf` ou a versão do Postgres
-mudem.
-
-**Conteúdo de `public/` do backend** (ver comentário em
-`docker-compose.yml`, volume `app_public`): se um deploy futuro mudar
-algo dentro de `backend/public/` (raro — é só `index.php`, `favicon.ico`,
-`robots.txt` e o symlink de storage), o volume nomeado já existente não
-vai reabsorver o novo conteúdo sozinho. Nesse caso específico:
-
-```bash
-docker compose down
-docker volume rm tear-v2-app_app_public
-docker compose up -d --build
-```
+Automático: um push na branch de produção dispara o workflow de deploy
+(§2). Verificação pós-deploy é sempre a §4/§5, mesmo em releases pequenos.
 
 ## 7. Rollback
 
-Sem migration destrutiva conhecida no histórico atual (auditoria de
-`database/migrations`, ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` §Banco) — toda
-migration tem `down()` implementado. Para reverter um deploy problemático:
+Sem migration destrutiva conhecida no histórico atual (todas têm `down()`
+implementado, ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` §Banco).
+Para reverter um deploy problemático, via SSH:
 
 ```bash
-git checkout <commit-anterior-conhecido-bom>
-docker compose up -d --build
+ln -sfn ~/releases/<release-anterior-boa>/ ~/current
 # só se a migration do release com problema precisar ser desfeita:
-docker compose exec app php artisan migrate:rollback --step=1
+cd ~/current && php artisan migrate:rollback --step=1
 ```
 
 Sempre rodar `./scripts/backup-db.sh` **antes** de qualquer rollback que
-envolva `migrate:rollback` — reverter migration não restaura dado
-apagado por ela.
+envolva `migrate:rollback` — reverter migration não restaura dado apagado
+por ela. O sistema legado GAS continua no ar durante toda a operação — é o
+fallback natural se o novo domínio precisar sair de produção temporariamente.
 
 ## 8. Backup
 
 ```bash
-./scripts/backup-db.sh                # ./backups/tear_AAAAMMDD_HHMMSS.sql.gz
+./scripts/backup-db.sh   # pg_dump direto contra o banco gerenciado da Locaweb
+php artisan backup:upload-to-drive --latest   # sobe o dump ao Google Shared Drive
 ./scripts/restore-db.sh <arquivo.sql.gz>   # destrutivo, pede confirmação
 ```
 
-Agendar `backup-db.sh` via cron do **host** (fora dos containers — não há
-scheduler configurado na aplicação, ver `docs/MONITORING.md` §Automações).
-Exemplo de crontab (diário às 3h, retendo os últimos 14 arquivos):
+Agendar via crontab do host (retenção sugerida: 14 diários + 8 semanais):
 
 ```cron
-0 3 * * * cd /caminho/para/tear-v2-app && ./scripts/backup-db.sh && find ./backups -name '*.sql.gz' -mtime +14 -delete
+0 3 * * * cd ~/current && ./scripts/backup-db.sh \
+  && php artisan backup:upload-to-drive --latest \
+  && find ./backups -name '*.sql.gz' -mtime +14 -delete
 ```
 
 ## 9. O que este runbook não cobre (decisão externa, fora de escopo de código)
 
-- Escolha de provedor de hosting/domínio.
-- Certificado HTTPS / reverse proxy externo ao `docker-compose.yml` (o
-  `nginx` do compose escuta em HTTP puro na porta interna 8080 — TLS deve
-  terminar num proxy na frente, ex.: Caddy/Traefik/load balancer do
-  provedor).
-- Escala horizontal (múltiplas réplicas do `app`) — o volume `storage`
-  local não é compartilhado entre hosts; migrar para Google Drive real
-  (`GOOGLE_DRIVE_*`) ou S3-compatível antes de escalar horizontalmente
-  (mesma recomendação de `docs/planning/TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md` §5).
+- Escolha de domínio definitivo (subdomínio de `estudioela.com` já decidido
+  em arquitetura; string exata a confirmar na execução).
+- Provisionamento real do banco gerenciado, do Shared Drive/Service Account
+  e dos secrets do GitHub Actions — passos manuais no painel Locaweb/Google
+  Cloud/GitHub, detalhados em `docs/deployment/PLANO_IMPLEMENTACAO.md`
+  (Etapas 1-6).
+- Limites de CPU/memória/processo da hospedagem compartilhada — só se
+  confirmam na execução real (ver `ARQUITETURA_PRODUCAO.md` §14); se
+  `composer install --no-dev` não couber no limite do plano, alternativa é
+  rodar `composer install` no CI e subir `vendor/` já pronto via `rsync`.
+- Escala horizontal (múltiplas réplicas do `app`) — fora de escopo enquanto
+  o projeto operar sob uma hospedagem compartilhada única.
