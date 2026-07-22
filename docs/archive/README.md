@@ -66,3 +66,27 @@ reduzir arquivos soltos):
 | `BACKLOG_EXECUTIVO_MVP.md` | Backlog de execução do MVP (2026-07-20) | Registro histórico de execução (EPIC 1-6, majoritariamente concluído); backlog vigente é `docs/planning/BACKLOG_FUNCIONAL_V2_6.md`. HU-3.5 (CPF) marcada como superada por CD-01 |
 | `PLANO_EXECUCAO_MVP.md` | Sequenciamento por ondas do MVP (2026-07-20) | Ondas 0-2 concluídas; sequenciamento vigente rastreado por `docs/_workspace/TASK_ROUTER.md` + `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` |
 | `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` | Decisão Material×Briefing (2026-07-20) | Decisão já implementada (HU-4.1), sem canônico correspondente — registro histórico |
+
+### `planejamento-pre-codigo/` — ensaio de planejamento pré-código (2026-07-22)
+
+Movidos com base em `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md` e
+`docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md` (Fase 1). Os 8
+arquivos abaixo compartilham a mesma origem: ensaio de planejamento gerado
+antes de qualquer código do Sistema B (`tear-v2-app/`) existir, com estrutura
+repetitiva de seções e citações externas de blog sem relação com o TEAR.
+Validação em duas rodadas (leitura estrutural + amostragem distribuída de
+conteúdo, cruzada contra `CONTRATO_SOBERANO.md`, ADRs, SPECs, migrations/
+models reais do Laravel e páginas reais do frontend) não encontrou nenhuma
+informação exclusiva — o conhecimento vigente já está em documentos muito
+mais curtos e específicos.
+
+| Arquivo | Origem/tema | Motivo do arquivamento |
+|---|---|---|
+| `DATA_MODEL.md` | Modelo de dados teórico (DDD, Aggregate Root/Value Object) | 5.814 linhas; entidades (`Competência`, `Colaboração_Mensal`) sem correspondência em nenhum sistema real. Canônico: `docs/history/CONTRATO_SOBERANO.md` + ADRs + SPECs |
+| `DATABASE_MODEL.md` | Modelo relacional teórico | 2.998 linhas; zero ocorrência de `competencia`/`colaboracao_mensal` em todo o código real (confirmado por grep). Já autoflag do próprio projeto em `ESTADO_SESSAO.md` §4. Canônico: migrations reais (`tear-v2-app/backend/database/migrations/*.php`) + `docs/history/PLANILHA_TEAR_2.0_MAPA.md` |
+| `DOMAIN.md` | Glossário/"Linguagem Ubíqua" teórico | 3.863 linhas; vocabulário divergente do real (Campanha/Participação/Briefing/Material). Canônico: `docs/history/CONTRATO_SOBERANO.md` + `docs/PRD.md` |
+| `TEAR.md` | Glossário de domínio, variante | 2.083 linhas; mesmo padrão, nomenclatura parcialmente mais próxima do real mas ainda teórica. Já autoflag do próprio projeto. Canônico: `docs/history/CONTRATO_SOBERANO.md` + SPECs |
+| `MIGRATION.md` | Filosofia de migração de banco | 3.986 linhas, 100% agnóstica de tecnologia; convenção de nome (`M001_CriarTabelaMarca`) nunca usada nas migrations reais. Canônico: as próprias migrations reais do Laravel |
+| `SCREEN_MAP.md` | Mapa de telas pré-implementação | 2.013 linhas; nomes de tela não batem com as páginas reais (ex.: "Competências"/"Colaborações" não existem; real é `CampanhasListPage`/`CampanhaDetailPage`). Canônico: páginas reais em `tear-v2-app/frontend/src/pages/*.tsx` |
+| `STITCH_PROTOTYPE.md` | Fundamentos de protótipo (ferramenta Stitch) | 1.327 linhas, pré-implementação, sem decisão técnica vinculante. Canônico: `docs/design/stitch-export/DESIGN.md` (tokens reais, confirmados contra o CSS implementado) + páginas reais |
+| `UX_FLOW.md` | Especificação de UX pré-código | Maior arquivo do repositório (10.234 linhas); amostragem distribuída (início/25%/50%/75%/fim, incluindo os módulos Logística/Contratos/Histórico) não encontrou nenhum identificador específico do TEAR. Canônico: experiência real já implementada e testada (E2E via Playwright) + `docs/planning/BACKLOG_FUNCIONAL_V2_6.md` |
