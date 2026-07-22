@@ -10,52 +10,57 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-22
-- **Branch:** `feat/ui-design-system-ela`
+- **HEAD:** `24f7dfc148ae823926d3820d6805cd6ed335e85e` (`24f7dfc`)
+- **Branch:** `feat/ui-design-system-ela` — 19 commits à frente de `origin/feat/ui-design-system-ela`, working tree limpa
 - **Sistema em foco:** `tear-v2-app/` (Laravel + React) — plano de lançamento comercial visando 15/01/2027
-- **Fase do Plano Mestre:** Macrofase A (Go Live interno) — ainda não iniciada tecnicamente; sessão atual foi de due diligence de plano e correção de governança, não de execução de fase
+- **Fase do Plano Mestre:** Macrofase A (Go Live interno) — ainda **não iniciada tecnicamente**. Esta sessão foi de due diligence de plano, correção de governança e reconciliação de código pendente, não de execução de fase.
+- **Testes:** backend 183/183 verdes (461 assertions), Pint limpo. Frontend: `tsc -b` limpo, `oxlint` só o warning pré-existente não relacionado (`auth.tsx:80`), `vite build` ok.
 
-## 2. Última sessão concluída (resumo)
+## 2. Principal marco concluído nesta sessão
 
-- Auditoria técnica do MVP `tear-v2-app` (prontidão de Go-Live).
-- Due diligence completa do Plano Mestre por painel de 9 especialistas de IA (Founder SaaS, CTO, Staff Engineer, PM, UX, Customer Success, Security/LGPD, FinOps/DevOps, Devil's Advocate).
-- Audit Kit preparado e enviado a auditores externos (Manus, outra IA/CPO).
-- 3 auditorias externas recebidas e consolidadas — ver `RELATORIO_CONSOLIDACAO_AUDITORIAS.md` (raiz do repo).
-- **Implementado e validado (151/151 testes verdes):** consentimento LGPD explícito no nascimento do dado, no cadastro público de Parceira (antes só existia na edição).
-- **Implementado:** contradição arquitetural Docker × Locaweb resolvida na documentação (`tear-v2-app/docs/DEPLOY.md` reescrito; `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` ajustado nos pontos normativos).
-- **Investigada, não mesclada:** branch órfã `origin/worktree-spec-mvp-completa` — 16 commits, zero conflitos confirmados (`git merge-tree`), contém logística (`Envio`), cálculo automático de data de aprovação do briefing (RN-04) e campos contratuais em `Parceira`. Merge bloqueado pelo classificador de permissão (ação grande demais para a tarefa em curso) — ver `TASK_ROUTER.md` §16.
+**Merge de `worktree-spec-mvp-completa` concluído** (commit `24f7dfc`) — 16 conflitos resolvidos combinando as duas frentes (correções de LGPD/segurança desta sessão + funcionalidades da branch órfã: logística/Envio, reprovação de cadastro, dados contratuais, congelamento de participação, Materiais vinculados a Briefing, Portal reorganizado). Nenhum lado descartado indiscriminadamente. Suíte subiu de 151 para 183 testes, todos verdes. Uma regressão adicional (fora dos 16 conflitos) foi encontrada e corrigida: `PortalCampanhaDetailPage.tsx` chamava a API de upload com assinatura obsoleta — substituída pela página já construída na branch órfã (`PortalParticipacaoPage.tsx`).
+
+Também concluído nesta sessão: due diligence completa do Plano Mestre (painel de 9 especialistas), consolidação de 3 auditorias externas (`RELATORIO_CONSOLIDACAO_AUDITORIAS.md`), fix de consentimento LGPD no cadastro público, resolução da contradição Docker×Locaweb na documentação de deploy, e institucionalização deste protocolo (`/comecar`, `/fim`).
 
 ## 3. Próxima tarefa recomendada
 
-1. **Decidir e, se autorizado, executar a integração de `worktree-spec-mvp-completa`** — maior ganho por esforço da fila hoje (código pronto e testado, só falta validar pós-merge contra o frontend atual).
-2. Depois disso: iniciar de fato a Macrofase A do Plano Mestre (infraestrutura Locaweb — variáveis reais, banco gerenciado, SMTP, Google Drive).
+**Iniciar a Macrofase A do Plano Mestre (Go Live interno)** — infraestrutura Locaweb: variáveis reais de produção, banco gerenciado, SMTP, Google Drive (ver `docs/deployment/PLANO_IMPLEMENTACAO.md` para o runbook de 12 etapas já detalhado).
+
+Antes disso, recomenda-se resolver o achado da seção 5 abaixo (sobreposição de documentos de planejamento) para não carregar duplicidade para a próxima fase.
 
 ## 4. Pendências / bloqueios (decisão do responsável do projeto)
 
-- Merge de `worktree-spec-mvp-completa` — aguardando autorização explícita.
 - Preço do piloto externo (simbólico vs. real reduzido).
 - Separação da marca do produto da marca da agência, antes do registro no INPI.
 - Credenciais reais de produção (Locaweb, Google Drive, SMTP) — nenhuma preenchida ainda.
+- **Novo:** decidir o que fazer com os 4 documentos trazidos pelo merge para `docs/` raiz (ver §5) — arquivar, mesclar ao canon de `docs/planning/`, ou manter como está.
 
-## 5. Riscos ativos (top 3)
+## 5. Riscos ativos
 
-1. Validação comercial concentrada em um único piloto ainda não confirmado.
-2. Bus factor 1 — fundador único operando agência, produto e suporte.
-3. Migração de infraestrutura prevista para novembro coincide com o pico sazonal da Jescri em dezembro.
+1. **Novo, encontrado nesta sessão:** o merge trouxe 4 documentos novos direto para `docs/` raiz — `BACKLOG_EXECUTIVO_MVP.md`, `ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`, `PLANO_EXECUCAO_MVP.md`, `DECISAO_TAXONOMIA_MATERIAL_BRIEFING.md` — que se sobrepõem em escopo a documentos já canônicos em `docs/planning/` (`BACKLOG_FUNCIONAL_V2_6.md`, `ESPECIFICACAO_FUNCIONAL_TEAR_V2.5.md`, `PLANO_MESTRE_ELA_INFLUENCIA.md`). Ainda não lidos/reconciliados nesta sessão — é exatamente o tipo de duplicação documental que o projeto já identificou como dívida recorrente (`docs/governance/REPOSITORY_GOVERNANCE_AUDIT.md`). **Leitura obrigatória na próxima sessão**, ver §6.
+2. Validação comercial concentrada em um único piloto ainda não confirmado.
+3. Bus factor 1 — fundador único operando agência, produto e suporte.
+4. Migração de infraestrutura prevista para novembro coincide com o pico sazonal da Jescri em dezembro.
 
-## 6. IA recomendada para a próxima tarefa
+## 6. Documentos de leitura obrigatória na próxima sessão
 
-- **Execução de engenharia/terminal** (merge de branch, deploy, scripts, correção de código): **ChatGPT**, por padrão, pela integração com terminal — salvo instrução em contrário do responsável do projeto.
-- **Planejamento, auditoria, redação estratégica, síntese multi-fonte:** **Claude**.
-- **Design visual/UX:** sem recomendação padrão registrada ainda — anotar aqui quando a primeira tarefa desse tipo surgir.
+Além de `CLAUDE.md` §Documentos oficiais (lista padrão): os 4 documentos novos trazidos pelo merge, citados no risco #1 acima, **antes** de tocar em `docs/planning/` ou de iniciar a Macrofase A — para decidir se há conflito de conteúdo com o canon existente e evitar decidir duas vezes a mesma coisa.
 
-## 7. Prompt de handoff (modelo — `/comecar` preenche com o estado real no momento)
+## 7. IA recomendada para a próxima tarefa
+
+- **Execução de engenharia/terminal** (deploy, scripts, provisionamento de infra): **ChatGPT**, por padrão, pela integração com terminal — salvo instrução em contrário do responsável do projeto.
+- **Reconciliação de documentos/planejamento/auditoria:** **Claude**.
+- **Design visual/UX:** sem recomendação padrão registrada ainda.
+
+## 8. Prompt de handoff (modelo — `/comecar` preenche com o estado real no momento)
 
 ```
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel+React), plano de
 lançamento comercial em 15/01/2027. Estado e pendências completos em
 docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e, para histórico/decisões
-de SPEC, docs/_workspace/TASK_ROUTER.md. Leitura obrigatória antes de
-alterar código: ver CLAUDE.md §Documentos oficiais.
+de SPEC, docs/_workspace/TASK_ROUTER.md (ver §16 para o histórico do merge
+da worktree-spec-mvp-completa). Leitura obrigatória antes de alterar
+código: ver CLAUDE.md §Documentos oficiais.
 
 Tarefa desta sessão: [preencher — vem da seção 3 acima]
 
