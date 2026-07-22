@@ -2017,3 +2017,64 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   deploy; concluir validação local do Agente A; só então aprovação final
   e execução do primeiro deploy (checklist completo em
   `GO_LIVE_STATUS.md` §8).
+
+## 28. Consolidação de princípios de engenharia + Auditoria Final de Prontidão do MVP (2026-07-22)
+
+- **Consolidação de guia externo de engenharia em `CLAUDE.md`.** Recebido
+  manual externo de "vibe coding" (KISS/DRY/YAGNI, Separation of Concerns,
+  Feature-Based Folder, fluxo Auditoria→Plano→Execução→Validação→Commit,
+  regra de melhoria contínua por arquivo) com pedido de criar uma árvore
+  `docs/ai/00_MANIFESTO.md`…`08_DECISION_MATRIX.md`. Auditoria prévia
+  mostrou que a maior parte do conteúdo já existia (fluxo e "uma frente
+  por vez" em `CLAUDE.md`/`PROJECT_GOVERNANCE.md`; Feature-Based Folder
+  já coberto pela ADR-014). **Decisão: não criar a árvore `docs/ai/`**
+  (evitaria duplicar `PROJECT_GOVERNANCE.md` como fonte de governança);
+  consolidado em vez disso só o conteúdo genuinamente novo em `CLAUDE.md`
+  §Regras de execução — KISS/DRY/YAGNI nomeados explicitamente e a regra
+  de melhoria contínua por arquivo aberto (sem expandir para refatoração/
+  arquitetura/regra de negócio). Commit `b0112f2`.
+- **Auditoria Final de Prontidão do MVP** (missão dedicada, Agente B,
+  read-only): inventário funcional, fluxo de negócio ponta a ponta,
+  riscos, dívida técnica, MVP score e veredito GO/NO GO para
+  `tear-v2-app`, consolidados em `docs/reports/AUDITORIA_FINAL_MVP.md`
+  (novo). Método: síntese cruzada de `GO_LIVE_STATUS.md` (55/100),
+  `AUDITORIA_QUALIDADE_INTERNA_2_ANOS.md` (72/100),
+  `RELATORIO_QA_FUNCIONAL_MVP_TEAR_V2.md` e `ARCHITECTURE_REVIEW_V2_5.md`
+  **mais verificação independente ao vivo** (dependências reinstaladas e
+  suíte reexecutada do zero: backend 192/192 verdes, Pint limpo,
+  `tsc -b`/`vite build` limpos, `oxlint` limpo).
+  - **Divergência encontrada e resolvida:** `RELATORIO_QA_FUNCIONAL_MVP_TEAR_V2.md`
+    (2026-07-20) registrava 9/12 itens do menu lateral como
+    `<PlaceholderPage>`; leitura direta de `App.tsx` nesta sessão confirma
+    que hoje só **Logística, Documentos, Histórico e Perfil (admin)**
+    continuam como placeholder genuíno — os outros 5 já redirecionam
+    para `/campanhas`. O relatório de 2026-07-20 está desatualizado neste
+    ponto específico.
+  - **Lacuna de fluxo de negócio confirmada:** Histórico (última etapa do
+    fluxo Cadastro→…→Histórico) tem 0% de implementação em `tear-v2-app`;
+    Documentos (admin) não foi portado do sistema legado (SPEC-023).
+  - **MVP Score: 6,0/10** (Deploy 4, UX 5, Manutenibilidade 5, Segurança
+    6, Funcionalidade 6, Engenharia 7, Estabilidade 7, Documentação 8).
+  - **Veredito, refinado a pedido do responsável do projeto em dois eixos
+    separados** (sem alterar nenhuma nota): **Prontidão do Produto: GO
+    COM RESSALVAS** (núcleo comercial Cadastro→Pagamento ponta a ponta
+    testado; ressalvas de escopo/débito conhecidas e aceitáveis item a
+    item) × **Prontidão de Implantação: NO GO** (Bloqueador #4 + os 3
+    bloqueadores técnicos de deploy — impossibilidade técnica objetiva,
+    não risco aceitável). **Veredito combinado para entrega em
+    produção: NO GO**, explicitamente por motivo de infraestrutura, não
+    de maturidade de produto — nenhum trabalho adicional de feature é
+    necessário para destravar o eixo de produto.
+  - Commits `01c608b` (relatório inicial) e `908733a` (refinamento dos
+    dois eixos), pushados, refletidos no PR #65.
+- **Nenhum código alterado, nenhuma decisão de arquitetura reaberta,
+  nenhum deploy feito** — sessão exclusivamente de consolidação
+  documental/governança e auditoria read-only, conforme instrução
+  explícita.
+- **Decisão de escopo nova, pendente do responsável do projeto:**
+  Histórico e Documentos (admin) entram no recorte de MVP ou ficam
+  pós-MVP? Condiciona a leitura do eixo de Prontidão do Produto nas
+  próximas sessões.
+- **Próximo passo:** igual ao registrado no §27 (Bloqueador #4, 3
+  bloqueadores técnicos de deploy, validação local do Agente A), mais a
+  nova decisão de escopo Histórico/Documentos.
