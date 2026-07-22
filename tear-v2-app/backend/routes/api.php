@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BriefingController;
 use App\Http\Controllers\Api\CadastroPublicoController;
 use App\Http\Controllers\Api\CampanhaController;
 use App\Http\Controllers\Api\EnvioController;
+use App\Http\Controllers\Api\HistoricoAlteracaoController;
 use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\MaterialController;
 use App\Http\Controllers\Api\MedidaController;
@@ -53,6 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/parceiras/{parceira}/medidas', [MedidaController::class, 'index']);
     Route::post('/parceiras/{parceira}/medidas', [MedidaController::class, 'store']);
+
+    Route::get('/parceiras/{parceira}/historico', [HistoricoAlteracaoController::class, 'index']);
 
     Route::get('/marcas', [MarcaController::class, 'index']);
     Route::get('/marcas/{marca}', [MarcaController::class, 'show']);

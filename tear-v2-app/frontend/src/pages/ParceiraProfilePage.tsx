@@ -7,6 +7,7 @@ import {
   reprovarParceira,
   type Parceira,
 } from '../lib/parceiras';
+import { listHistorico, type HistoricoAlteracao } from '../lib/historico';
 import { useAuth } from '../lib/auth';
 import StatusBadge from '../components/StatusBadge';
 import Button, { LinkButton } from '../components/Button';
@@ -36,6 +37,8 @@ export default function ParceiraProfilePage() {
   const [motivoReprovacao, setMotivoReprovacao] = useState('');
   const [isReprovando, setIsReprovando] = useState(false);
   const [reprovacaoErro, setReprovacaoErro] = useState<string | null>(null);
+  const [historico, setHistorico] = useState<HistoricoAlteracao[] | null>(null);
+  const [historicoErro, setHistoricoErro] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -43,6 +46,15 @@ export default function ParceiraProfilePage() {
       .then(setParceira)
       .catch(() => setError('Não foi possível carregar esta parceira.'));
   }, [id]);
+
+  const isAdmin = user?.role === 'ADMIN';
+
+  useEffect(() => {
+    if (!id || !isAdmin) return;
+    listHistorico(id)
+      .then(setHistorico)
+      .catch(() => setHistoricoErro('Não foi possível carregar o histórico de alterações.'));
+  }, [id, isAdmin]);
 
   async function handleAprovar() {
     if (!parceira) return;
@@ -97,7 +109,6 @@ export default function ParceiraProfilePage() {
     return <p className={styles.loading}>Carregando…</p>;
   }
 
-  const isAdmin = user?.role === 'ADMIN';
   const podeDecidir = isAdmin && parceira.status === 'Inativa';
   const podeAprovar = podeDecidir;
   const podeReprovar = podeDecidir && !parceira.reprovado_em;
@@ -195,6 +206,37 @@ export default function ParceiraProfilePage() {
         <Field label="Endereço completo" value={parceira.endereco_completo} />
         <Field label="CEP" value={parceira.cep} />
       </section>
+
+      {isAdmin && (
+        <section className={styles.group}>
+          <h3 className={styles.groupTitle}>Histórico de alterações</h3>
+          {historicoErro && <p className={styles.error}>{historicoErro}</p>}
+          {historico === null && !historicoErro && (
+            <p className={styles.loading}>Carregando…</p>
+          )}
+          {historico?.length === 0 && (
+            <p className={styles.fieldValue}>Nenhuma alteração registrada.</p>
+          )}
+          {historico !== null && historico.length > 0 && (
+            <ul className={styles.historicoList}>
+              {historico.map((item) => (
+                <li key={item.id} className={styles.historicoItem}>
+                  <span className={styles.fieldLabel}>
+                    {item.campo}
+                    {item.criado_em
+                      ? ` — ${new Date(item.criado_em).toLocaleString('pt-BR')}`
+                      : ''}
+                    {item.autor ? ` — ${item.autor}` : ''}
+                  </span>
+                  <span className={styles.fieldValue}>
+                    {item.valor_anterior ?? '—'} → {item.valor_novo ?? '—'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <Link to="/parceiras" className={styles.backLink}>
         ← voltar para a lista

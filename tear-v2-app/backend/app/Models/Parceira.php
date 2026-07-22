@@ -90,6 +90,11 @@ class Parceira extends Model
         return $this->hasMany(ParticipacaoNaCampanha::class);
     }
 
+    public function historicoAlteracoes(): HasMany
+    {
+        return $this->hasMany(HistoricoAlteracao::class)->orderByDesc('id');
+    }
+
     public function medidaAtual(): ?MedidaInfluenciadora
     {
         return $this->medidas()->first();
