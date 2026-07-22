@@ -69,7 +69,7 @@ export default function Dashboard() {
 
         <article className={styles.card}>
           <h3 className={styles.cardTitle}>Colaborações</h3>
-          <p className={styles.cardMessage}>Você ainda não possui colaborações cadastradas.</p>
+          <p className={styles.cardMessage}>Em breve — indicador ainda não implementado.</p>
         </article>
 
         <article className={styles.card}>
@@ -91,7 +91,7 @@ export default function Dashboard() {
 
         <article className={styles.card}>
           <h3 className={styles.cardTitle}>Financeiro</h3>
-          <p className={styles.cardMessage}>Nenhum pagamento registrado.</p>
+          <p className={styles.cardMessage}>Em breve — indicador ainda não implementado.</p>
         </article>
       </section>
     </>

@@ -26,6 +26,18 @@ class CampanhaController extends Controller
 
         return CampanhaResource::collection(
             Campanha::with('marca')
+                // Mesmo escopo de participacoes() do show(): sem isto, o
+                // Portal da Influenciadora (PortalCampanhasListPage) recebia
+                // a chave `participacoes` inteiramente ausente do JSON
+                // (CampanhaResource::whenLoaded omite quando não carregada),
+                // e `campanha.participacoes[0]` quebrava o componente em
+                // runtime — sem ErrorBoundary, derrubava a SPA inteira.
+                ->with(['participacoes' => function ($query) use ($user) {
+                    if (! $user->hasRole('ADMIN')) {
+                        $query->where('parceira_id', $user->parceira?->id);
+                    }
+                    $query->with('parceira');
+                }])
                 ->when($request->query('marca_id'), fn ($query, $marcaId) => $query->where('marca_id', $marcaId))
                 ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
                 ->when(

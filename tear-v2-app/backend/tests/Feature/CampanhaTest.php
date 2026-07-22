@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Campanha;
 use App\Models\Marca;
+use App\Models\Parceira;
+use App\Models\ParticipacaoNaCampanha;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -113,6 +115,32 @@ class CampanhaTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
+    }
+
+    public function test_lista_de_campanhas_inclui_participacoes_da_propria_influenciadora(): void
+    {
+        // Regressão: CampanhaResource::whenLoaded('participacoes') omite a
+        // chave inteira do JSON quando a relação não é eager-carregada no
+        // index(). O frontend do Portal (PortalCampanhasListPage) acessa
+        // `campanha.participacoes[0]` sem guarda — a chave ausente derrubava
+        // a tela inteira (sem ErrorBoundary em main.tsx).
+        $user = User::factory()->create();
+        $parceira = Parceira::factory()->create(['status' => 'Ativa']);
+        $parceira->vincularUsuario($user);
+        Sanctum::actingAs($user);
+
+        $campanha = Campanha::factory()->for(Marca::factory())->create(['status' => 'ATIVA']);
+        $participacao = ParticipacaoNaCampanha::factory()->create([
+            'campanha_id' => $campanha->id,
+            'parceira_id' => $parceira->id,
+            'status' => 'ATIVA',
+        ]);
+
+        $response = $this->getJson('/api/campanhas');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data.0.participacoes');
+        $response->assertJsonPath('data.0.participacoes.0.id', $participacao->id);
     }
 
     public function test_pode_ver_campanha_com_marca_e_participacoes(): void

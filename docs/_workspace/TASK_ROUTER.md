@@ -1685,3 +1685,141 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   e `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` ainda descrevem o fluxo
   Docker/Coolify anterior (pendência de `IMPLEMENTACAO_TECNICA.md` §2,
   tratada em sessão própria antes da Etapa 11).
+
+  > **Correção (§20, 2026-07-22):** a nota acima estava incorreta. Ambos os
+  > documentos já haviam sido reescritos para o fluxo Locaweb/SSH no commit
+  > `ef18225`, anterior a esta sessão — o texto de `IMPLEMENTACAO_TECNICA.md`
+  > §2 que originou esta nota estava desatualizado, não os documentos em si.
+
+## 20. Correção de referências desatualizadas + reavaliação do `PLANO_IMPLEMENTACAO.md` (2026-07-22)
+
+- **Gatilho:** typo encontrado ao final da sessão anterior —
+  `IMPLEMENTACAO_TECNICA.md` referenciava
+  `ADR-015-frontend-servido-pelo-laravel-origem-unica.md` (arquivo
+  inexistente); o real é `ADR-015-frontend-servido-pelo-laravel.md`.
+  Corrigido, e confirmado que não havia outra ocorrência do nome errado no
+  repositório.
+- **Achado maior durante a reavaliação:** `IMPLEMENTACAO_TECNICA.md` §2/§3/§6/
+  §9/§10/§12 estava inteiro desatualizado — escrito como mapeamento
+  prospectivo (2026-07-21) e nunca atualizado depois que os commits
+  `29a8306` e `ac5180f` implementaram praticamente tudo que a tabela listava
+  como "precisa ajustar"/"precisa criar". Corrigido item a item com
+  referência ao commit que resolveu cada um.
+- **Achado específico:** a alegação repetida em três lugares
+  (`IMPLEMENTACAO_TECNICA.md` §2/§12 e `PLANO_IMPLEMENTACAO.md` Etapa 11) de
+  que `tear-v2-app/docs/DEPLOY.md` e
+  `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` "ainda descrevem o fluxo
+  Docker/Coolify antigo" estava **errada** — ambos já haviam sido reescritos
+  no commit `ef18225` (anterior até à criação de `IMPLEMENTACAO_TECNICA.md`
+  em `59ca61a`). Ninguém voltou para atualizar a nota depois. Corrigido nos
+  três lugares; único ajuste real necessário em `DEPLOY.md` foi alinhar a
+  chamada de build (`npm run build` → `npm run build:locaweb`, ADR-015).
+- **`PLANO_IMPLEMENTACAO.md`:** adicionada nota de status no topo (Etapas
+  5/6 executadas) e STATUS ao final de cada uma das duas etapas, sem alterar
+  o runbook das Etapas 1-4/7-12 (continuam não executadas, corretamente).
+- **Reavaliação completa das Etapas 1-12** (pedido explícito desta sessão):
+  confirmado que **todo** o trabalho tecnicamente possível sem acesso
+  externo está feito. As únicas pendências reais são infraestrutura/
+  credenciais que o agente não possui — detalhe etapa a etapa em
+  `IMPLEMENTACAO_TECNICA.md` §12 (resumo consolidado, reescrito nesta
+  sessão) e na resposta desta sessão ao usuário.
+- **Nenhum código alterado nesta sessão** — só documentação (correção de
+  referências e reavaliação de status). Nenhuma tarefa técnica nova estava
+  disponível para executar sem credenciais; nenhum trabalho foi inventado.
+- **Validação:** `grep` confirmou zero ocorrências residuais do nome de
+  arquivo incorreto; suíte de testes não foi re-executada por não haver
+  mudança de código nesta sessão.
+- **Próximo passo:** aguardando exclusivamente o responsável do projeto
+  (credenciais Locaweb/banco/DNS/Google Workspace, secrets do GitHub
+  Actions). Sem esses insumos, não há próxima tarefa de engenharia
+  disponível no TEAR V2 além de manutenção/observação.
+
+## 21. Auditoria funcional do MVP + correção de 1 bug real + revisão de menu (2026-07-22)
+
+- **Gatilho:** usuário reportou 404 ao acessar o portal via Laravel em
+  dev (`npm run dev` + `php artisan serve`) — investigado como possível
+  regressão de ADR-015. Diagnóstico: não é regressão (`/` nunca serviu o
+  portal real nesse modo, antes era a view `welcome`) — dev sempre foi
+  acessado via `:5173` (Vite). Corrigido só a mensagem de 404 (mandava
+  rodar `npm run build`, que gera `dist/`, não `public/build/index.html`
+  — só `build:locaweb` faz isso) e adicionado aviso específico em
+  ambiente local.
+- **Auditoria funcional completa do MVP** (código real, não documentação)
+  pedida pelo usuário: mapeou todos os itens de menu do Admin e do Portal
+  da Influenciadora contra a implementação real. Achados principais:
+  - **Bug real e crítico, corrigido:** `PortalCampanhasListPage.tsx`
+    acessava `campanha.participacoes[0]` sem guarda; `CampanhaController::index()`
+    não fazia eager-load de `participacoes`; `CampanhaResource::whenLoaded`
+    omitia a chave inteira do JSON; sem `ErrorBoundary` em `main.tsx`, a
+    SPA inteira quebrava ao abrir "Campanhas" no Portal — sempre que a
+    influenciadora tinha ao menos uma campanha real (caminho feliz, não
+    caso de borda). Corrigido: `CampanhaController::index()` agora
+    eager-carrega `participacoes` (escopada por parceira quando
+    não-ADMIN, mesmo padrão do `show()`); frontend ganhou `?.` defensivo.
+    Teste de regressão: `CampanhaTest::test_lista_de_campanhas_inclui_participacoes_da_propria_influenciadora`.
+    Validado ao vivo no navegador (login como influenciadora, campanha
+    real, "ver" abre a participação sem crash).
+  - **Falso positivo da própria auditoria, corrigido antes de agir:**
+    `MedidaController::store` sempre cria um novo registro em vez de
+    fazer update — isto **não é bug**. Existe teste dedicado
+    (`MedidaInfluenciadoraTest::test_nova_medida_nao_sobrescreve_a_anterior_e_medida_atual_e_a_mais_recente`)
+    e um accessor `Parceira::medidaAtual()` — histórico de medidas é
+    design deliberado e testado. Nenhuma mudança feita neste controller;
+    decisão de transformar em update-in-place fica para o responsável do
+    projeto, se quiser abrir mão do histórico.
+  - **9 itens de menu do Admin** (Colaborações, Briefings, Materiais,
+    Aprovações, Logística, Pagamentos, Documentos, Histórico, Perfil)
+    prometiam telas que não existem como visão própria (a maioria
+    redirecionava para `/campanhas`; 4 eram `PlaceholderPage` "Em
+    construção"). **Decisão do usuário:** não remover nada da
+    arquitetura/rotas/componentes — só desabilitar a navegação no menu,
+    rotulando `"Item (em breve)"`, sem link. Implementado em
+    `AppShell.tsx` (`NAV_ITEMS` sem `to` para esses 9 itens); `App.tsx`,
+    `PlaceholderPage.tsx`/`.module.css` e as rotas de drill-down
+    (`/participacoes/:id/briefing|materiais|pagamento|envio`, já
+    funcionais) permanecem intactos. Dois cards estáticos do Dashboard
+    admin ("Colaborações", "Financeiro") tiveram só o texto trocado para
+    "Em breve — indicador ainda não implementado" (antes soava como dado
+    real).
+  - **`GESTOR_MARCA`:** papel seedado mas sem nenhuma tela alcançável
+    (não há UI de criação de usuário com esse papel) — `CampanhaController`/
+    `ParceiraController` retornam vazio ou 403 para ele. Sem risco ativo
+    hoje (já registrado como P1 em `GO_LIVE_CHECKLIST.md`); não é
+    bloqueio de MVP.
+- **Validação:** backend 192/192 verde (478 assertions), Pint limpo,
+  `tsc -b`/`vite build`/`oxlint` do frontend limpos. Verificação visual
+  no navegador (login admin e influenciadora) confirmando o menu reduzido
+  e o fluxo antes quebrado agora funcional.
+- **Próximo passo:** MVP funcionalmente pronto para a fase de
+  infraestrutura (ver §22).
+
+## 22. Consolidação do plano de implantação (Go-Live) (2026-07-22)
+
+- **Pedido:** inventário completo de dependências de infraestrutura
+  externa, em ordem de execução, com objetivo/dependências/onde
+  configurar/como validar/critérios de aceite por item, consolidado num
+  `PLANO_DE_IMPLANTACAO.md`.
+- **Criado:** `docs/deployment/PLANO_DE_IMPLANTACAO.md` — documento único
+  de execução do Go-Live, 17 etapas (domínio → acesso Locaweb → Postgres
+  → DNS → Google Drive → SMTP → `APP_KEY` → `.env` real → secrets do
+  GitHub → estrutura de diretórios no host → primeiro deploy →
+  provisionar admin → backup → fila/scheduler → uptime check → smoke
+  test → corte para produção), mais rollback e rotina pós-go-live.
+  Nenhuma decisão de arquitetura reaberta — consolida e corrige (não
+  substitui) `PLANO_IMPLEMENTACAO.md`, `CONFIGURACAO_PRODUCAO.md`,
+  `DEPLOY.md` e `GO_LIVE_CHECKLIST.md`.
+- **Achado durante a consolidação:** `CONFIGURACAO_PRODUCAO.md` e
+  `MONITORING.md` ainda tinham comandos de exemplo da arquitetura Docker
+  anterior (ex.: `docker compose run --rm app php artisan key:generate`),
+  nunca atualizados quando `ARQUITETURA_PRODUCAO.md` (2026-07-21) mudou
+  para Locaweb sem Docker. Corrigido o comando de `APP_KEY` em
+  `CONFIGURACAO_PRODUCAO.md`; adicionada nota de ponteiro no topo dos 4
+  documentos consolidados (nenhum arquivo foi apagado ou arquivado — só
+  o `PLANO_DE_IMPLANTACAO.md` passa a ser a ordem de execução oficial).
+- **Nenhum código alterado** — só documentação (consolidação +
+  correção de referências desatualizadas), conforme instrução explícita
+  do usuário ("não implemente novas funcionalidades... apenas atividades
+  de implantação, configuração, segurança, validação e operação").
+- **Próximo passo:** aguardando o responsável do projeto executar as
+  Etapas 1-10 de `PLANO_DE_IMPLANTACAO.md` (decisões e credenciais
+  externas) — nenhuma delas pode ser feita pelo agente.

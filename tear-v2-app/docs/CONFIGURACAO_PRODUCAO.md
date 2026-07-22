@@ -1,5 +1,15 @@
 # Configuração de Produção — `tear-v2-app`
 
+> **Nota (2026-07-22):** a ordem de execução oficial do Go-Live é
+> `docs/deployment/PLANO_DE_IMPLANTACAO.md`. Este documento continua
+> valendo como auditoria de referência de cada variável (o que faz,
+> impacto se ausente) — só os comandos de exemplo com `docker compose`
+> abaixo estão desatualizados: a arquitetura vigente é Locaweb sem
+> Docker (`docs/deployment/ARQUITETURA_PRODUCAO.md`, 2026-07-21). Onde
+> este documento disser `docker compose run --rm app ...`, o comando
+> real é o mesmo `php artisan ...` rodado via SSH dentro de
+> `~/tear/current/` — ver `PLANO_DE_IMPLANTACAO.md` Etapa 7.
+
 Auditoria de todas as variáveis de ambiente usadas pelo backend (Laravel
 12) e pelo frontend (Vite/React), com o que é obrigatório preencher para
 o Go-Live. **Nenhuma credencial real está neste documento** — só nomes,
@@ -157,7 +167,7 @@ estas variáveis hoje **não tem efeito nenhum**:
 
 ### APP_KEY
 - [ ] Nunca reaproveitar a `APP_KEY` de dev/homologação em produção.
-- [ ] Gerar com `docker compose run --rm app php artisan key:generate --show` no primeiro deploy do ambiente.
+- [ ] Gerar com `php artisan key:generate --show` (local ou via SSH no host — ver `PLANO_DE_IMPLANTACAO.md` Etapa 7).
 - [ ] Colar o valor gerado em `APP_KEY=` no `.env` real do ambiente de produção.
 - [ ] Guardar a chave em um gestor de segredos — trocá-la invalida todas as sessões/cookies ativos.
 

@@ -2,20 +2,27 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import styles from './AppShell.module.css';
 
+// Itens sem `to` ficam desabilitados (span não clicável, ver NavList) em vez
+// de removidos: a rota e a página continuam existindo em App.tsx — só a
+// navegação pelo menu é que fica em espera até cada item ter uma visão
+// própria pronta (auditoria de MVP, 2026-07-22). Briefing/Materiais/
+// Pagamentos/Envio já são funcionais via drill-down a partir de
+// Campanhas/Parceiras; os demais (Logística/Documentos/Histórico/Perfil)
+// ainda não têm nenhuma implementação.
 const NAV_ITEMS: { label: string; to?: string }[] = [
   { label: 'Painel', to: '/' },
   { label: 'Marcas', to: '/marcas' },
   { label: 'Parceiras', to: '/parceiras' },
   { label: 'Campanhas', to: '/campanhas' },
-  { label: 'Colaborações', to: '/colaboracoes' },
-  { label: 'Briefings', to: '/briefings' },
-  { label: 'Materiais', to: '/materiais' },
-  { label: 'Aprovações', to: '/aprovacoes' },
-  { label: 'Logística', to: '/logistica' },
-  { label: 'Pagamentos', to: '/pagamentos' },
-  { label: 'Documentos', to: '/documentos' },
-  { label: 'Histórico', to: '/historico' },
-  { label: 'Perfil', to: '/perfil' },
+  { label: 'Colaborações (em breve)' },
+  { label: 'Briefings (em breve)' },
+  { label: 'Materiais (em breve)' },
+  { label: 'Aprovações (em breve)' },
+  { label: 'Logística (em breve)' },
+  { label: 'Pagamentos (em breve)' },
+  { label: 'Documentos (em breve)' },
+  { label: 'Histórico (em breve)' },
+  { label: 'Perfil (em breve)' },
 ];
 
 function getInitials(name: string): string {

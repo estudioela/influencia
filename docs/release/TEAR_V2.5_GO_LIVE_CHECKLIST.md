@@ -1,5 +1,14 @@
 # TEAR V2.5 — Checklist de Go-Live (Produtização)
 
+> **Nota (2026-07-22):** a ordem de execução oficial do Go-Live é
+> `docs/deployment/PLANO_DE_IMPLANTACAO.md`. Este documento continua
+> valendo como histórico auditável de P0/P1/P2 e do que foi entregue em
+> cada sessão — as duas caixas não marcadas na seção "Deploy" de §6
+> (`tear-v2-deploy.yml` e aposentar `tear-v2-docker.yml`) já estão
+> resolvidas (commit `ac5180f`, ver `TASK_ROUTER.md` §19); a marcação
+> abaixo não foi atualizada para preservar o histórico da sessão que a
+> escreveu.
+
 Data: 2026-07-21
 Autor: Agente B (sessão dedicada a produtização, mandato de operação
 autônoma de 2026-07-16, `CLAUDE.md`)

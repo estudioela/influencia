@@ -59,7 +59,7 @@ export default function PortalCampanhasListPage() {
                   <Badge label={campanha.status} tone={campanhaStatusTone(campanha.status)} />
                 </td>
                 <td className={styles.actionCell}>
-                  {campanha.participacoes[0] && (
+                  {campanha.participacoes?.[0] && (
                     <Link
                       to={`/participacoes/${campanha.participacoes[0].id}`}
                       className={styles.actionLink}

@@ -1,5 +1,10 @@
 # Deploy — TEAR V2 (`tear-v2-app`)
 
+> **Nota (2026-07-22):** a ordem de execução oficial do Go-Live, com
+> critérios de aceite por etapa, é `docs/deployment/PLANO_DE_IMPLANTACAO.md`.
+> Este runbook continua correto e serve como detalhe narrativo do mesmo
+> fluxo.
+
 Runbook operacional. Ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (raiz do
 repositório) para o checklist de prontidão e a lista de pendências P0/P1/P2, e
 `docs/deployment/ARQUITETURA_PRODUCAO.md` para a decisão de arquitetura por
@@ -42,10 +47,13 @@ Sem containers e sem orquestrador — o deploy é direto:
 
 1. CI (`tear-v2-ci.yml`, já existente) roda testes/lint em cada push/PR.
 2. Job de **build** (`.github/workflows/tear-v2-deploy.yml`) roda
-   `npm ci && npm run build` no runner — o Vite gera os assets estáticos.
-   Node/npm não são dependência do servidor de produção.
-3. Job de **deploy** (só na branch de produção) conecta via SSH ao host
-   Locaweb e publica os arquivos (`rsync`) em `releases/<id>/`, depois:
+   `npm ci && npm run build:locaweb` no runner — o Vite gera os assets
+   estáticos direto em `backend/public/build` (origem única, Laravel serve
+   o frontend — ver ADR-015). Node/npm não são dependência do servidor de
+   produção.
+3. Job de **deploy** (mesmo workflow, só na branch de produção) conecta via
+   SSH ao host Locaweb e publica os arquivos (`rsync`) em `releases/<id>/`,
+   depois:
    ```bash
    cd ~/releases/<id>/
    composer install --no-dev --optimize-autoloader

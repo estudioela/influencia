@@ -1,14 +1,28 @@
 # PLANO_IMPLEMENTACAO.md — TEAR V2.5
 
+> **Superseded para fins de execução (2026-07-22):**
+> `docs/deployment/PLANO_DE_IMPLANTACAO.md` é agora a fonte única de
+> ordem de execução e critérios de aceite do Go-Live — consolida este
+> documento, `CONFIGURACAO_PRODUCAO.md`, `DEPLOY.md` e o
+> `GO_LIVE_CHECKLIST.md`, corrigido para o estado real do código. Este
+> arquivo permanece como referência histórica (runbook original,
+> detalhe etapa a etapa antes da consolidação).
+
 **Fonte única desta implementação:** `ARQUITETURA_PRODUCAO.md` (revisado,
 decisão definitiva 2026-07-21 — Locaweb Hospedagem Linux, PostgreSQL
 gerenciado, deploy via GitHub Actions + SSH, zero custo recorrente
 adicional). Este documento não reavalia nenhuma escolha registrada lá —
 apenas a transforma em etapas executáveis, em ordem.
 
-**Natureza deste documento:** é um runbook para execução futura. Nenhum
-comando aqui foi rodado, nenhum recurso foi provisionado, nenhum código foi
-alterado nesta sessão.
+**Natureza deste documento:** nasceu como runbook para execução futura, sem
+nenhum comando rodado/recurso provisionado/código alterado. **Atualização de
+2026-07-22:** as Etapas 5 e 6 (as duas que não dependem de credenciais/acesso
+externo) já foram executadas — código commitado e pushado (`29a8306`,
+`ac5180f`), arquitetura formalizada em
+`docs/adrs/ADR-015-frontend-servido-pelo-laravel.md`, registro completo em
+`docs/_workspace/TASK_ROUTER.md` §18/§19. As Etapas 1-4 e 7-12 continuam como
+runbook não executado — bloqueadas exclusivamente por credenciais/acesso que
+o agente não possui (ver status ao final de cada etapa abaixo).
 
 **Escopo:** `tear-v2-app/`. O sistema legado GAS (`src/`) continua em
 produção sem alteração durante toda a execução deste plano — é o
@@ -201,6 +215,14 @@ deploy.
 **Rollback:** reverter o commit do workflow — nenhum impacto em produção
 (esta etapa só prepara o pipeline).
 
+**STATUS (2026-07-22): ✅ concluída.** `.github/workflows/tear-v2-deploy.yml`
+builda o frontend com `npm run build:locaweb` direto em
+`tear-v2-app/backend/public/build` (arquitetura ADR-015 — Laravel serve o
+build, origem única — em vez de artifact solto consumido por um job
+separado, simplificação que dispensa a etapa de download/upload de
+artifact entre jobs). Testado localmente e no workflow. Sem bloqueio
+externo.
+
 ---
 
 ## Etapa 6 — Configurar o job de deploy via SSH no GitHub Actions
@@ -245,6 +267,15 @@ symlink — sem ainda apontar tráfego real (isso só acontece após a Etapa
 **Rollback:** apagar a release recém-criada em `~/releases/<id>/` e
 manter `current` apontando para a release anterior (ou para nenhuma, se
 for a primeira execução). Nenhum tráfego real depende disso ainda.
+
+**STATUS (2026-07-22): código ✅ concluído, execução real ⛔ bloqueada por
+credenciais.** `tear-v2-app/scripts/deploy-locaweb.sh` e o job de deploy em
+`.github/workflows/tear-v2-deploy.yml` estão prontos e o workflow falha
+rápido e visível (`::error::`, sem tentar conectar) se os secrets
+`SSH_HOST`/`SSH_USER`/`SSH_PRIVATE_KEY`/`DEPLOY_BASE_PATH` não estiverem
+cadastrados — o que é o caso hoje. Nenhum código adicional depende de
+decisão técnica; falta só o responsável do projeto cadastrar os 4 secrets
+(Etapa 1 deste plano) para a etapa rodar de fato.
 
 ---
 
@@ -384,15 +415,15 @@ para receber usuários reais.
 **Pré-requisitos:** Etapas 7, 8, 9 e 10 concluídas.
 
 **Comandos:** seguir o runbook de smoke test já existente em
-`tear-v2-app/docs/DEPLOY.md` — **atenção:** esse documento ainda descreve
-o fluxo Docker/Coolify anterior e precisa de revisão própria antes desta
-etapa ser executada de fato (pendência registrada em
-`IMPLEMENTACAO_TECNICA.md` §2, fora do escopo desta revisão de
-arquitetura).
+`tear-v2-app/docs/DEPLOY.md` §4 — já reescrito para o fluxo Locaweb/SSH
+(commit `ef18225`, confirmado e alinhado ao ADR-015 em 2026-07-22); **não**
+depende mais de revisão antes desta etapa.
 
 **Arquivos envolvidos:**
-- `tear-v2-app/docs/DEPLOY.md` (pendente de revisão — ver nota acima)
-- `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (pendente de revisão — mesma nota)
+- `tear-v2-app/docs/DEPLOY.md` (✅ pronto)
+- `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (✅ pronto — P0-2/P0-9 já
+  refletem a arquitetura Locaweb; permanecem abertos só pela credencial
+  real, não por texto desatualizado)
 
 **Critérios de sucesso:** containers/processos saudáveis (equivalente
 `php-fpm`/cron ativo), `/up` e `/api/health` OK, login ADMIN funcional,
@@ -437,14 +468,14 @@ incidente ser resolvido.
 
 ## O que este plano não cobre (fora de escopo por instrução explícita)
 
-- Execução de qualquer comando acima.
-- Alteração de qualquer arquivo do repositório.
+- Execução de qualquer comando das Etapas 1-4 e 7-12 (todas dependem de
+  credenciais/acesso externo — ver STATUS de cada etapa acima; Etapas 5/6
+  já foram executadas, ver nota no topo do documento).
 - Criação real de contas, banco gerenciado, DNS records ou secrets do
   GitHub.
 - Reavaliação de qualquer escolha de `ARQUITETURA_PRODUCAO.md`.
-- Reescrita de `tear-v2-app/docs/DEPLOY.md` e
-  `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (pendência registrada, tratada em
-  sessão própria antes da Etapa 11).
 
-Execução real é trabalho de uma sessão futura, autorizada explicitamente
-para isso.
+Execução das Etapas 1-4 e 7-12 é trabalho de uma sessão futura, quando as
+credenciais/acessos abaixo estiverem disponíveis — ver
+`docs/deployment/IMPLEMENTACAO_TECNICA.md` §12 para o resumo consolidado do
+que falta.

@@ -12,7 +12,7 @@ executado — ver nota de status em cada item da tabela de §2/§3 e
 `docs/_workspace/TASK_ROUTER.md` §18 para o registro da execução.
 **Decisão de arquitetura fechada nesta execução:** o frontend é servido
 pelo Laravel a partir de `public/build`, origem única — ver ADR-015
-(`docs/adrs/ADR-015-frontend-servido-pelo-laravel-origem-unica.md`), que
+(`docs/adrs/ADR-015-frontend-servido-pelo-laravel.md`), que
 resolve a lacuna que existia entre este documento (já assumia
 `public/build`) e o código (ainda não tinha a fiação).
 
@@ -58,15 +58,15 @@ A ordem segue dependência real:
 
 | Arquivo | Motivo | STATUS |
 |---|---|---|
-| `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Suporte a Shared Drive exige `supportsAllDrives=true` (em `files.create`/upload) e `includeItemsFromAllDrives=true`+`corpora=drive`+`driveId` (em `files.list`, usado por `ensureFolder`) — hoje nenhum dos dois existe no código. Sem isso, `ensureFolder`/`uploadFile` falham silenciosamente contra um Shared Drive, mesmo com credenciais corretas. Necessário independente da hospedagem escolhida. | precisa ajustar |
-| `tear-v2-app/backend/bootstrap/app.php` | `$middleware->trustProxies(at: [...])` — a Locaweb compartilhada expõe a aplicação atrás de um proxy reverso do próprio provedor; sem confiar nesse proxy, `Request::ip()` (rate-limit de `/login`) e a detecção de HTTPS ficam incorretas. O IP/CIDR exato só é confirmável na Etapa 1 do `PLANO_IMPLEMENTACAO.md` — usar variável de ambiente (`TRUSTED_PROXIES`), nunca hardcode. | precisa ajustar |
+| `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Suporte a Shared Drive exige `supportsAllDrives=true` (em `files.create`/upload) e `includeItemsFromAllDrives=true`+`corpora=drive`+`driveId` (em `files.list`, usado por `ensureFolder`) — hoje nenhum dos dois existe no código. Sem isso, `ensureFolder`/`uploadFile` falham silenciosamente contra um Shared Drive, mesmo com credenciais corretas. Necessário independente da hospedagem escolhida. | ✅ ajustado (commit `29a8306`) |
+| `tear-v2-app/backend/bootstrap/app.php` | `$middleware->trustProxies(at: [...])` — a Locaweb compartilhada expõe a aplicação atrás de um proxy reverso do próprio provedor; sem confiar nesse proxy, `Request::ip()` (rate-limit de `/login`) e a detecção de HTTPS ficam incorretas. O IP/CIDR exato só é confirmável na Etapa 1 do `PLANO_IMPLEMENTACAO.md` — usar variável de ambiente (`TRUSTED_PROXIES`), nunca hardcode. | ✅ ajustado (commit `29a8306`) — `TRUSTED_PROXIES` já lido via `env()`; valor real do CIDR ainda depende da Etapa 1 |
 | `tear-v2-app/backend/composer.json` | Nenhuma dependência nova obrigatória — `resend/resend-laravel` e `sentry/sentry-laravel` saem do caminho crítico (viram melhoria opcional, só entram se/quando habilitadas). | sem mudança obrigatória |
-| `tear-v2-app/backend/.env.production.example` | Remover qualquer referência a host de serviço Docker (`DB_HOST=db`); apontar `DB_*` para o banco gerenciado da Locaweb; `MAIL_MAILER=smtp` com host/porta do relay incluso no plano (não Resend); adicionar `TRUSTED_PROXIES`, `GOOGLE_DRIVE_BACKUP_FOLDER_ID`; manter `SESSION_DOMAIN`/`APP_URL`/`SANCTUM_STATEFUL_DOMAINS` apontando para o subdomínio de produção. | precisa ajustar |
+| `tear-v2-app/backend/.env.production.example` | Remover qualquer referência a host de serviço Docker (`DB_HOST=db`); apontar `DB_*` para o banco gerenciado da Locaweb; `MAIL_MAILER=smtp` com host/porta do relay incluso no plano (não Resend); adicionar `TRUSTED_PROXIES`, `GOOGLE_DRIVE_BACKUP_FOLDER_ID`; manter `SESSION_DOMAIN`/`APP_URL`/`SANCTUM_STATEFUL_DOMAINS` apontando para o subdomínio de produção. | ✅ ajustado (commits `29a8306` + `ac5180f` — `SESSION_DOMAIN`/`FRONTEND_URL` corrigidos para origem única, ver ADR-015); valores `CHANGE_ME` só preenchíveis com credenciais reais (Etapa 1-4) |
 | `tear-v2-app/docker-compose.yml` | **Deixa de ser o artefato de deploy de produção.** Mantido só como ambiente de desenvolvimento local (uso já existente) — nenhuma referência de produção deve apontar para ele. | mantido só para dev local |
-| `tear-v2-app/scripts/backup-db.sh` | Reescrever: remover qualquer referência a `docker compose exec`; rodar `pg_dump` direto contra host/porta do banco gerenciado (via `PGPASSWORD`/`.pgpass`); ao final, chamar o comando Artisan novo (§3) que sobe o dump ao Google Drive. | precisa ajustar |
-| `tear-v2-app/docs/DEPLOY.md` | Runbook assume hoje deploy manual via Docker Compose — precisa de reescrita completa para o fluxo GitHub Actions + SSH + symlink. **Registrado como pendência desta revisão, não reescrito nesta sessão** (fora do escopo dos três documentos pedidos) — sinalizar antes de iniciar a Etapa 11 do `PLANO_IMPLEMENTACAO.md`. | pendente (fora do escopo desta revisão) |
-| `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` | P0-2 (banco em produção) e P0-9 (variáveis reais) precisam ser reescritos à luz da nova arquitetura (Postgres gerenciado da Locaweb, não Droplet/Docker). **Mesma nota acima** — pendência registrada, não reescrito nesta sessão. | pendente (fora do escopo desta revisão) |
-| `docs/_workspace/TASK_ROUTER.md` | Registrar a mudança de arquitetura (substituição da decisão DigitalOcean/Coolify por Locaweb) quando a execução real começar — convenção já usada no projeto. | precisa ajustar (só na execução) |
+| `tear-v2-app/scripts/backup-db.sh` | Reescrever: remover qualquer referência a `docker compose exec`; rodar `pg_dump` direto contra host/porta do banco gerenciado (via `PGPASSWORD`/`.pgpass`); ao final, chamar o comando Artisan novo (§3) que sobe o dump ao Google Drive. | ✅ ajustado (commit `29a8306`) |
+| `tear-v2-app/docs/DEPLOY.md` | Runbook assume hoje deploy manual via Docker Compose — precisa de reescrita completa para o fluxo GitHub Actions + SSH + symlink. | ✅ já reescrito (commit `ef18225`, anterior a esta tabela — a nota de "pendente" abaixo estava desatualizada). Alinhado nesta revisão (2026-07-22) para citar `npm run build:locaweb` (ADR-015) em vez do script genérico. |
+| `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` | P0-2 (banco em produção) e P0-9 (variáveis reais) precisam ser reescritos à luz da nova arquitetura (Postgres gerenciado da Locaweb, não Droplet/Docker). | ✅ já reescrito (commit `ef18225`) — P0-2/P0-9 já descrevem corretamente Postgres gerenciado da Locaweb; ambos permanecem 🔴 abertos só pela credencial/instância real, não por texto desatualizado. |
+| `docs/_workspace/TASK_ROUTER.md` | Registrar a mudança de arquitetura (substituição da decisão DigitalOcean/Coolify por Locaweb) quando a execução real começar — convenção já usada no projeto. | ✅ ajustado (§18 registrou o bloqueio, §19 registrou a resolução via ADR-015) |
 
 ---
 
@@ -74,11 +74,11 @@ A ordem segue dependência real:
 
 | Arquivo | Motivo | STATUS |
 |---|---|---|
-| `.github/workflows/tear-v2-deploy.yml` | Job de build do frontend (`npm ci && npm run build`) + deploy via SSH (rsync/scp + comandos remotos) para o host Locaweb, com deploy atômico por symlink. | precisa criar |
-| `tear-v2-app/scripts/deploy-locaweb.sh` | Script chamado pelo job de deploy — cria `releases/<id>/`, roda `composer install`/`migrate`/`cache`, faz o swap do symlink `current`. | precisa criar |
-| `tear-v2-app/backend/app/Console/Commands/BackupDatabaseToDrive.php` | Comando Artisan que sobe o dump gerado por `backup-db.sh` para o Google Shared Drive, reaproveitando `GoogleDriveService` — substitui o upload para object storage externo da versão anterior. | precisa criar |
-| `tear-v2-app/scripts/crontab.example` | Documentar as linhas de cron do host Locaweb (backup, `schedule:run`, `queue:work --stop-when-empty`) de forma reprodutível. | precisa criar |
-| Registro DNS `A`/`CNAME` do subdomínio escolhido apontando para o host Locaweb | Não é arquivo do repositório. | precisa criar (fora do repo) |
+| `.github/workflows/tear-v2-deploy.yml` | Job de build do frontend (`npm run build:locaweb`, ver ADR-015) + deploy via SSH (rsync/scp + comandos remotos) para o host Locaweb, com deploy atômico por symlink. | ✅ criado (commit `ac5180f`) — sintaticamente pronto; execução real depende dos secrets de SSH (§7/§9), ainda não cadastrados |
+| `tear-v2-app/scripts/deploy-locaweb.sh` | Script chamado pelo job de deploy — cria `releases/<id>/`, roda `composer install`/`migrate`/`cache`, faz o swap do symlink `current`. | ✅ criado (commit `ac5180f`) |
+| `tear-v2-app/backend/app/Console/Commands/BackupDatabaseToDrive.php` | Comando Artisan que sobe o dump gerado por `backup-db.sh` para o Google Shared Drive, reaproveitando `GoogleDriveService` — substitui o upload para object storage externo da versão anterior. | ✅ criado (commit `29a8306`), com teste dedicado e notificação de falha (`BackupFalhouNotification`) |
+| `tear-v2-app/scripts/crontab.example` | Documentar as linhas de cron do host Locaweb (backup, `schedule:run`, `queue:work --stop-when-empty`) de forma reprodutível. | ✅ criado (commit `29a8306`) — arquivo pronto; instalação real no crontab do host depende do host existir (Etapa 1/9/10) |
+| Registro DNS `A`/`CNAME` do subdomínio escolhido apontando para o host Locaweb | Não é arquivo do repositório. | pendente — só infraestrutura externa (Etapa 3) |
 
 ---
 
@@ -116,9 +116,9 @@ nenhuma etapa do `PLANO_IMPLEMENTACAO.md`.
 |---|---|---|
 | `backend/Dockerfile` / `frontend/Dockerfile` | mantidos só para **dev local** | Não são mais o artefato de produção — produção não usa Docker. |
 | `docker-compose.yml` | mantido só para **dev local** | Nenhuma referência de produção deve apontar para ele. |
-| `.github/workflows/tear-v2-deploy.yml` | precisa criar | Ver §3 — build do frontend + deploy via SSH. |
-| `tear-v2-app/scripts/deploy-locaweb.sh` | precisa criar | Ver §3 — estrutura `releases/`/`current`. |
-| Estrutura de diretórios no host Locaweb (`releases/`, `current` symlink, `shared/` para `.env`/storage persistente entre releases) | precisa criar | Convenção padrão de deploy atômico via SSH, criada manualmente na primeira execução da Etapa 6/7 do plano. |
+| `.github/workflows/tear-v2-deploy.yml` | ✅ criado | Ver §3 — build do frontend + deploy via SSH. |
+| `tear-v2-app/scripts/deploy-locaweb.sh` | ✅ criado | Ver §3 — estrutura `releases/`/`current`. |
+| Estrutura de diretórios no host Locaweb (`releases/`, `current` symlink, `shared/` para `.env`/storage persistente entre releases) | pendente — só infraestrutura externa | Convenção padrão de deploy atômico via SSH, criada manualmente na primeira execução da Etapa 6/7 do plano (depende do host existir). |
 
 ---
 
@@ -142,8 +142,8 @@ do repositório:
 | Item | STATUS | Detalhe |
 |---|---|---|
 | `docker-compose.yml`, serviço `db` | mantido só para **dev local** | Produção não usa esse serviço — usa o banco gerenciado da Locaweb. |
-| `backend/.env.production.example` (`DB_*`) | precisa ajustar | Valores reais vêm do banco gerenciado (host/porta/credenciais do painel), não de um serviço `db` de compose. |
-| Instância real provisionada/confirmada no painel Locaweb | precisa criar/confirmar | Etapa 2 do `PLANO_IMPLEMENTACAO.md`. |
+| `backend/.env.production.example` (`DB_*`) | ✅ ajustado | Template já aponta `DB_CONNECTION=pgsql` com campos `CHANGE_ME` para host/porta/credenciais do banco gerenciado — não referencia mais serviço `db` de compose. |
+| Instância real provisionada/confirmada no painel Locaweb | pendente — só infraestrutura externa | Etapa 2 do `PLANO_IMPLEMENTACAO.md`. |
 
 ---
 
@@ -152,9 +152,9 @@ do repositório:
 | Item | STATUS | Detalhe |
 |---|---|---|
 | `.github/workflows/tear-v2-ci.yml` (testes/lint) | já existe | Inalterado — continua rodando em cada push/PR. |
-| `.github/workflows/tear-v2-docker.yml` (build+push GHCR) | **aposentar** | Deixa de fazer sentido — produção não consome imagem Docker. Remoção é limpeza a ser feita na sessão de execução, não bloqueia nada. |
-| `.github/workflows/tear-v2-deploy.yml` | precisa criar | Ver §3/§6 — build do frontend + deploy via SSH, job novo do fluxo de produção. |
-| Secrets do GitHub (`SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`) | precisa criar | Nas Settings do repositório, usados pelo job de deploy. |
+| `.github/workflows/tear-v2-docker.yml` (build+push GHCR) | ✅ removido (commit `ac5180f`) | Produção não consome mais imagem Docker. |
+| `.github/workflows/tear-v2-deploy.yml` | ✅ criado (commit `ac5180f`) | Ver §3/§6 — build do frontend + deploy via SSH, job novo do fluxo de produção. |
+| Secrets do GitHub (`SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`, `DEPLOY_BASE_PATH`) | pendente — só infraestrutura externa | Nas Settings do repositório, usados pelo job de deploy. Workflow já falha rápido e visível (`::error::`) se ausentes, em vez de tentar conectar com credenciais vazias. |
 
 ---
 
@@ -162,10 +162,10 @@ do repositório:
 
 | Item | STATUS | Detalhe |
 |---|---|---|
-| `scripts/backup-db.sh` | precisa ajustar | Ver §2 — remove dependência de `docker compose exec`, roda `pg_dump` direto contra o banco gerenciado. |
-| `app/Console/Commands/BackupDatabaseToDrive.php` | precisa criar | Ver §3 — upload do dump ao Google Drive via `GoogleDriveService`. |
-| Alerta de falha por e-mail nativo | precisa criar | Lógica simples dentro do comando acima ou do script: se `pg_dump`/upload falhar, dispara `Mail::raw(...)` para o admin, usando o mesmo SMTP do §6 de `ARQUITETURA_PRODUCAO.md`. |
-| Agendamento via Crontab do host | precisa criar | `scripts/crontab.example` (§3) documenta as linhas exatas. |
+| `scripts/backup-db.sh` | ✅ ajustado | Ver §2 — sem dependência de `docker compose exec`, roda `pg_dump` direto contra o banco gerenciado. |
+| `app/Console/Commands/BackupDatabaseToDrive.php` | ✅ criado | Ver §3 — upload do dump ao Google Drive via `GoogleDriveService`, com `BackupFalhouNotification`. |
+| Alerta de falha por e-mail nativo | ✅ criado | Implementado como `Notification` (não `Mail::raw()`, que é no-op sob `Mail::fake()` — ver commit `29a8306`), disparado para ADMINs em falha de `pg_dump`/upload. |
+| Agendamento via Crontab do host | ✅ documentado (`scripts/crontab.example`, §3) | Instalação real no crontab do host pendente — só infraestrutura externa, depende do host existir (Etapa 1/9/10). |
 | Laravel Pulse (`/pulse`) | já existe | Sem mudança — observabilidade backend já implementada, continua sendo o monitoramento obrigatório. |
 
 ---
@@ -190,20 +190,36 @@ do repositório:
 
 ## 12. Resumo por STATUS
 
+**Atualizado em 2026-07-22 (pós-execução das Etapas 5/6 de
+`PLANO_IMPLEMENTACAO.md`, commits `29a8306` e `ac5180f`).** Todo o
+trabalho de código e documentação possível sem acesso externo está
+concluído. O que resta é exclusivamente infraestrutura/credenciais reais.
+
 - **já existe** (nenhuma ação): `config/mail.php`, `config/services.php`,
   `config/cors.php`, `config/sanctum.php`, `config/session.php`, ambos
   `Dockerfile` (uso restrito a dev local), `tear-v2-ci.yml`,
-  `docker-compose.yml` (uso restrito a dev local).
-- **precisa ajustar**: `GoogleDriveService.php`, `bootstrap/app.php`
-  (`trustProxies`, sem bloco Sentry), `.env.production.example` (banco
-  gerenciado + SMTP incluso + `TRUSTED_PROXIES` + pasta de backup),
-  `scripts/backup-db.sh`.
-- **precisa criar**: `.github/workflows/tear-v2-deploy.yml`,
-  `scripts/deploy-locaweb.sh`,
-  `app/Console/Commands/BackupDatabaseToDrive.php`,
-  `scripts/crontab.example`, estrutura `releases/`/`current`/`shared/` no
-  host, secrets do GitHub Actions.
-- **pendente, fora do escopo desta revisão** (sinalizado, não reescrito
-  agora): `tear-v2-app/docs/DEPLOY.md`, `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md`
-  — ambos ainda descrevem o fluxo Docker/Coolify antigo e precisam de
-  reescrita própria antes da Etapa 11 do `PLANO_IMPLEMENTACAO.md`.
+  `docker-compose.yml` (uso restrito a dev local), Laravel Pulse.
+- **✅ ajustado/criado nesta execução**: `GoogleDriveService.php`,
+  `bootstrap/app.php` (`trustProxies`), `.env.production.example` (banco
+  gerenciado + SMTP incluso + `TRUSTED_PROXIES` + pasta de backup +
+  origem única para `SESSION_DOMAIN`/`FRONTEND_URL`, ADR-015),
+  `scripts/backup-db.sh`, `.github/workflows/tear-v2-deploy.yml`,
+  `tear-v2-app/scripts/deploy-locaweb.sh`,
+  `app/Console/Commands/BackupDatabaseToDrive.php` +
+  `BackupFalhouNotification`, `scripts/crontab.example`,
+  `backend/routes/web.php` (catch-all da SPA), `frontend/vite.config.ts`
+  (`build:locaweb`), `docs/adrs/ADR-015-frontend-servido-pelo-laravel.md`.
+  `.github/workflows/tear-v2-docker.yml` removido.
+- **já estava correto, só a nota desta tabela estava desatualizada**:
+  `tear-v2-app/docs/DEPLOY.md` e `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md`
+  já haviam sido reescritos para o fluxo Locaweb/SSH no commit `ef18225`
+  (anterior a esta tabela) — a entrada anterior deste resumo, que dizia
+  "pendente, fora do escopo", estava obsoleta e foi corrigida agora.
+- **pendente — exclusivamente infraestrutura/credenciais externas, fora
+  do alcance do agente**: registro DNS do subdomínio; estrutura
+  `releases/`/`current`/`shared/` no host; instância real do Postgres
+  gerenciado; secrets do GitHub Actions (`SSH_HOST`, `SSH_USER`,
+  `SSH_PRIVATE_KEY`, `DEPLOY_BASE_PATH`); credenciais reais de Google
+  Drive/SMTP/domínio para preencher `.env` de produção; instalação do
+  crontab no host real. Ver `PLANO_IMPLEMENTACAO.md` Etapas 1-4, 7-12 para
+  o detalhe etapa a etapa.

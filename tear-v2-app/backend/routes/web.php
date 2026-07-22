@@ -12,7 +12,19 @@ use Illuminate\Support\Facades\Route;
 Route::get('/{any?}', function () {
     $index = public_path('build/index.html');
 
-    abort_unless(file_exists($index), 404, 'Build do frontend não encontrado. Rode `npm run build` em frontend/.');
+    if (! file_exists($index)) {
+        // Em dev, o par `npm run dev` (Vite, porta 5173) + `php artisan serve`
+        // é intencionalmente duas origens (HMR do Vite) — este backend não
+        // serve a SPA nesse modo, só `/api/*`. Não é regressão de ADR-015:
+        // `/` nunca serviu o portal real aqui (era a view `welcome` antes).
+        // Resposta direta (não `abort()`): a view padrão de erro 404 do
+        // Laravel não exibe a mensagem da exceção ao navegador.
+        $mensagem = app()->environment('local')
+            ? 'Build do frontend não encontrado em public/build. Em desenvolvimento, acesse o frontend pelo servidor do Vite (`npm run dev` em frontend/, padrão http://localhost:5173) — este backend serve só /api/* nesse modo. Para servir o build completo por aqui (como em produção), rode `npm run build:locaweb` em frontend/.'
+            : 'Build do frontend não encontrado. Rode `npm run build:locaweb` em frontend/.';
+
+        return response($mensagem, 404)->header('Content-Type', 'text/plain; charset=UTF-8');
+    }
 
     return response(file_get_contents($index))->header('Content-Type', 'text/html');
 })->where('any', '.*');
