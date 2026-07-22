@@ -2276,3 +2276,89 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   encerrado.** Próximo passo depende do responsável do projeto (decisões
   acima) ou da retomada do Go-Live (§27/§29, inalterados: PostgreSQL,
   autenticação SSH do deploy, `restore-db.sh` com Docker, PR #62).
+
+## 32. Mudança oficial de prioridade — fase de Certificação do MVP (2026-07-22)
+
+**Mandato registrado pelo responsável do projeto nesta sessão:** o
+projeto sai da fase "construir funcionalidades" e entra na fase
+"certificar o MVP e colocá-lo em produção". Toda tarefa futura deve
+responder "isso aproxima o sistema de uma influenciadora real em
+produção?" — se não, não é prioridade. Nenhuma funcionalidade nova deve
+ser criada enquanto existir item que impeça uma influenciadora real de
+concluir o ciclo completo (Cadastro → Aprovação → Convite → Senha →
+Login → Participação → Briefing → Upload → Aprovação → Pagamento →
+Histórico). Decisão arquitetural reconfirmada como encerrada nesta
+sessão: banco relacional, PostgreSQL em produção — não reabrir estudo de
+alternativas (ex.: MongoDB).
+
+**Nova ordem de prioridade:** 1) certificar regras de negócio; 2)
+resolver Google Drive; 3) resolver SMTP; 4) validar fluxo completo; 5)
+preparar produção; 6) executar piloto (uma única influenciadora real);
+7) corrigir problemas encontrados; 8) publicar. Toda nova tarefa deve ser
+classificada como Certificação, Correção, Infraestrutura, Integração,
+Go-Live ou Evolução — itens de Evolução têm prioridade inferior a todos
+os demais até o Go-Live.
+
+**Auditoria funcional completa executada nesta sessão** (navegação real
+via browser como ADMIN, GESTOR_MARCA e INFLUENCIADORA — não só leitura de
+código), cobrindo os módulos que as sessões anteriores (§29-§31) não
+haviam percorrido ao vivo (Logística/Envio) e reconfirmando ao vivo os
+que já eram só documentados:
+
+- **F1 — Upload de Material retorna 503** (Questão de Infraestrutura,
+  **bloqueia**): `MaterialController::store` exige
+  `GoogleDriveService::isConfigured()`; `.env` sem
+  `GOOGLE_DRIVE_CLIENT_EMAIL`/`_PRIVATE_KEY`. Sem fallback local (já
+  documentado em `PLANO_DE_IMPLANTACAO.md` Etapa 5 e
+  `TEAR_V2.5_GO_LIVE_CHECKLIST.md` P0-9 — reconfirmado ao vivo, não é
+  achado novo).
+- **F2 — Upload de comprovante de pagamento com a mesma falha**
+  (Questão de Infraestrutura, **bloqueia**): `PagamentoController::comprovante`,
+  mesma checagem.
+- **F3 — `MAIL_MAILER=log`** (Questão de Infraestrutura, **bloqueia**):
+  convite/definir-senha tecnicamente correto, mas não chega a nenhuma
+  influenciadora real (já documentado em `PLANO_DE_IMPLANTACAO.md` Etapa
+  6 — reconfirmado ao vivo).
+- **F4 — GESTOR_MARCA é papel não funcional** (Regra de Negócio
+  Incompleta/Bug, não bloqueia): `CampanhaController`/`ParceiraController`
+  só distinguem ADMIN de "resto", filtrando por posse do próprio usuário
+  — lógica pensada só para INFLUENCIADORA. Sem vínculo Usuário-Gestor↔Marca
+  no schema. Confirmado ao vivo (login `gestor@tear.test` não vê nada).
+  Não bloqueia porque o ciclo certificado (ver definição acima) não
+  depende de GESTOR_MARCA. Fica registrado como Evolução, não Correção
+  prioritária.
+- **F5 — Congelamento não bloqueia Briefing** (Regra de Negócio
+  Incompleta, não bloqueia): só campos comerciais são bloqueados após
+  `congelado_em`; Briefing pode ser criado/editado numa participação
+  congelada sem aviso. Estreita ainda mais o escopo da ratificação
+  pendente já registrada em §29-§31 — falta decidir se Briefing/Material/
+  Pagamento entram no bloqueio.
+- **F6 — Instagram sem validação de formato** (Decisão de Produto
+  Pendente, não bloqueia): reconfirmado ao vivo, já era pendência
+  conhecida (§29).
+- **F7 — Sidebar rotula módulos funcionais como "(em breve)"** (Problema
+  de UX, não bloqueia): Briefings/Materiais/Aprovações/Pagamentos já são
+  100% funcionais via drill-down Campanha→Participação, mas o texto
+  esconde isso de um operador novo.
+- **Logística/Envio testado ao vivo nesta sessão, sem divergência
+  encontrada:** criação de Envio, endereço lido corretamente da Parceira
+  (proteção de PII do schema, P0-4, funciona como projetado), avanço de
+  status PENDENTE→EXPEDIDO→ENTREGUE, RBAC (`role:ADMIN` nas rotas de
+  escrita) — tudo correto. Fecha a última lacuna de módulo não percorrido
+  ao vivo do backlog de certificação funcional.
+
+**Conclusão desta auditoria:** o fluxo de negócio core está certificado
+funcionalmente (nenhum bloqueador de lógica de aplicação). Os únicos
+bloqueadores reais para uma influenciadora real em produção são
+**credenciais/infraestrutura externa**, já mapeados e não são achado
+novo: Service Account do Google Drive (`PLANO_DE_IMPLANTACAO.md` Etapa
+5), SMTP de produção (Etapa 6), e a infraestrutura de hospedagem já
+registrada em §27/§29 (PostgreSQL na Locaweb, autenticação SSH do
+deploy, `restore-db.sh` com Docker, PR #62, DNS de
+`influencia.estudioela.com`).
+
+**Bloqueio atual (aguardando o responsável do projeto, prioridades 2-3
+da nova ordem):** credenciais que a IA não possui e não pode gerar —
+acesso ao Google Workspace/Cloud Console para criar a Service Account do
+Drive, e confirmação do relay SMTP da Locaweb (ou decisão por outro
+provedor). Nenhum código foi alterado nesta entrada.
