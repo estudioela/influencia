@@ -11,9 +11,11 @@ use App\Models\User;
 use App\Notifications\InfluenciadoraConviteNotification;
 use App\Services\AtualizarCadastroComConsentimentoService;
 use App\Services\CepLookupService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -101,24 +103,36 @@ class ParceiraController extends Controller
             ], 409);
         }
 
-        $parceira->aprovar($request->user());
+        try {
+            DB::transaction(function () use ($request, $parceira) {
+                $parceira->aprovar($request->user());
 
-        if ($parceira->user_id === null) {
-            $user = User::create([
-                'name' => $parceira->nome,
-                'email' => $parceira->email,
-                'password' => Str::random(40),
-            ]);
+                if ($parceira->user_id === null) {
+                    $user = User::create([
+                        'name' => $parceira->nome,
+                        'email' => $parceira->email,
+                        'password' => Str::random(40),
+                    ]);
 
-            Role::findOrCreate('INFLUENCIADORA', 'web');
-            $user->assignRole('INFLUENCIADORA');
+                    Role::findOrCreate('INFLUENCIADORA', 'web');
+                    $user->assignRole('INFLUENCIADORA');
 
-            $parceira->vincularUsuario($user);
+                    $parceira->vincularUsuario($user);
 
-            $this->enviarConvite($user);
+                    $this->enviarConvite($user);
+                }
+            });
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
+
+            return response()->json([
+                'message' => 'Já existe um usuário cadastrado com este e-mail. Ajuste o e-mail da parceira antes de aprovar.',
+            ], 422);
         }
 
-        return new ParceiraResource($parceira);
+        return new ParceiraResource($parceira->fresh());
     }
 
     /**

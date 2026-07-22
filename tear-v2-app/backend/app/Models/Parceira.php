@@ -108,6 +108,9 @@ class Parceira extends Model
         $this->status = 'Ativa';
         $this->aprovado_por = $admin->id;
         $this->aprovado_em = now();
+        $this->reprovado_por = null;
+        $this->reprovado_em = null;
+        $this->motivo_reprovacao = null;
         $this->save();
     }
 

@@ -80,6 +80,25 @@ class ParceiraAprovacaoTest extends TestCase
         $this->patchJson("/api/parceiras/{$parceira->id}/aprovar")->assertUnauthorized();
     }
 
+    public function test_aprovar_com_email_ja_usado_por_outro_usuario_nao_corrompe_estado(): void
+    {
+        Notification::fake();
+        $this->autenticarComoAdmin();
+        User::factory()->create(['email' => 'duplicado@example.com']);
+        $parceira = Parceira::factory()->create(['email' => 'duplicado@example.com', 'status' => 'Inativa']);
+
+        $response = $this->patchJson("/api/parceiras/{$parceira->id}/aprovar");
+
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('parceiras', [
+            'id' => $parceira->id,
+            'status' => 'Inativa',
+            'user_id' => null,
+            'aprovado_por' => null,
+        ]);
+        Notification::assertNothingSent();
+    }
+
     public function test_aprovar_parceira_ja_ativa_retorna_conflito(): void
     {
         $this->autenticarComoAdmin();

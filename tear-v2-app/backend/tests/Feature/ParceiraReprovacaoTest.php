@@ -109,5 +109,9 @@ class ParceiraReprovacaoTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.status', 'Ativa');
+        $parceira->refresh();
+        $this->assertNull($parceira->reprovado_por);
+        $this->assertNull($parceira->reprovado_em);
+        $this->assertNull($parceira->motivo_reprovacao);
     }
 }
