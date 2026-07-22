@@ -10,7 +10,7 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-22
-- **HEAD:** `9ecaded` — commitado e já pushado para
+- **HEAD:** `feab0b7` — commitado e já pushado para
   `origin/feat/ui-design-system-ela`. **Nada pendente de commit**: `git
   status`/`git diff` limpos ao final desta sessão.
 - **Branch:** `feat/ui-design-system-ela`.
@@ -21,99 +21,65 @@
   Composer já auditados/resolvidos no host (ver `AUDITORIA_LOCAWEB.md`
   §4.3 e `ADR-016`); resta levantar IP/CIDR do proxy reverso e host/porta
   do SMTP (pendências, §4 abaixo). **Confirmação oficial do suporte
-  Locaweb: o plano Hospedagem I não oferece PostgreSQL** — pendência
-  atual é decidir a estratégia de infraestrutura (§4). **Ambiente de
-  desenvolvimento local validado ponta a ponta nesta sessão** — o que
-  falta para o Go-Live é só infraestrutura remota, não código.
-- **Testes:** backend 192/192 verdes (PHPUnit), Pint limpo, `tsc -b` limpo,
-  `oxlint` limpo (1 warning pré-existente de fast-refresh em `auth.tsx`,
-  não é erro), `vite build` ok. Medido nesta sessão, sem alteração de
-  código de produção.
+  Locaweb: o plano Hospedagem I não oferece PostgreSQL** — nova pendência
+  bloqueante para a Etapa 3 é decidir a estratégia de infraestrutura (§4).
+  Ambiente de desenvolvimento local segue validado ponta a ponta (sessão
+  anterior) — o que falta para o Go-Live é só infraestrutura remota, não
+  código.
+- **Testes:** sem alteração de código nesta sessão (só documentação) —
+  última medição conhecida (sessão anterior): backend 192/192 verdes,
+  Pint limpo, `tsc -b`/`oxlint`/`vite build` do frontend limpos.
 
-## 2. Última sessão concluída — validação completa do ambiente local (2026-07-22)
+## 2. Última sessão concluída — correção da pendência de PostgreSQL na Locaweb (2026-07-22)
 
-Por instrução explícita do responsável do projeto: **não investigar mais
-Locaweb/SSH/Composer/ADR-016** (já concluídos em sessão anterior, commit
-`9ecaded`) e **tratar PostgreSQL como bloqueio externo temporário**,
-registrado só como pendência (ver §4) — sem nova investigação. Foco desta
-sessão: validar o ambiente local enquanto se aguarda resposta da Locaweb.
-Também por instrução: **não priorizar atualização de `TASK_ROUTER.md`**
-nem tarefas de documentação nesta sessão, a menos que necessárias para
-executar a etapa — por isso não há nova entrada em `TASK_ROUTER.md` desta
-vez (nada aqui é decisão de arquitetura/domínio/SPEC; é validação
-operacional).
+Sessão iniciada com briefing padrão (`/comecar`): estado do repositório
+conferido contra `ESTADO_SESSAO.md` (bateu — `HEAD` era `9ecaded`, sem
+divergência), com uma observação secundária: o próprio `ESTADO_SESSAO.md`
+estava `M` (modificado, não commitado) desde uma sessão anterior — o
+conteúdo já era a versão mais atual (documentava a validação completa do
+ambiente local), só não tinha sido commitado ainda.
 
-**Subiu o sistema localmente:** `php artisan serve` (backend, :8000) e
-`npm run dev` (frontend, :5173), ambos a partir do `.env`/`.env.example`
-já existentes (nenhuma variável de ambiente precisou de correção — uma
-suspeita inicial de que `frontend/.env.example` estivesse com conteúdo
-errado do backend se mostrou um engano de leitura durante a investigação,
-não um bug real; o arquivo já está e sempre esteve correto,
-`VITE_API_URL=http://localhost:8000/api`).
+**Instrução do responsável do projeto:** confirmação oficial do suporte
+Locaweb de que **o plano Hospedagem I não oferece PostgreSQL** — isso
+encerra a divergência que estava registrada como pendência de
+"reconciliar" entre `AUDITORIA_LOCAWEB.md` (que afirmava Postgres
+disponível, 0/10 bancos) e um relato de bloqueio não investigado a fundo.
+A pendência foi substituída por: **definir a estratégia de
+infraestrutura** (upgrade para Hospedagem II/III ou PostgreSQL externo).
 
-**Problema real encontrado e corrigido:** o banco sqlite de desenvolvimento
-tinha **7 migrations pendentes** desde 20/07 (`add_reprovacao_to_parceiras_table`
-até `add_consentimento_cadastro_to_parceiras_table`) — código já esperava
-essas colunas/tabela (`envios`, `briefing_id` em `materiais`), banco local
-não. Rodar `php artisan migrate` direto falhou: a migration de
-`briefing_id` adiciona coluna `NOT NULL` sem default numa tabela com 3
-registros residuais de sessões de QA antigas (SQLite não permite isso em
-tabela não vazia). Resolvido fazendo backup do sqlite, resetando-o do zero
-e rodando `migrate --seed` — sem erro, banco 100% em dia com o schema
-atual. Backup descartado ao final (dado de QA descartável, não é dado de
-produção). Nenhuma migration foi alterada — o design already assumia banco
-vazio/CI (comentário na própria migration), só o ambiente local estava
-desatualizado.
+**Trabalho realizado, em dois commits separados** (por instrução
+explícita — "commit exclusivo dessa correção"):
+1. `076d7f4` — commitada a reescrita de `ESTADO_SESSAO.md` que já estava
+   pendente de uma sessão anterior (documentação da validação completa do
+   ambiente local: backend/frontend local rodando, 7 migrations pendentes
+   corrigidas, fluxo E2E via Playwright sem bug novo — detalhe já estava
+   no arquivo, só não commitado). Isolada num commit próprio para não se
+   misturar com a correção do Postgres.
+2. `feab0b7` — commit exclusivo da correção da pendência de PostgreSQL:
+   atualizado `ESTADO_SESSAO.md` §1, §3, §4, §5, §6 e o prompt de handoff
+   (§8) para refletir a indisponibilidade confirmada e a nova pendência de
+   decisão de estratégia de infraestrutura.
 
-**Validação end-to-end via browser real (Playwright), identidade nova de
-ponta a ponta** ("QA Smoke Test 20260722"): cadastro público → aprovação
-(ADMIN) → e-mail de primeiro acesso capturado no log (`MAIL_MAILER=log`)
-→ definir senha → login → criação de Marca/Campanha → vínculo da parceira
-na campanha → briefing (Feed) publicado pelo ADMIN → tentativa de upload
-de material → pagamento (PENDENTE→APROVADO→PAGO) → perfil da parceira →
-logout. Todos os passos alcançáveis localmente funcionaram sem bug novo.
+Ambos os commits pushados para `origin/feat/ui-design-system-ela`.
+Registrada também uma entrada correspondente em `TASK_ROUTER.md` §27
+(mudança de estado relevante para o histórico de longo prazo: invalida a
+premissa de "Postgres confirmado disponível" da auditoria anterior).
 
-**Confirmações de comportamentos já conhecidos (não são regressões):**
-- Upload de material retorna 503 sem credenciais reais do Google Drive —
-  mesma limitação já documentada na sessão de QA de 2026-07-21.
-- Pagamento aprova imediatamente numa participação sem nenhum material —
-  comportamento correto e já documentado (`PagamentoController::existeMaterialNaoAprovado`
-  só bloqueia se existir material `!= APROVADO`, caso vácuo aprova).
-- Telefone/CNPJ exibidos sem máscara no perfil/detalhe da parceira — P2
-  cosmético já registrado, ainda presente.
-- `GESTOR_MARCA` recebe 403 ao tentar criar briefing — esperado, rotas de
-  criação (`marcas`, `campanhas`, `participações`, `briefings`, `materiais`
-  aprovar/reprovar, `pagamentos`, `envios`) são `role:ADMIN` por desenho
-  (`routes/api.php`), não um bug de RBAC.
-
-**Falsa pista descartada:** durante os testes, uma aba do browser parou de
-disparar requisições de rede ao clicar em botões (logout, login) mesmo com
-os handlers React corretos e o elemento certo sob o cursor. Investigação
-a fundo (interceptação de `fetch`/`XHR`, invocação manual do handler,
-inspeção do fiber React) confirmou que era **artefato da própria
-instrumentação de teste** acumulada numa aba específica (muitos
-`page.on`/monkeypatches via `run_code_unsafe`), não um bug do app — uma
-aba nova, limpa, reproduziu login/logout perfeitamente. Registrado aqui só
-para não ser reinvestigado à toa numa sessão futura.
-
-**Nenhuma mudança de código ou documentação foi commitada nesta sessão**
-(`git status`/`git diff` limpos) — só ambiente local (sqlite, já
-`.gitignore`d) e validação. Servidores locais (`:8000`/`:5173`) deixados
-rodando ao final, com os dados de QA desta sessão (Parceira, Marca,
-Campanha, Participação, Briefing, Pagamento) ainda no banco local.
+**Nenhum código alterado nesta sessão** — só documentação
+(`ESTADO_SESSAO.md`, `TASK_ROUTER.md`).
 
 ## 3. Próxima tarefa recomendada
 
-1. **Fechar a validação técnica remota da Etapa 2:** habilitar SSH no
-   painel da hospedagem `estudioela.com` para levantar o que falta:
-   IP/CIDR do proxy reverso (`TRUSTED_PROXIES`) e host/porta do relay SMTP
-   — checklist em `AUDITORIA_LOCAWEB.md` §2.1 (Composer já resolvido, ver
-   `ADR-016`).
-2. **Definir a estratégia de infraestrutura para o PostgreSQL** —
-   confirmado oficialmente pelo suporte Locaweb que o plano Hospedagem I
-   não oferece PostgreSQL. Decidir entre upgrade para Hospedagem II/III ou
-   PostgreSQL externo, conforme `AUDITORIA_LOCAWEB.md`, antes de seguir
-   para a Etapa 3 (criar banco de produção).
+1. **Definir a estratégia de infraestrutura para o PostgreSQL** —
+   decisão do responsável do projeto entre upgrade para Hospedagem II/III
+   da Locaweb ou contratar PostgreSQL externo (ex.: serviço gerenciado).
+   Bloqueia a Etapa 3 (criar banco de produção). Ver `AUDITORIA_LOCAWEB.md`
+   para os dados de contexto (specs dos planos, custos, etc., a levantar
+   se ainda não estiverem lá).
+2. **Fechar a validação técnica remota da Etapa 2:** habilitar SSH no
+   painel da hospedagem `estudioela.com` para levantar IP/CIDR do proxy
+   reverso (`TRUSTED_PROXIES`) e host/porta do relay SMTP — checklist em
+   `AUDITORIA_LOCAWEB.md` §2.1 (Composer já resolvido, ver `ADR-016`).
 3. Apontar o DNS de `estudioela.com` para a Locaweb (Etapa 4, depende da
    Etapa 2 fechada).
 4. Enquanto a infraestrutura não fecha: o ambiente local está validado e
@@ -123,9 +89,8 @@ Campanha, Participação, Briefing, Pagamento) ainda no banco local.
 ## 4. Pendências / bloqueios (decisão do responsável do projeto)
 
 - **Definir estratégia de infraestrutura (upgrade para Hospedagem
-  II/III ou PostgreSQL externo)**, conforme auditoria da Locaweb —
-  suporte confirmou que o plano Hospedagem I não oferece PostgreSQL. Ver
-  item 2 do §3 acima.
+  II/III ou PostgreSQL externo)** — bloqueante para a Etapa 3, suporte da
+  Locaweb confirmou que o plano Hospedagem I não oferece PostgreSQL.
 - Habilitar SSH no painel Locaweb para levantar IP/CIDR do proxy reverso
   e host/porta do SMTP (não pode ser feito pelo agente).
 - Apontar o DNS de `estudioela.com` para a Locaweb (depende da Etapa 2
@@ -148,9 +113,10 @@ Campanha, Participação, Briefing, Pagamento) ainda no banco local.
    via `workflow_dispatch`) para lidar com a limitação real de SSH
    temporário/por senha do plano Locaweb — risco tecnicamente mitigado,
    falta só concluir Etapa 2 remota (IP do proxy, SMTP).
-2. PostgreSQL confirmado indisponível no plano Hospedagem I da Locaweb
-   (ver §3 item 2 e §4) — decisão de estratégia de infraestrutura ainda
-   pendente, pode impactar custo/cronograma do Go-Live.
+2. **PostgreSQL confirmado indisponível** no plano Hospedagem I da
+   Locaweb — decisão de estratégia de infraestrutura ainda pendente, pode
+   impactar custo e cronograma do Go-Live (upgrade de plano ou serviço
+   externo, ambos com custo adicional não orçado até aqui).
 3. Validação comercial concentrada em um único piloto ainda não
    confirmado.
 4. Bus factor 1 — fundador único operando agência, produto e suporte.
@@ -178,18 +144,17 @@ remota ou a decisão de estratégia de PostgreSQL, ver também
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel+React), plano de
 lançamento comercial em 15/01/2027. Estado e pendências completos em
 docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e, para histórico/decisões
-de SPEC, docs/_workspace/TASK_ROUTER.md. Leitura obrigatória antes de
+de SPEC, docs/_workspace/TASK_ROUTER.md (ver §27 para a confirmação de
+indisponibilidade de PostgreSQL na Locaweb). Leitura obrigatória antes de
 alterar código: ver CLAUDE.md §Documentos oficiais.
 
-Estado: ambiente de desenvolvimento local validado ponta a ponta nesta
-sessão (backend+frontend rodando, testes verdes, fluxo crítico completo
-testado via browser). Deploy depende só de infraestrutura remota, não de
-código.
+Estado: ambiente de desenvolvimento local validado ponta a ponta. Deploy
+depende só de infraestrutura remota, não de código. PostgreSQL confirmado
+indisponível no plano Hospedagem I da Locaweb.
 
 Tarefa desta sessão: (1) definir a estratégia de infraestrutura para o
-PostgreSQL — suporte da Locaweb confirmou que o plano Hospedagem I não
-oferece PostgreSQL; decidir entre upgrade para Hospedagem II/III ou
-PostgreSQL externo, conforme AUDITORIA_LOCAWEB.md. (2) Etapa 2 remota do
+PostgreSQL — decidir entre upgrade para Hospedagem II/III ou PostgreSQL
+externo, conforme AUDITORIA_LOCAWEB.md. (2) Etapa 2 remota do
 PLANO_DE_IMPLANTACAO.md: habilitar SSH para levantar IP/CIDR do proxy
 reverso (TRUSTED_PROXIES) e host/porta do SMTP — checklist em
 AUDITORIA_LOCAWEB.md §2.1 (Composer e SSH básico já resolvidos, ADR-016).

@@ -1972,3 +1972,29 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Próximo passo:** igual ao §25 — habilitar SSH, decidir estratégia de
   deploy. Adicionalmente, decidir sobre o commit pendente destes 2
   arquivos de encerramento.
+
+## 27. PostgreSQL confirmado indisponível no plano Hospedagem I da Locaweb (2026-07-22)
+
+- **Fato novo, via suporte oficial da Locaweb:** o plano **Hospedagem I**
+  (o plano ativo para `estudioela.com`) **não oferece PostgreSQL**. Isso
+  invalida a premissa registrada em `AUDITORIA_LOCAWEB.md` (auditoria de
+  painel, §25/commit `93578f5`) de que PostgreSQL estava confirmado
+  disponível (0/10 bancos usados) — o painel mostrava a opção, mas o
+  plano contratado não a habilita de fato.
+- **Pendência anterior** ("reconciliar se PostgreSQL está de fato
+  disponível ou não", registrada na sessão de validação local de
+  2026-07-22, ver commit `076d7f4`) **encerrada** por esta confirmação.
+- **Nova pendência, bloqueante para a Etapa 3** (criar banco de produção)
+  do `PLANO_DE_IMPLANTACAO.md`: definir a estratégia de infraestrutura —
+  upgrade para Hospedagem II/III da Locaweb ou contratar PostgreSQL
+  externo (ex.: serviço gerenciado). Decisão do responsável do projeto;
+  impacto de custo/cronograma ainda não orçado.
+- **Nenhum código alterado.** Só documentação: `ESTADO_SESSAO.md`
+  atualizado em dois commits separados — `076d7f4` (reescrita pendente de
+  sessão anterior, sobre a validação do ambiente local, commitada isolada)
+  e `feab0b7` (correção exclusiva desta pendência de PostgreSQL). Ambos
+  pushados para `origin/feat/ui-design-system-ela`.
+- **Próximo passo:** decidir a estratégia de infraestrutura do PostgreSQL
+  (bloqueia Etapa 3); em paralelo, habilitar SSH para fechar a Etapa 2
+  (IP/CIDR do proxy reverso, host/porta SMTP — checklist em
+  `AUDITORIA_LOCAWEB.md` §2.1).
