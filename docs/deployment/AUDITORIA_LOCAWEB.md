@@ -94,7 +94,7 @@ data). Detalhe na §2.
 | Deploy via Git (GitHub Actions) | ⚠️ Parcialmente compatível | O recurso "Publicar via Git" do painel é só um template de FTP upload (`locaweb/ftp-deploy`), não executa comandos remotos. A estratégia de `ARQUITETURA_PRODUCAO.md` §3 (symlink swap + `migrate` remoto via SSH) **não pode ser feita por esse recurso** — só via SSH manual/scriptado, sujeito à limitação acima. `composer install` deixou de fazer parte do que rodaria remotamente — decisão `ADR-016`, roda só no runner do CI |
 | Crontab (`schedule:run`, `queue:work`, backup) | ✅ Totalmente compatível | Nativo, sem uso ainda |
 | Storage local (disco) | ⚠️ A confirmar | Painel não expõe quota em GB; sem SSH habilitado não dá para checar `df -h` |
-| Google Drive (upload de Material) | ✅ Totalmente compatível | Não depende da Locaweb, é integração externa via Service Account |
+| Google Drive (upload de Material) | ✅ Totalmente compatível | Não depende da Locaweb, é integração externa via OAuth de conta dedicada (`ADR-017`, não Service Account) |
 | SMTP incluso no plano | ⚠️ A confirmar | Seção de e-mail existe no painel ("Email Locaweb"), mas não foi possível localizar host/porta do relay SMTP nesta auditoria — ver §3 |
 | SSL gratuito (Let's Encrypt) | ✅ Totalmente compatível | Confirmado no painel, mas emissão para `estudioela.com` está bloqueada até o DNS ser apontado |
 | Domínio `influencia.estudioela.com` | ⚠️ Parcialmente compatível | Hospedagem correta existe, mas domínio pai (`estudioela.com`) ainda não tem DNS apontado nem subdomínio criado |
@@ -168,8 +168,8 @@ painel:
 - [ ] GitHub Secrets para deploy (host/usuário/senha FTP e/ou credenciais
       SSH) — só depois da decisão de estratégia de deploy
 - [ ] Ativar backup (hoje "Ativar", não habilitado) nas duas hospedagens
-- [ ] Chave de Service Account do Google Drive no `.env` — fora do escopo
-      Locaweb
+- [ ] Credenciais OAuth da conta dedicada do Google Drive (`ADR-017`) no
+      `.env` — fora do escopo Locaweb
 
 ---
 

@@ -19,8 +19,8 @@ resolve a lacuna que existia entre este documento (já assumia
 Arquitetura aprovada, resumida: Locaweb Hospedagem Linux (compartilhada,
 PHP 8.3, sem Docker/root) → PostgreSQL gerenciado pelo próprio plano →
 deploy via GitHub Actions (build do frontend no CI + job de deploy via
-SSH, `releases/` + symlink `current`) → Google Shared Drive (Service
-Account dedicada, também destino do backup) → SMTP incluso no
+SSH, `releases/` + symlink `current`) → Google Drive (pasta comum, conta
+dedicada via OAuth, também destino do backup) → SMTP incluso no
 plano/domínio → backup `pg_dump` + Crontab + upload para o Drive + alerta
 de e-mail nativo → subdomínio de `estudioela.com` → SSL do painel Locaweb
 → CI (GitHub Actions, já existente) + CD (job novo de deploy via SSH) →
@@ -35,8 +35,8 @@ A ordem segue dependência real:
 
 1. **Decisões de nomenclatura/valor que travam tudo:** domínio(s) exato(s)
    (frontend/API), credenciais do banco gerenciado (host/porta/usuário/
-   senha), confirmação do Shared Drive + Service Account já existentes
-   (Material + nova subpasta de backup).
+   senha), confirmação da pasta do Google Drive + conta dedicada OAuth já
+   existentes (Material + nova subpasta de backup — ver `ADR-017`).
 2. **Confirmação de recursos do plano Locaweb** (fora do repo): SSH,
    Crontab, PHP 8.3, banco gerenciado, SSL, espaço em disco suficiente
    para o histórico de `releases/`.
@@ -58,7 +58,7 @@ A ordem segue dependência real:
 
 | Arquivo | Motivo | STATUS |
 |---|---|---|
-| `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Suporte a Shared Drive exige `supportsAllDrives=true` (em `files.create`/upload) e `includeItemsFromAllDrives=true`+`corpora=drive`+`driveId` (em `files.list`, usado por `ensureFolder`) — hoje nenhum dos dois existe no código. Sem isso, `ensureFolder`/`uploadFile` falham silenciosamente contra um Shared Drive, mesmo com credenciais corretas. Necessário independente da hospedagem escolhida. | ✅ ajustado (commit `29a8306`) |
+| `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Autenticação via OAuth de conta dedicada (`refresh_token`), não Service Account Key — `elafashionmkt-org` bloqueia a criação dessa chave via Org Policy, e o projeto não tem Google Workspace (conta pessoal). Pasta comum no Meu Drive da conta dedicada, não Shared Drive (`corpora=drive`/`driveId` removidos; `supportsAllDrives`/`includeItemsFromAllDrives` mantidos como flags inofensivas). | ✅ ajustado (`ADR-017`, 2026-07-22) |
 | `tear-v2-app/backend/bootstrap/app.php` | `$middleware->trustProxies(at: [...])` — a Locaweb compartilhada expõe a aplicação atrás de um proxy reverso do próprio provedor; sem confiar nesse proxy, `Request::ip()` (rate-limit de `/login`) e a detecção de HTTPS ficam incorretas. O IP/CIDR exato só é confirmável na Etapa 1 do `PLANO_IMPLEMENTACAO.md` — usar variável de ambiente (`TRUSTED_PROXIES`), nunca hardcode. | ✅ ajustado (commit `29a8306`) — `TRUSTED_PROXIES` já lido via `env()`; valor real do CIDR ainda depende da Etapa 1 |
 | `tear-v2-app/backend/composer.json` | Nenhuma dependência nova obrigatória — `resend/resend-laravel` e `sentry/sentry-laravel` saem do caminho crítico (viram melhoria opcional, só entram se/quando habilitadas). | sem mudança obrigatória |
 | `tear-v2-app/backend/.env.production.example` | Remover qualquer referência a host de serviço Docker (`DB_HOST=db`); apontar `DB_*` para o banco gerenciado da Locaweb; `MAIL_MAILER=smtp` com host/porta do relay incluso no plano (não Resend); adicionar `TRUSTED_PROXIES`, `GOOGLE_DRIVE_BACKUP_FOLDER_ID`; manter `SESSION_DOMAIN`/`APP_URL`/`SANCTUM_STATEFUL_DOMAINS` apontando para o subdomínio de produção. | ✅ ajustado (commits `29a8306` + `ac5180f` — `SESSION_DOMAIN`/`FRONTEND_URL` corrigidos para origem única, ver ADR-015); valores `CHANGE_ME` só preenchíveis com credenciais reais (Etapa 1-4) |
@@ -76,7 +76,7 @@ A ordem segue dependência real:
 |---|---|---|
 | `.github/workflows/tear-v2-deploy.yml` | Job de build do frontend (`npm run build:locaweb`, ver ADR-015) + deploy via SSH (rsync/scp + comandos remotos) para o host Locaweb, com deploy atômico por symlink. | ✅ criado (commit `ac5180f`) — sintaticamente pronto; execução real depende dos secrets de SSH (§7/§9), ainda não cadastrados |
 | `tear-v2-app/scripts/deploy-locaweb.sh` | Script chamado pelo job de deploy — verifica que `vendor/` veio pronto na release, roda `migrate`/`cache`, faz o swap do symlink `current`. Não roda mais `composer install` (host confirmado sem Composer global; `vendor/` é gerado no runner do CI, ver `ADR-016`). | ✅ criado (commit `ac5180f`), ajustado (`ADR-016`, 2026-07-22) |
-| `tear-v2-app/backend/app/Console/Commands/BackupDatabaseToDrive.php` | Comando Artisan que sobe o dump gerado por `backup-db.sh` para o Google Shared Drive, reaproveitando `GoogleDriveService` — substitui o upload para object storage externo da versão anterior. | ✅ criado (commit `29a8306`), com teste dedicado e notificação de falha (`BackupFalhouNotification`) |
+| `tear-v2-app/backend/app/Console/Commands/BackupDatabaseToDrive.php` | Comando Artisan que sobe o dump gerado por `backup-db.sh` para a pasta BACKUP do Google Drive, reaproveitando `GoogleDriveService` — substitui o upload para object storage externo da versão anterior. | ✅ criado (commit `29a8306`), com teste dedicado e notificação de falha (`BackupFalhouNotification`) |
 | `tear-v2-app/scripts/crontab.example` | Documentar as linhas de cron do host Locaweb (backup, `schedule:run`, `queue:work --stop-when-empty`) de forma reprodutível. | ✅ criado (commit `29a8306`) — arquivo pronto; instalação real no crontab do host depende do host existir (Etapa 1/9/10) |
 | Registro DNS `A`/`CNAME` do subdomínio escolhido apontando para o host Locaweb | Não é arquivo do repositório. | pendente — só infraestrutura externa (Etapa 3) |
 
@@ -92,8 +92,8 @@ A ordem segue dependência real:
 | `SESSION_DOMAIN` | sim | `influencia.estudioela.com` (host exato, sem ponto inicial — não o domínio pai) |
 | `DB_CONNECTION`/`HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD` | sim | apontam para o **PostgreSQL gerenciado da Locaweb** (host/porta/credenciais do painel, obtidos na Etapa 2 do `PLANO_IMPLEMENTACAO.md`) |
 | `MAIL_MAILER`/`MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD` | sim | relay SMTP incluso no plano/domínio Locaweb |
-| `GOOGLE_DRIVE_CLIENT_ID` / `_CLIENT_SECRET` / `_REFRESH_TOKEN` / `_ROOT_FOLDER_ID` | sim | OAuth de conta dedicada do Workspace (`ADR-017`) — não Service Account; `elafashionmkt-org` bloqueia Service Account Key via Org Policy |
-| `GOOGLE_DRIVE_BACKUP_FOLDER_ID` | **não** | pasta dedicada dentro do mesmo Shared Drive, destino dos dumps de backup |
+| `GOOGLE_DRIVE_CLIENT_ID` / `_CLIENT_SECRET` / `_REFRESH_TOKEN` / `_ROOT_FOLDER_ID` | sim | OAuth de conta dedicada — pessoal, sem Workspace (`ADR-017`) — não Service Account; `elafashionmkt-org` bloqueia Service Account Key via Org Policy |
+| `GOOGLE_DRIVE_BACKUP_FOLDER_ID` | **não** | pasta dedicada dentro da mesma pasta raiz, destino dos dumps de backup |
 | `TRUSTED_PROXIES` | **não** | IP(s)/CIDR do proxy reverso da Locaweb, confirmado na Etapa 1 do plano |
 | `QUEUE_CONNECTION` | sim (`database` já é opção válida) | `database` — sem worker de longa duração, processado via Crontab (`queue:work --stop-when-empty`) |
 | `RESEND_API_KEY` / `SENTRY_LARAVEL_DSN` / `VITE_SENTRY_DSN` | não aplicável | **removidos do caminho obrigatório** — só entram se uma melhoria opcional (`ARQUITETURA_PRODUCAO.md` §16) for habilitada |
@@ -183,8 +183,8 @@ do repositório:
   middleware), `RequestId` middleware, `php artisan admin:create`.
 - Laravel Pulse.
 - `scripts/healthcheck.sh`.
-- Necessidade de ajuste em `GoogleDriveService.php` (Shared Drive) —
-  necessária independente da hospedagem escolhida.
+- Ajuste em `GoogleDriveService.php` para OAuth de conta dedicada
+  (`ADR-017`) — já aplicado, independente da hospedagem escolhida.
 
 ---
 

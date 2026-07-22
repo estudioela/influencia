@@ -152,6 +152,8 @@ class MaterialTest extends TestCase
      */
     public function test_upload_retorna_503_quando_drive_nao_esta_configurado(): void
     {
+        config(['services.google_drive.client_id' => null]);
+
         $this->autenticarComoAdmin();
         $participacao = ParticipacaoNaCampanha::factory()->create();
         $briefing = Briefing::factory()->create(['participacao_id' => $participacao->id, 'tipo' => 'REELS']);

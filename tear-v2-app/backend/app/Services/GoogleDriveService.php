@@ -43,14 +43,15 @@ class GoogleDriveService
             ->get(self::API_URL.'/files', [
                 'q' => $query,
                 'fields' => 'files(id, name)',
-                // Shared Drive institucional (não "Meu Drive"): sem estes três
-                // parâmetros a API ignora o conteúdo do Shared Drive e retorna
-                // lista vazia, mesmo com a pasta existindo e a conta autenticada
-                // tendo acesso (ver docs/deployment/IMPLEMENTACAO_TECNICA.md §2).
+                // Pasta comum no Meu Drive da conta dedicada (ADR-017 adendo
+                // 2026-07-22), não Shared Drive: elafashionmkt@gmail.com é
+                // conta pessoal, sem Google Workspace, e Shared Drives são
+                // recurso exclusivo de Workspace. supportsAllDrives/
+                // includeItemsFromAllDrives ficam como flags inofensivas
+                // (sem efeito num Meu Drive comum), sem corpora=drive/driveId
+                // — que exigiriam um Shared Drive inexistente.
                 'supportsAllDrives' => 'true',
                 'includeItemsFromAllDrives' => 'true',
-                'corpora' => 'drive',
-                'driveId' => $this->rootFolderId(),
             ])
             ->throw()
             ->json();
@@ -102,12 +103,48 @@ class GoogleDriveService
         ];
     }
 
-    private function accessToken(): string
+    /**
+     * @return array{id: string, name: string, mimeType: string}
+     */
+    public function getFile(string $id): array
+    {
+        return Http::withToken($this->accessToken())
+            ->get(self::API_URL."/files/{$id}", [
+                'fields' => 'id, name, mimeType',
+                'supportsAllDrives' => 'true',
+            ])
+            ->throw()
+            ->json();
+    }
+
+    public function downloadFile(string $id): string
+    {
+        return Http::withToken($this->accessToken())
+            ->get(self::API_URL."/files/{$id}", [
+                'alt' => 'media',
+                'supportsAllDrives' => 'true',
+            ])
+            ->throw()
+            ->body();
+    }
+
+    public function deleteFile(string $id): void
+    {
+        Http::withToken($this->accessToken())
+            ->delete(self::API_URL."/files/{$id}", [
+                'supportsAllDrives' => 'true',
+            ])
+            ->throw();
+    }
+
+    public function accessToken(): string
     {
         return Cache::remember('google_drive_access_token', 3300, function () {
-            // Conta dedicada do Workspace via refresh_token (ADR-017) — não
-            // usa Service Account, para não esbarrar em
-            // iam.disableServiceAccountKeyCreation em elafashionmkt-org.
+            // Conta dedicada via refresh_token (ADR-017) — não Service
+            // Account, para não esbarrar em
+            // iam.disableServiceAccountKeyCreation em elafashionmkt-org, e
+            // não Workspace, já que a conta usada é pessoal (Gmail comum) —
+            // ver ADR-017 adendo 2026-07-22.
             $response = Http::asForm()->post(self::TOKEN_URL, [
                 'grant_type' => 'refresh_token',
                 'client_id' => config('services.google_drive.client_id'),

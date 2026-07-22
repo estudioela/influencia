@@ -15,6 +15,15 @@
 > `docs/adrs/ADR-016-composer-no-ci-deploy-manual.md` e
 > `docs/deployment/PLANO_DE_IMPLANTACAO.md` Etapa 11 para a mecânica
 > corrigida.
+>
+> **Correção factual (2026-07-22, `ADR-017`):** as menções abaixo a
+> "Service Account dedicada" para o Google Drive estão superadas — não há
+> Google Workspace disponível (conta pessoal `elafashionmkt@gmail.com`),
+> e a Org Policy do Google Cloud bloqueia Service Account Key. A
+> autenticação passou a ser OAuth 2.0 de conta dedicada
+> (`GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET`/`_REFRESH_TOKEN`), sem Shared
+> Drive. Ver `docs/adrs/ADR-017-oauth-conta-dedicada-google-drive.md` e
+> `docs/deployment/PLANO_DE_IMPLANTACAO.md` Etapa 5.
 
 Runbook operacional. Ver `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md` (raiz do
 repositório) para o checklist de prontidão e a lista de pendências P0/P1/P2, e
@@ -43,15 +52,15 @@ decisão soberana de custo zero, aprovada e definitiva em 2026-07-21).
   definitivo desde 2026-07-22 — ver `docs/deployment/PLANO_DE_IMPLANTACAO.md`
   Etapa 1), registro DNS isolado apontando para o host Locaweb.
 - Credenciais reais: banco gerenciado (host/porta/usuário/senha do painel),
-  Google Shared Drive + Service Account dedicada (Material + backup),
-  relay SMTP incluso no plano/domínio.
+  Google Drive (pasta comum + conta dedicada via OAuth — `ADR-017`,
+  Material + backup), relay SMTP incluso no plano/domínio.
 - Secrets do GitHub Actions: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`,
   caminho absoluto de deploy no host.
 - Ajustes de código que a arquitetura exige e que precisam existir antes do
-  primeiro deploy real (detalhe em `IMPLEMENTACAO_TECNICA.md` §2): suporte a
-  Shared Drive em `GoogleDriveService.php`, `trustProxies()` em
-  `bootstrap/app.php` (proxy reverso da Locaweb), `scripts/backup-db.sh` sem
-  dependência de `docker compose exec`.
+  primeiro deploy real (detalhe em `IMPLEMENTACAO_TECNICA.md` §2): OAuth de
+  conta dedicada em `GoogleDriveService.php` (`ADR-017`), `trustProxies()`
+  em `bootstrap/app.php` (proxy reverso da Locaweb), `scripts/backup-db.sh`
+  sem dependência de `docker compose exec`.
 
 ## 2. Pipeline de deploy (GitHub Actions + SSH, deploy atômico por symlink)
 
@@ -77,7 +86,7 @@ Sem containers e sem orquestrador — o deploy é direto:
 4. O `.env` real vive em `~/shared/.env` no host (preservado entre releases,
    nunca commitado) — gerar a partir de `backend/.env.production.example`,
    preenchendo todo campo `CHANGE_ME` com os valores reais (banco gerenciado,
-   SMTP incluso, Shared Drive, `TRUSTED_PROXIES`).
+   SMTP incluso, OAuth do Google Drive, `TRUSTED_PROXIES`).
 5. Primeiro `APP_KEY`: gerar localmente (`php artisan key:generate --show`)
    ou uma vez via SSH na primeira release, e copiar para `~/shared/.env`.
 
@@ -167,7 +176,7 @@ fallback natural se o novo domínio precisar sair de produção temporariamente.
 
 ```bash
 ./scripts/backup-db.sh   # pg_dump direto contra o banco gerenciado da Locaweb
-php artisan backup:upload-to-drive --latest   # sobe o dump ao Google Shared Drive
+php artisan backup:upload-to-drive --latest   # sobe o dump à pasta BACKUP do Google Drive
 ./scripts/restore-db.sh <arquivo.sql.gz>   # destrutivo, pede confirmação
 ```
 
@@ -183,9 +192,10 @@ Agendar via crontab do host (retenção sugerida: 14 diários + 8 semanais):
 
 - Escolha de domínio definitivo (subdomínio de `estudioela.com` já decidido
   em arquitetura; string exata a confirmar na execução).
-- Provisionamento real do banco gerenciado, do Shared Drive/Service Account
-  e dos secrets do GitHub Actions — passos manuais no painel Locaweb/Google
-  Cloud/GitHub, detalhados em `docs/deployment/PLANO_IMPLEMENTACAO.md`
+- Provisionamento real do banco gerenciado, da conta dedicada OAuth do
+  Google Drive (`ADR-017`) e dos secrets do GitHub Actions — passos
+  manuais no painel Locaweb/Google Cloud/GitHub, detalhados em
+  `docs/deployment/PLANO_IMPLEMENTACAO.md`
   (Etapas 1-6).
 - Limites de CPU/memória/processo da hospedagem compartilhada — só se
   confirmam na execução real (ver `ARQUITETURA_PRODUCAO.md` §14); se

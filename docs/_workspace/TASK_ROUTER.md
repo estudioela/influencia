@@ -2411,3 +2411,72 @@ comando `google-drive:obter-refresh-token` para gerar os 3 valores OAuth
 — passos manuais que exigem acesso ao Google Workspace/Cloud Console,
 documentados em `PLANO_DE_IMPLANTACAO.md` Etapa 5. Teste real de upload
 em homologação (Etapa 16) segue pendente até esses valores chegarem.
+
+> **Correção (2026-07-22, ver §34):** a premissa de Google Workspace/
+> Shared Drive acima estava errada — o projeto usa conta pessoal
+> (`elafashionmkt@gmail.com`), sem Workspace. §34 corrige o mecanismo.
+
+## 34. Google Drive sem Workspace nem Shared Drive — pasta comum + IDs reais confirmados (2026-07-22)
+
+O responsável do projeto esclareceu que o TEAR **não tem Google
+Workspace** — o projeto usa a conta pessoal `elafashionmkt@gmail.com`,
+que administra o Google Cloud e terá acesso às pastas do Drive. Isso
+corrige a premissa de §33 (que ainda assumia Workspace/Shared Drive).
+
+**Achado técnico:** `GoogleDriveService::ensureFolder()` usava
+`corpora=drive`+`driveId=$rootFolderId`, parâmetros que só funcionam
+contra um **Shared Drive** — recurso exclusivo de Google Workspace, não
+disponível numa conta pessoal. O mecanismo OAuth do ADR-017 (`refresh_token`)
+em si não tinha nenhuma dependência de Workspace; a dependência estava
+só nesses dois parâmetros da busca de pastas.
+
+**Corrigido nesta sessão:**
+- `GoogleDriveService::ensureFolder()` — removidos `corpora`/`driveId`;
+  mantidos `supportsAllDrives`/`includeItemsFromAllDrives` (flags
+  inofensivas para uma pasta comum). Passa a operar contra uma pasta
+  comum no Meu Drive da conta dedicada, não um Shared Drive.
+- Adicionados `GoogleDriveService::getFile()`, `downloadFile()`,
+  `deleteFile()`, e `accessToken()` passou a público — suporte ao novo
+  comando de diagnóstico.
+- Novo comando `php artisan google-drive:test` — valida, em 8 etapas com
+  relatório de sucesso/falha (variáveis de ambiente, access token, acesso
+  à pasta ROOT, existência/criação da pasta BACKUP, permissão de
+  escrita, upload, leitura, exclusão de um arquivo de diagnóstico), toda
+  a configuração antes do primeiro upload real.
+- IDs reais das pastas confirmados pelo responsável do projeto e
+  preenchidos em `.env`/`.env.example`/`.env.production.example`:
+  `GOOGLE_DRIVE_ROOT_FOLDER_ID=1uSmA2qt8apAkNP54z9yBChhitYXSw2y4`,
+  `GOOGLE_DRIVE_BACKUP_FOLDER_ID=1c_ImyhRDHGox509kRjTJKHkyiIc5zzBE`.
+- Correções textuais em `ARQUITETURA_PRODUCAO.md`, `AUDITORIA_LOCAWEB.md`,
+  `IMPLEMENTACAO_TECNICA.md`, `PLANO_DE_IMPLANTACAO.md` Etapa 5,
+  `PLANO_IMPLEMENTACAO.md` (nota de correção), `CONFIGURACAO_PRODUCAO.md`,
+  `DEPLOY.md` — substituindo "Shared Drive institucional"/"Service
+  Account"/"Workspace" pela realidade (pasta comum + conta pessoal via
+  OAuth). Varredura por `GOOGLE_DRIVE_CLIENT_EMAIL`/`_PRIVATE_KEY`/
+  `ServiceAccount`/JWT no código confirmou zero referências ativas
+  restantes (só menções explicativas do que foi descartado).
+- Suíte completa 202/202 verde, Pint limpo (validado após as mudanças de
+  código desta seção).
+
+**Interrompido a pedido do responsável do projeto (modo "critical path",
+2026-07-22):** varredura de documentação ainda tinha 1-2 arquivos
+secundários não revisados quando a sessão pivotou para focar só em obter
+o `refresh_token` real e validar upload — registrado como TODO em
+`ESTADO_SESSAO.md`, não bloqueia nada funcional.
+
+**Ainda não decidido (pausado, não é bloqueador do ciclo certificado):**
+o responsável do projeto pediu uma função que garanta a estrutura fixa
+`ROOT → Materiais/Backup/Temporarios/Contratos/Exportacoes`. A estrutura
+real usada em produção por `MaterialController`/`PagamentoController` é
+dinâmica (`ROOT/<Parceira>/<Campanha>/<Tipo|Comprovantes>`), não essa
+taxonomia fixa — conflito de requisito identificado, ainda não
+resolvido com o responsável do projeto. Ver TODO em `ESTADO_SESSAO.md`.
+
+**Bloqueio atual (aguardando o responsável do projeto):** `refresh_token`
+real ainda não gerado — `GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET` reais
+também ainda não entregues (mensagem anterior trazia só placeholders).
+Assim que chegarem, rodar `google-drive:obter-refresh-token` →
+`google-drive:test` → upload real em homologação, depois um único commit
+consolidando toda a mudança (instrução explícita do responsável do
+projeto: acumular e commitar só quando o fluxo OAuth estiver
+completamente validado).

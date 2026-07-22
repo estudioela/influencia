@@ -92,9 +92,10 @@ Fonte: `grep` de todo `env('...')` em `config/*.php` e `app/`, cruzado com
 
 | Variável | Obrigatória? | Descrição | Exemplo | Onde obter | Impacto se ausente |
 |---|---|---|---|---|---|
-| `GOOGLE_DRIVE_CLIENT_EMAIL` | **Sim** | E-mail da service account | `tear-drive@projeto.iam.gserviceaccount.com` | Google Cloud Console → Service Account criada para o projeto | Sem as 3 variáveis: upload de Material retorna **503 para todo usuário, sem fallback** — bloqueia uma função central do Portal |
-| `GOOGLE_DRIVE_PRIVATE_KEY` | **Sim** | Chave privada da service account | `-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n` (escapar quebras de linha como `\n`) | Campo `private_key` do JSON gerado ao criar a service account | Idem acima |
-| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | **Sim** | ID da pasta raiz do Drive onde os materiais são organizados | `1O9CYZNguX0zL1w1Tz9f5eM5Co4xO18CW` | ID na URL da pasta do Google Drive (compartilhada com a service account como Editor) | Idem acima |
+| `GOOGLE_DRIVE_CLIENT_ID` | **Sim** | Client ID do OAuth Client (tipo "Desktop app" — Device Flow não suporta o escopo `drive` completo, ver `ADR-017` adendo) | `123...apps.googleusercontent.com` | Google Cloud Console → Credentials | Sem as 3 variáveis OAuth: upload de Material retorna **503 para todo usuário, sem fallback** — bloqueia uma função central do Portal |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | **Sim** | Client Secret do mesmo OAuth Client | *(fornecido pelo Cloud Console)* | Google Cloud Console → Credentials | Idem acima |
+| `GOOGLE_DRIVE_REFRESH_TOKEN` | **Sim** | Token de longa duração da conta dedicada, trocado por access tokens em tempo de execução | *(gerado uma única vez)* | `php artisan google-drive:obter-refresh-token` (Authorization Code + redirect loopback local) | Idem acima |
+| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | **Sim** | ID da pasta raiz do Drive onde os materiais são organizados | `1O9CYZNguX0zL1w1Tz9f5eM5Co4xO18CW` | ID na URL da pasta do Google Drive (pasta comum no Meu Drive da conta dedicada, não Shared Drive — ver `ADR-017`) | Idem acima |
 
 ### 1.7 E-mail (SMTP)
 
@@ -157,14 +158,20 @@ estas variáveis hoje **não tem efeito nenhum**:
 - [ ] Agendar `scripts/backup-db.sh` via cron do host (diário).
 
 ### Google Drive
-- [ ] Criar/usar um projeto no Google Cloud Console.
+- [ ] Criar/usar um projeto no Google Cloud Console (conta Google — não
+      exige Workspace, ver `ADR-017`).
 - [ ] Habilitar a Google Drive API nesse projeto.
-- [ ] Criar uma Service Account dedicada (não uma conta pessoal).
-- [ ] Gerar uma chave JSON para a Service Account e extrair `client_email` e `private_key`.
-- [ ] Criar (ou escolher) a pasta raiz no Google Drive que vai guardar os materiais.
-- [ ] Compartilhar essa pasta com o e-mail da Service Account, papel **Editor**.
+- [ ] Criar um OAuth Client ID, tipo **TVs and Limited Input devices**
+      (não usa Service Account nem exige URI de redirecionamento).
+- [ ] Criar (ou escolher) a pasta raiz no Meu Drive da conta dedicada que
+      vai guardar os materiais — não é um Shared Drive.
 - [ ] Copiar o ID da pasta (da URL) para `GOOGLE_DRIVE_ROOT_FOLDER_ID`.
-- [ ] Preencher `GOOGLE_DRIVE_CLIENT_EMAIL`/`GOOGLE_DRIVE_PRIVATE_KEY` no `.env` real (escapar quebras de linha da chave privada como `\n`).
+- [ ] Rodar `php artisan google-drive:obter-refresh-token` (Device
+      Authorization Grant) e preencher `GOOGLE_DRIVE_CLIENT_ID`/
+      `_CLIENT_SECRET`/`_REFRESH_TOKEN` no `.env` real com o resultado.
+- [ ] Rodar `php artisan google-drive:test` para validar toda a
+      configuração (env, token, pastas, escrita, upload, leitura,
+      exclusão) antes do primeiro upload real.
 - [ ] Testar upload real de um Material em homologação antes do Go-Live.
 
 ### SMTP

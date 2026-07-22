@@ -175,3 +175,65 @@ execução da Etapa 5/16 de `PLANO_DE_IMPLANTACAO.md`).
 - `docs/deployment/IMPLEMENTACAO_TECNICA.md` §4
 - `docs/_workspace/TASK_ROUTER.md` §32, §33
 - RFC 8628 — OAuth 2.0 Device Authorization Grant
+
+---
+
+## 6. Adendo (2026-07-22) — Device Authorization Grant substituído por Authorization Code + loopback
+
+Ao executar `google-drive:obter-refresh-token` pela primeira vez com
+credenciais reais, o Google recusou a requisição do Device Authorization
+Grant para o escopo `https://www.googleapis.com/auth/drive`:
+
+```
+"error": "invalid_scope",
+"error_description": "Invalid device flow scope: https://www.googleapis.com/auth/drive"
+```
+
+Confirmado na documentação oficial
+(`developers.google.com/identity/protocols/oauth2/limited-input-device`,
+seção "Allowed scopes"): o Device Authorization Grant só é suportado para
+uma lista fechada de escopos — `email`, `openid`, `profile`,
+`drive.appdata`, `drive.file`, `youtube`, `youtube.readonly`. O escopo
+`drive` completo **não está nessa lista**; é uma restrição do Google,
+independente de qualquer configuração do client OAuth.
+
+`drive.file` foi descartado como alternativa: esse escopo só concede
+acesso a arquivos **criados pelo próprio app** sob esta autorização (ou
+abertos via Google Picker). A estrutura de pastas
+(ROOT/Materiais/Backup/Temporarios/Contratos/Exportacoes) e o arquivo de
+teste (`Temporarios/teste-upload.txt`) já existem, criados manualmente —
+adotar `drive.file` exigiria recriar toda a estrutura via API sob a nova
+autorização, descartando o que já existe e antecipando, sem necessidade,
+a decisão de produto ainda pendente sobre estrutura fixa vs. dinâmica de
+pastas (`ESTADO_SESSAO.md` §4).
+
+**Decisão do adendo:** manter o escopo `drive` completo e trocar apenas o
+*mecanismo de obtenção do `refresh_token`* — não o runtime de produção —
+para **Authorization Code + redirect loopback local** (RFC 8252), fluxo
+padrão para aplicações instaladas/desktop, sem essa restrição de escopo.
+
+- Exige um OAuth Client tipo **Desktop app** no Cloud Console — o client
+  "TVs and Limited Input devices" existente não suporta `redirect_uri`
+  (confirmado em `developers.google.com/identity/protocols/oauth2/native-app`,
+  que reserva o loopback redirect a clients Desktop app e direciona
+  TV/entrada-limitada exclusivamente ao Device Flow). O client antigo é
+  preservado (não usado neste fluxo, sem necessidade de exclusão).
+- `google-drive:obter-refresh-token` reescrito: abre um servidor HTTP
+  loopback temporário em `127.0.0.1:<porta livre>`, gera a URL de
+  autorização (`response_type=code`, `access_type=offline`,
+  `prompt=consent`), aguarda o redirect do navegador, troca o `code` por
+  tokens em `oauth2.googleapis.com/token` com
+  `grant_type=authorization_code`. Continua sendo execução manual única,
+  fora do fluxo de produção.
+- `GoogleDriveService::accessToken()` **não muda**: já consome só
+  `client_id`/`client_secret`/`refresh_token` via
+  `grant_type=refresh_token`, independente de como o `refresh_token` foi
+  obtido.
+- `GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET` no `.env` passam a ser os do
+  novo client Desktop app (o valor de `_REFRESH_TOKEN` também muda,
+  emitido sob a nova autorização).
+
+### O que não muda (reafirmado)
+Tudo listado na §"O que não muda" original permanece válido — a única
+mudança é o mecanismo de obtenção do `refresh_token`, não o que ele
+autoriza nem como é consumido em produção.

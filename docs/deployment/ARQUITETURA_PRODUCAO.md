@@ -111,8 +111,8 @@ já incluso no plano).
 Duas necessidades distintas, resolvidas por peças diferentes:
 
 1. **Material enviado pelas influenciadoras** — vai direto para o
-   **Google Drive** (Shared Drive institucional + Service Account
-   dedicada, §5). Decisão de produto, fora de escopo desta análise.
+   **Google Drive** (pasta comum + conta dedicada via OAuth, §5,
+   `ADR-017`). Decisão de produto, fora de escopo desta análise.
 2. **Arquivos internos da aplicação** (documentos gerados, uploads
    temporários, cache de disco) — disco local do próprio plano Locaweb
    (`FILESYSTEM_DISK=local`). Sem múltiplas réplicas de app, disco local
@@ -122,12 +122,25 @@ Duas necessidades distintas, resolvidas por peças diferentes:
 
 ## 5. Estratégia para Google Drive
 
-Sem mudança em relação à decisão original: **Shared Drive institucional
-(Google Workspace) + Service Account com acesso Editor**, propriedade da
-organização, não de uma pessoa. Custo incremental: **US$0** (dentro do
-Workspace já existente). A chave privada da Service Account vive só no
-`.env` do servidor (permissão de arquivo restrita) + cópia em
-gerenciador de senhas como *break-glass*.
+> **Correção factual (2026-07-22, `ADR-017`):** o parágrafo abaixo
+> descreve Shared Drive institucional (Google Workspace) + Service
+> Account — superado. Não há Google Workspace disponível (o projeto usa
+> a conta pessoal `elafashionmkt@gmail.com`); Shared Drives são recurso
+> exclusivo de Workspace, e a Org Policy do Google Cloud
+> (`elafashionmkt-org`) bloqueia a criação de Service Account Key. A
+> estratégia vigente é: pasta comum no Meu Drive da conta dedicada +
+> autenticação OAuth 2.0 (`refresh_token`) da mesma conta. Custo
+> incremental continua **US$0** (dentro da conta Google já existente). O
+> `refresh_token` (não uma chave privada) vive só no `.env` do servidor +
+> cópia em gerenciador de senhas como *break-glass*. Ver
+> `docs/adrs/ADR-017-oauth-conta-dedicada-google-drive.md`.
+
+Texto original, mantido como referência histórica da decisão anterior:
+Shared Drive institucional (Google Workspace) + Service Account com
+acesso Editor, propriedade da organização, não de uma pessoa. Custo
+incremental: US$0 (dentro do Workspace já existente). A chave privada da
+Service Account vive só no `.env` do servidor (permissão de arquivo
+restrita) + cópia em gerenciador de senhas como *break-glass*.
 
 ---
 
@@ -262,7 +275,7 @@ produção com segurança dentro do perfil atual do projeto.
 | 2. Banco | PostgreSQL gerenciado da própria Locaweb |
 | 3. Deploy | GitHub Actions + SSH, deploy atômico por symlink (`releases/` + `current`) |
 | 4. Storage interno | Disco local do plano compartilhado |
-| 5. Google Drive | Shared Drive institucional + Service Account dedicada |
+| 5. Google Drive | Pasta comum no Meu Drive + conta dedicada via OAuth (`ADR-017`) |
 | 6. SMTP | Relay incluso no domínio/plano Locaweb |
 | 7. Backup | `pg_dump` via Crontab + upload para o próprio Google Drive; alerta por e-mail nativo |
 | 8. Domínio | Subdomínio de `estudioela.com` |

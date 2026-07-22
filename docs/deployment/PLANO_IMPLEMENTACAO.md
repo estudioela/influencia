@@ -29,7 +29,7 @@
 > (`GOOGLE_DRIVE_CLIENT_EMAIL`/`_PRIVATE_KEY`) — superada. A organização
 > `elafashionmkt-org` bloqueia a criação dessa chave via Org Policy
 > (`iam.disableServiceAccountKeyCreation`); o mecanismo passou a ser OAuth
-> de conta dedicada do Workspace (`GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET`/
+> de conta dedicada (pessoal, sem Workspace) (`GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET`/
 > `_REFRESH_TOKEN`, obtidos via `php artisan google-drive:obter-refresh-token`).
 > Ver `docs/adrs/ADR-017-oauth-conta-dedicada-google-drive.md` e
 > `PLANO_DE_IMPLANTACAO.md` Etapa 5 para o procedimento corrigido.

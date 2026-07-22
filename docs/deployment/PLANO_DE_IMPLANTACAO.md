@@ -192,7 +192,7 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ---
 
-### Etapa 5 — Confirmar Google Shared Drive + conta dedicada (OAuth) ✅ mecanismo definido (2026-07-22, `ADR-017`)
+### Etapa 5 — Confirmar pasta do Google Drive + conta dedicada (OAuth) ✅ mecanismo definido (2026-07-22, `ADR-017`, adendo 2026-07-22)
 
 > **Correção de 2026-07-22:** esta etapa descrevia autenticação via
 > Service Account Key (`GOOGLE_DRIVE_CLIENT_EMAIL`/`_PRIVATE_KEY`). A
@@ -200,43 +200,57 @@ credencial ou decisão que só o responsável do projeto tem.
 > `constraints/iam.disableServiceAccountKeyCreation` habilitada, que
 > bloqueia a geração dessa chave — confirmado ao tentar executar esta
 > etapa. `ADR-017` decidiu trocar o mecanismo por OAuth de conta dedicada
-> (`refresh_token`), sem abrir exceção na política da organização. O
-> procedimento abaixo reflete a versão já implementada.
+> (`refresh_token`), sem abrir exceção na política da organização.
+>
+> **Correção de 2026-07-22 (adendo):** a versão anterior deste
+> procedimento ainda assumia um **Shared Drive** — recurso exclusivo de
+> Google Workspace. O projeto não tem Workspace: a conta usada é pessoal,
+> `elafashionmkt@gmail.com`. O procedimento abaixo usa uma **pasta comum
+> no Meu Drive** dessa conta, não um Shared Drive — `GoogleDriveService`
+> foi ajustado de acordo (removidos os parâmetros `corpora`/`driveId` que
+> exigiam Shared Drive).
 
-- **Objetivo:** credenciais institucionais (não atreladas a uma pessoa
-  física) para upload de Material e backup de banco, sem depender de
-  Service Account Key.
-- **Dependências:** acesso de administrador ao Google Workspace de
-  `estudioela.com` e a um projeto no Google Cloud Console vinculado.
+- **Objetivo:** credenciais para upload de Material e backup de banco,
+  sem depender de Service Account Key nem de Google Workspace.
+- **Dependências:** acesso à conta Google `elafashionmkt@gmail.com`
+  (administra o projeto no Google Cloud) e a um projeto no Google Cloud
+  Console vinculado a ela.
 - **Onde configurar:** Google Cloud Console + Google Drive + terminal
   (`php artisan google-drive:obter-refresh-token`, uso único):
-  1. Confirmar/criar o Shared Drive dedicado (ex.: "TEAR — Materiais de
-     Campanha") e, dentro dele, a subpasta `Backup`.
+  1. Confirmar/criar, no Meu Drive de `elafashionmkt@gmail.com`, a pasta
+     raiz dedicada (ex.: "TEAR — Materiais de Campanha") e, dentro dela,
+     a subpasta `Backup`.
   2. Habilitar a Google Drive API no projeto do Cloud Console
      (**APIs & Services → Library**).
-  3. Criar uma conta de e-mail dedicada no Workspace (ex.:
-     `tear-drive@estudioela.com`) — identidade de sistema, nunca usada
-     para login humano.
-  4. Criar um OAuth Client ID (**APIs & Services → Credentials → Create
-     Credentials → OAuth client ID**), tipo **TVs and Limited Input
-     devices** — não exige URI de redirecionamento.
-  5. Adicionar a conta dedicada ao Shared Drive com papel **Content
-     Manager**.
-  6. Rodar `php artisan google-drive:obter-refresh-token` (informando o
-     Client ID/Secret do passo 4), abrir a URL exibida, logar com a conta
-     dedicada e digitar o código mostrado no terminal (Device
-     Authorization Grant — RFC 8628, sem servidor local de callback).
-  7. O comando imprime `GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET`/
+  3. Criar um OAuth Client ID (**APIs & Services → Credentials → Create
+     Credentials → OAuth client ID**), tipo **Desktop app** ("App para
+     computador" na UI em português) — **não** "TVs and Limited Input
+     devices": o Device Flow não suporta o escopo `drive` completo,
+     só `drive.file`/`drive.appdata` (ver ADR-017, adendo 2026-07-22).
+  4. Na tela de permissão OAuth (**Google Auth Platform → Público-alvo**),
+     em "Usuários de teste", adicionar `elafashionmkt@gmail.com` — sem
+     isso, a autorização falha com "Acesso bloqueado" (app em fase de
+     testes, `Erro 403: access_denied`).
+  5. Rodar `php artisan google-drive:obter-refresh-token` (informando o
+     Client ID/Secret do passo 3), abrir a URL exibida, logar com
+     `elafashionmkt@gmail.com` e autorizar (Authorization Code + redirect
+     loopback local — RFC 8252, sem servidor de callback externo, execução
+     manual única).
+  6. O comando imprime `GOOGLE_DRIVE_CLIENT_ID`/`_CLIENT_SECRET`/
      `_REFRESH_TOKEN` prontos para o `.env`. IDs das pastas
      (`GOOGLE_DRIVE_ROOT_FOLDER_ID`/`_BACKUP_FOLDER_ID`) vêm da URL de
      cada pasta no Drive (trecho após `/folders/`).
-- **Como validar:** a conta dedicada aparece como membro do Shared Drive
-  com permissão de escrita; o comando do passo 6 termina com "Autorizado"
-  e imprime os 3 valores OAuth. Validação funcional real acontece na
-  Etapa 16 (upload de teste em homologação).
+  7. Preencher os 5 valores no `.env` e rodar
+     `php artisan google-drive:test` — valida variáveis, token, acesso à
+     pasta ROOT, existência/criação da pasta BACKUP, permissão de
+     escrita, upload, leitura e exclusão de um arquivo de diagnóstico,
+     com relatório de sucesso/falha por etapa.
+- **Como validar:** `php artisan google-drive:test` termina com "Todas as
+  etapas passaram". Validação funcional real (upload de Material de
+  verdade) acontece na Etapa 16, em homologação.
 - **Critérios de aceite:** os cinco valores (`CLIENT_ID`, `CLIENT_SECRET`,
-  `REFRESH_TOKEN`, `ROOT_FOLDER_ID`, `BACKUP_FOLDER_ID`) extraídos e
-  guardados em local seguro para a Etapa 8. Sem eles, upload de Material
+  `REFRESH_TOKEN`, `ROOT_FOLDER_ID`, `BACKUP_FOLDER_ID`) preenchidos no
+  `.env` e `google-drive:test` verde. Sem eles, upload de Material
   retorna 503 para todo usuário (comportamento já implementado, sem
   fallback local — ver `MaterialController::store`).
 
