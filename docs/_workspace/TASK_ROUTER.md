@@ -1950,3 +1950,48 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Próximo passo:** igual ao registrado no §24 — habilitar SSH para
   fechar a Etapa 2, e decidir a estratégia de deploy (recomendação em
   `AUDITORIA_LOCAWEB.md` §5.1) antes das Etapas 9–11.
+
+## 26. Auditoria read-only do conflito de merge `worktree-spec-mvp-completa` — reconfirma integridade do §16 (2026-07-22)
+
+- **Pedido:** investigar, em modo estritamente somente-leitura (sem
+  merge/rebase/commit/checkout/reset/stash/clean/restore), por que
+  `git merge origin/worktree-spec-mvp-completa` reportava
+  `Your local changes to the following files would be overwritten by
+  merge` em 7 arquivos de `Parceira`, apesar de `git status` mostrar
+  árvore limpa.
+- **Achado:** o conflito não existe mais no estado atual do repositório.
+  `git merge-base --is-ancestor origin/worktree-spec-mvp-completa HEAD`
+  confirma que a branch órfã já está totalmente incorporada — o merge foi
+  concluído no commit `24f7dfc` (2026-07-22 01:32:38), a mesma resolução
+  já registrada em §16. Os 7 arquivos do alerta são exatamente os que
+  genuinamente divergiam entre o HEAD pré-merge (`ef18225`) e a ponta da
+  branch órfã (`7fc9567`) — conflito de conteúdo real de 3-way merge; a
+  mensagem reportada é o comportamento padrão de segurança do Git
+  (`unpack-trees`) ao encontrar um path com alteração não commitada no
+  momento exato da tentativa de merge, não um bug ou corrupção.
+- **Hipóteses descartadas com evidência direta:** linked worktree em
+  `.claude/worktrees/spec-mvp-completa` (limpa, sem operação pendente —
+  não bloqueia merge de ref remota em outra worktree), sparse-checkout,
+  submódulo, conflito de índice, line endings, file mode, hook ativo,
+  processo externo, stash órfão, lock de índice.
+- **Efeito prático:** fecha em definitivo a pendência de §16 sobre a
+  integridade do merge — confirma independentemente que
+  `worktree-spec-mvp-completa` pode ser arquivada/apagada sem risco
+  técnico, quando o responsável do projeto decidir.
+- **Achado colateral de processo (não fazia parte do pedido original):**
+  `origin/main` está 97 commits atrás de `origin/feat/ui-design-system-ela`
+  (`git rev-list --left-right --count` = `0  97`) — `feat/ui-design-system-ela`
+  é a trunk real de trabalho, `main` está defasada. Relevante porque o
+  entregável desta auditoria (`GIT_CONFLITO_DIAGNOSTICO.md`) foi commitado
+  numa branch baseada em `main` e o PR (#63) foi aberto contra `main` —
+  decisão pendente do responsável do projeto sobre sincronizar as branches
+  ou formalizar `feat/ui-design-system-ela` como base padrão de PR
+  enquanto o Go-Live estiver em andamento (detalhe em `ESTADO_SESSAO.md`
+  §1/§4).
+- **Entregável:** `GIT_CONFLITO_DIAGNOSTICO.md` (raiz do repo, branch
+  `worktree-git-conflito-diagnostico`), PR draft
+  https://github.com/estudioela/jescri-migracao/pull/63 — ainda não
+  revisado/mergeado.
+- Nenhum código alterado, nenhum comando de escrita git executado durante
+  a investigação (só depois de confirmado o encerramento da missão é que
+  o relatório foi commitado/pushado/aberto em PR).
