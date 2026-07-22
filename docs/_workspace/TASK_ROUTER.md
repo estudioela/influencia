@@ -1972,3 +1972,48 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Próximo passo:** igual ao §25 — habilitar SSH, decidir estratégia de
   deploy. Adicionalmente, decidir sobre o commit pendente destes 2
   arquivos de encerramento.
+
+## 27. Auditoria de go-live (Agente B) + Bloqueador #4 — banco de dados de produção indefinido (2026-07-22)
+
+- **Auditoria completa de prontidão para produção**, read-only, via 5
+  investigações paralelas (Laravel core, frontend/build, API/segurança
+  backend, banco de dados + secrets, deploy + observabilidade),
+  consolidada em `docs/reports/GO_LIVE_STATUS.md` (novo). Nenhuma
+  alteração de código.
+- Identificados **3 bloqueadores técnicos de deploy** (com evidência
+  arquivo:linha no relatório): (1) `tear-v2-app/scripts/restore-db.sh`
+  assume Docker, que não existe na Locaweb real — restauração de backup
+  quebrada; (2) workflow de deploy usa `SSH_PRIVATE_KEY`, mas a Locaweb
+  só autentica por senha (achado já conhecido, confirmado ainda presente
+  no código); (3) nenhum documento especifica apontar o domínio no
+  painel Locaweb para `current/public` — risco de expor `.env`/`vendor`
+  publicamente se malfeito.
+- Achados adicionais classificados em recomendados/pós-MVP (rate
+  limiting ausente na API, `SESSION_SECURE_COOKIE` sem default seguro,
+  ausência de backup pré-`migrate`, ausência de healthcheck pós-deploy,
+  ausência de soft deletes, FKs sem índice explícito, entre outros) —
+  lista completa e classificação em `GO_LIVE_STATUS.md` §5/§6.
+- **Achado de infraestrutura reabre decisão já considerada fechada:** o
+  suporte técnico da Locaweb confirmou que o plano contratado
+  ("Hospedagem I") **não oferece PostgreSQL** — contradiz a evidência de
+  painel registrada em `docs/deployment/AUDITORIA_LOCAWEB.md`
+  ("PostgreSQL disponível, 0/10 usados"). Essa confirmação de suporte
+  passa a ser a referência oficial. Registrado como **Bloqueador #4**
+  (infraestrutura externa, distinto dos 3 bloqueadores técnicos) em
+  `GO_LIVE_STATUS.md` §1/§4/§7 — decisão de infraestrutura de banco
+  (upgrade de plano, PostgreSQL externo/gerenciado, ou outro SGBD) segue
+  em aberto.
+- Nota de prontidão: 63/100 (auditoria inicial) → **55/100** (após
+  registrar o Bloqueador #4).
+- Commit único `73963aa` (só `docs/reports/GO_LIVE_STATUS.md`),
+  pushado para `worktree-agente-b-deploy-infra`, refletido no PR #65
+  (aberto, base `feat/ui-design-system-ela`).
+- **Deploy explicitamente não autorizado nesta sessão**, apesar de
+  pedido posterior do responsável do projeto — mantida a condição mais
+  específica já dada na mesma conversa (banco definido + validação local
+  do Agente A + aprovação final para Go-Live, nenhuma cumprida ainda).
+- **Próximo passo:** decidir a infraestrutura de banco de dados de
+  produção (Bloqueador #4); resolver os 3 bloqueadores técnicos de
+  deploy; concluir validação local do Agente A; só então aprovação final
+  e execução do primeiro deploy (checklist completo em
+  `GO_LIVE_STATUS.md` §8).
