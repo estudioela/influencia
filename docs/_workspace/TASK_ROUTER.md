@@ -611,7 +611,7 @@ Corrigidas (FASE 4.1, decisão explícita do responsável, 2026-07-16, suíte 10
 cards com radius 16px, sombras discretas) que conflitam com a paleta e as
 regras visuais já adotadas em `ADR-002-frontend-foundation.md` (`#CD0005`,
 radius 0, "Absolute Flatness", zero box-shadow) e com o export elã/Stitch
-em `docs/stitch-export/`. Atualizar `DESIGN_SYSTEM.md` para alinhar os
+em `docs/design/stitch-export/`. Atualizar `DESIGN_SYSTEM.md` para alinhar os
 tokens ao ADR-002 antes da implementação frontend.
 
 ## 8. Preparação para deploy (FASE 6 pós-SPECs, 2026-07-16)
@@ -859,7 +859,7 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 ## 14. Redesign visual — Design System Estúdio Elã (iniciado 2026-07-19)
 
 - **Origem:** sessão de auditoria de UI (`src/ui/`) comparando com o Design
-  System Estúdio Elã e o export Stitch (`docs/stitch-export/`). Documentos de
+  System Estúdio Elã e o export Stitch (`docs/design/stitch-export/`). Documentos de
   referência (raiz do repo, não em `docs/` por serem artefatos de sessão):
   `UI_AUDIT_REPORT.md`, `UI_DESIGN_SYSTEM_GAP_ANALYSIS.md`,
   `UI_IMPLEMENTATION_ROADMAP.md`, `UI_VISUAL_HANDOFF.md`,
@@ -924,9 +924,9 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
   removidos por já estarem concluídos e aprovados; as pendências não
   bloqueantes acima foram preservadas nesta seção.
 - **Correção de caminho (2026-07-19, auditoria fase Implementação):** esta
-  nota listava `docs/stitch-export/` entre os artefatos removidos — o
+  nota listava `docs/design/stitch-export/` entre os artefatos removidos — o
   diretório **continua presente no repositório**
-  (`docs/stitch-export/DESIGN.md` + `docs/stitch-export/screens/`, 9 telas)
+  (`docs/design/stitch-export/DESIGN.md` + `docs/design/stitch-export/screens/`, 9 telas)
   e segue sendo a referência visual Stitch oficial. `UI_FINAL_REVIEW.md`
   também já não existe (a nota anterior dizia "mantido"); a PR #40 já foi
   revisada e mergeada em `origin/main` (merge commit `c96e618`).
