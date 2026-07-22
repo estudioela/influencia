@@ -22,6 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
+
+        // Locaweb compartilhada expõe a aplicação atrás do proxy reverso do
+        // provedor; sem confiar nele, Request::ip() (rate-limit de /login) e a
+        // detecção de HTTPS ficam incorretas. IP/CIDR confirmado só em produção
+        // (Etapa 1 de docs/deployment/PLANO_IMPLEMENTACAO.md) — nunca hardcode.
+        $trustedProxies = array_filter(explode(',', (string) env('TRUSTED_PROXIES', '')));
+        if ($trustedProxies !== []) {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

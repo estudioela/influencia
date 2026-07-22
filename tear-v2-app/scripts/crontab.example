@@ -1,0 +1,15 @@
+# Linhas de crontab do host Locaweb (`crontab -e`) para produção.
+# Ver docs/deployment/PLANO_IMPLEMENTACAO.md Etapas 9 e 10 — copiar para o
+# crontab real do host após o primeiro deploy (Etapa 7), ajustando o
+# caminho `~/current` se o diretório de deploy escolhido for outro.
+
+# Etapa 9 — backup diário do banco às 3h, upload ao Google Drive, retenção
+# local de 14 dias.
+0 3 * * * cd ~/current && ./scripts/backup-db.sh \
+  && php artisan backup:upload-to-drive --latest \
+  && find ./backups -name '*.sql.gz' -mtime +14 -delete
+
+# Etapa 10 — scheduler do Laravel e worker de fila, disparados a cada
+# minuto (a hospedagem compartilhada não suporta um worker de longa duração).
+* * * * * cd ~/current && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd ~/current && php artisan queue:work --stop-when-empty >> /dev/null 2>&1

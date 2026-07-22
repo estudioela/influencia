@@ -44,6 +44,14 @@ class GoogleDriveService
             ->get(self::API_URL.'/files', [
                 'q' => $query,
                 'fields' => 'files(id, name)',
+                // Shared Drive institucional (não "Meu Drive"): sem estes três
+                // parâmetros a API ignora o conteúdo do Shared Drive e retorna
+                // lista vazia, mesmo com a pasta existindo e a Service Account
+                // tendo acesso (ver docs/deployment/IMPLEMENTACAO_TECNICA.md §2).
+                'supportsAllDrives' => 'true',
+                'includeItemsFromAllDrives' => 'true',
+                'corpora' => 'drive',
+                'driveId' => $this->rootFolderId(),
             ])
             ->throw()
             ->json();
@@ -53,7 +61,7 @@ class GoogleDriveService
         }
 
         $created = Http::withToken($this->accessToken())
-            ->post(self::API_URL.'/files', [
+            ->post(self::API_URL.'/files?supportsAllDrives=true', [
                 'name' => $name,
                 'mimeType' => 'application/vnd.google-apps.folder',
                 'parents' => [$parentId],
@@ -85,7 +93,7 @@ class GoogleDriveService
 
         $response = Http::withToken($this->accessToken())
             ->withBody($body, "multipart/related; boundary={$boundary}")
-            ->post(self::UPLOAD_URL.'?uploadType=multipart&fields=id,webViewLink')
+            ->post(self::UPLOAD_URL.'?uploadType=multipart&fields=id,webViewLink&supportsAllDrives=true')
             ->throw()
             ->json();
 

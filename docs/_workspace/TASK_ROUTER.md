@@ -1573,3 +1573,56 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Resultado:** cada tema tratado pelos 4 documentos do merge agora tem
   exatamente uma fonte oficial vigente (ver tabela em
   `docs/archive/README.md` §`consolidacao-mvp-completa/`).
+
+## 18. Macrofase A (Go Live interno) — início da execução, ajustes de código sem credenciais reais (2026-07-22)
+
+- **Contexto:** início da execução técnica da Macrofase A, seguindo a ordem
+  de `docs/deployment/IMPLEMENTACAO_TECNICA.md` §1. Itens 1/2/5/7 dessa
+  ordem (confirmação de acesso Locaweb, provisionamento de banco/DNS/Drive,
+  configuração do host, primeiro deploy) exigem credenciais/acesso reais
+  que o agente não possui — não executados. Itens 3 e 6 (parte de código,
+  sem credenciais) executados nesta sessão.
+- **Alterações de código (§2/§3 de `IMPLEMENTACAO_TECNICA.md`):**
+  - `GoogleDriveService.php` — suporte a Shared Drive
+    (`supportsAllDrives`/`includeItemsFromAllDrives`/`corpora=drive`/
+    `driveId`), ausente até então; sem isso `ensureFolder`/`uploadFile`
+    falhariam silenciosamente contra o Shared Drive institucional.
+  - `bootstrap/app.php` — `trustProxies` condicionado a `TRUSTED_PROXIES`
+    (vazio por padrão, sem mudança de comportamento fora de produção).
+  - `.env.production.example` / `.env.example` / `config/services.php` —
+    `DB_HOST` deixou de assumir `db` (docker-compose); adicionadas
+    `TRUSTED_PROXIES` e `GOOGLE_DRIVE_BACKUP_FOLDER_ID`.
+  - `scripts/backup-db.sh` — reescrito para `pg_dump` direto contra o banco
+    gerenciado (lendo `backend/.env`), sem `docker compose exec`.
+  - `app/Console/Commands/BackupDatabaseToDrive.php` (novo, comando
+    `backup:upload-to-drive`) + `app/Notifications/BackupFalhouNotification.php`
+    (novo) — upload do dump ao Shared Drive via `GoogleDriveService`, com
+    alerta por e-mail aos ADMINs em caso de falha (via `Notification`, não
+    `Mail::raw()` — este último é no-op sob `Mail::fake()`, logo
+    intestável; o padrão de notificação já usado no projeto,
+    `InfluenciadoraConviteNotification`, foi seguido).
+  - `scripts/crontab.example` (novo) — linhas exatas das Etapas 9/10 de
+    `PLANO_IMPLEMENTACAO.md`, para copiar ao crontab real do host.
+- **Bloqueio arquitetural encontrado (parou a execução antes das Etapas 5/6
+  de CI/CD — job de build do frontend + deploy SSH):**
+  `ARQUITETURA_PRODUCAO.md` decide subdomínio único (`tear.estudioela.com`)
+  com o Laravel servindo `public/build`, mas o repositório atual não tem
+  essa fiação: `frontend/vite.config.ts` não aponta `outDir` para
+  `backend/public/build`, não há `laravel-vite-plugin`, `backend/routes/web.php`
+  só retorna a view placeholder `welcome` (sem rota catch-all servindo a
+  SPA), e `SESSION_DOMAIN`/`SANCTUM_STATEFUL_DOMAINS` no template ainda
+  assumem múltiplos subdomínios (ponto inicial), o que é redundante/
+  potencialmente incorreto para origem única. **Decisão de arquitetura
+  necessária antes de continuar:** como o build do frontend chega ao
+  usuário — servido pelo Laravel a partir de `public/build` (origem única,
+  como a decisão registrada assume) ou como site estático separado (ainda
+  que no mesmo subdomínio via proxy do servidor web)? Isso define o job de
+  CI (Etapa 5), o script/workflow de deploy (Etapa 6) e potencialmente
+  `config/cors.php`/`config/sanctum.php`. Não decidido nesta sessão —
+  registrado aqui para não ficar só no resumo do chat.
+- **Validação:** backend 188/188 testes verdes (469 assertions, +5 novos
+  testes de `backup:upload-to-drive`), Pint limpo, `composer audit` sem
+  achados, `tsc -b` do frontend limpo (frontend não alterado nesta sessão).
+- **Próximo passo:** decisão de arquitetura acima, depois retomar Etapas
+  5/6 de `PLANO_IMPLEMENTACAO.md`. Etapas 1/2/3/4/7+ permanecem bloqueadas
+  por credenciais reais (fora do escopo de execução do agente).
