@@ -3162,3 +3162,94 @@ só por terem links apontando para eles.
   Suíte completa (`php artisan test` 208/208, `pint --test`, `tsc -b`,
   `vite build`, `oxlint`) validada antes do commit anterior (§43) e não
   afetada por esta rodada (só documentação).
+
+---
+
+## 45. Auditoria de Go-Live + inventário real da infraestrutura Locaweb
+    (2026-07-23)
+
+> **Nota de numeração:** esta branch (`docs/locaweb-infrastructure`)
+> partiu de `origin/main` antes das sessões de `AI_CONSTITUTION.md`
+> (branch `docs/ai-constitution-notebooklm`, PR #79), que já numerou
+> suas próprias entradas como §45/§46 nesse outro branch. No merge,
+> **esta seção provavelmente precisa ser renumerada para §47** (depois
+> das duas já existentes em PR #79) — verificar a numeração vigente em
+> `main` no momento do merge.
+
+Sessão sem alteração de código de `tear-v2-app/`. Investigação de
+Go-Live em várias frentes sucessivas, com mudanças de escopo pedidas
+pelo responsável do projeto ao longo da sessão, e um artefato de
+documentação novo.
+
+1. **Auditoria P0 de bloqueadores de Go-Live** (fork em background, só
+   leitura): confirmou, na época, dois bloqueadores — nenhum canal de
+   deploy funcional (zero GitHub Secrets cadastrados no repositório;
+   SSH da Locaweb incompatível com autenticação por chave) e ausência de
+   PostgreSQL de produção provisionado. Não gerou arquivo — só relatório
+   na conversa.
+2. **Comparação de plataformas de deploy alternativas** (Railway,
+   Render, Fly.io, VPS+Coolify) como possível caminho mais rápido para
+   uma URL de homologação — depois **restrita a "só MySQL + gratuito"**
+   por instrução do responsável do projeto, e por fim **descartada por
+   completo**: a infraestrutura já contratada (Locaweb) deveria ser
+   usada, não uma plataforma nova. Não gerou arquivo.
+3. **Verificação de ferramentas oficiais da Locaweb** (API própria, CLI,
+   MCP) — API oficial existe (`developer.locaweb.com.br`) mas cobre só
+   Servidores Dedicados/Cloud/VPS, não o plano de hospedagem
+   compartilhada contratado; nenhum CLI nem MCP oficial encontrado. Não
+   gerou arquivo.
+4. **Sequência mínima de deploy** extraída de
+   `docs/deployment/PLANO_DE_IMPLANTACAO.md` (documento já existente, 17
+   etapas) para "ter uma URL funcional hoje" — recomendação de fazer o
+   primeiro deploy manualmente (sem GitHub Actions) dentro de uma única
+   janela de SSH de 3h, evitando depender de resolver a automação via CI
+   no mesmo dia. Recomendação ficou só na conversa, não virou arquivo.
+5. **Decisão de arquitetura testada e confirmada:** o responsável do
+   projeto instruiu trocar o banco de dados oficial de PostgreSQL para
+   MySQL. O agente identificou que isso contradizia a decisão já
+   aprovada em `ARQUITETURA_PRODUCAO.md` §2 (status "Aprovada e
+   definitiva") e perguntou explicitamente antes de prosseguir — o
+   responsável do projeto **confirmou manter PostgreSQL**, conforme já
+   aprovado. Nenhum arquivo de arquitetura foi alterado.
+6. **`docs/deployment/LOCAWEB.md` criado** (PR #80, branch
+   `docs/locaweb-infrastructure`): primeira versão redigida a partir de
+   `AUDITORIA_LOCAWEB.md`/`ARQUITETURA_PRODUCAO.md` (sem prints reais).
+   **Reescrito por completo** depois que o responsável do projeto
+   forneceu 10 prints reais do painel Locaweb
+   (`docs/infrastructure/assets/`), passando a citar cada achado pelo
+   print de origem.
+7. **Decisão de domínio (não é divergência):** todos os 10 prints
+   fornecidos são da hospedagem `elafashionmkt.com.br`, não de
+   `estudioela.com` (que `AUDITORIA_LOCAWEB.md`, sessão anterior, tratava
+   como o alvo do deploy do TEAR). O responsável do projeto esclareceu:
+   **`elafashionmkt.com.br` é o ambiente inicial** de
+   deploy/homologação/estabilização; **`estudioela.com` é o domínio
+   canônico planejado** do produto, migração futura só por
+   alias/apontamento de hospedagem, sem mudança de infraestrutura
+   física. Registrado como decisão em `docs/deployment/LOCAWEB.md`.
+8. **Divergência técnica real, registrada e não resolvida:** o wizard de
+   banco de dados do painel Locaweb mostra PostgreSQL como "Nenhum banco
+   de dados disponível" em `elafashionmkt.com.br`, enquanto MySQL está
+   disponível (0/10 usados). Isso contradiz tanto
+   `AUDITORIA_LOCAWEB.md` §1.1 ("PostgreSQL confirmado disponível")
+   quanto a decisão de arquitetura de `ARQUITETURA_PRODUCAO.md` §2
+   (PostgreSQL gerenciado). A pedido do responsável do projeto, a
+   conclusão de `docs/deployment/LOCAWEB.md` foi redigida separando
+   **fatos observados** (MySQL disponível; PostgreSQL não listado no
+   painel desta hospedagem) de **decisão de arquitetura ainda pendente**
+   (usar PostgreSQL foi escolha do projeto, não é uma limitação
+   comprovada da infraestrutura) — sem declarar o deploy "bloqueado".
+   Fica para decisão do responsável do projeto: investigar com o
+   suporte Locaweb a disponibilidade real de PostgreSQL, ou revisar a
+   arquitetura para MySQL (exigiria novo ADR).
+9. **Itens antes "pendentes de validação" resolvidos pelos prints:**
+   porta SSH (22), porta FTP (21), existência de Web FTP (gerenciador de
+   arquivos via navegador) e de um agendador HTTP nativo da Locaweb
+   ("Netscheduler", distinto do crontab tradicional). Template exato do
+   recurso "Publicar via Git" do painel capturado
+   (`locaweb/ftp-deploy@1.0.0`) — confirma que é upload FTP automatizado
+   via GitHub Actions, não deploy real com execução remota de comandos.
+- **Validação:** nenhum código de `tear-v2-app/` alterado nesta sessão.
+  Suíte de testes não executada (não havia mudança de código a validar) —
+  só documentação (`docs/deployment/LOCAWEB.md`,
+  `docs/_workspace/ESTADO_SESSAO.md`, este arquivo).

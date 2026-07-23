@@ -9,147 +9,153 @@
 
 ## 1. Estado atual
 
-- **Data desta atualização:** 2026-07-23
-- **HEAD de `feat/ui-design-system-ela`:** `a82d77f`, pushado e
-  sincronizado com `origin/feat/ui-design-system-ela`.
-- **Branch:** `feat/ui-design-system-ela`.
-- **Working tree:** limpo.
-- **Sistema em foco:** o repositório inteiro (missão de limpeza
-  estrutural), não uma SPEC específica de `tear-v2-app`. Nenhum código de
-  `tear-v2-app` foi alterado nesta sessão — só estrutura de arquivos e
-  documentação.
-- **Go-Live de produção: continua NÃO AUTORIZADO**, pendente só de
-  infraestrutura externa ao código (inalterado desde a sessão anterior;
-  ver `docs/release/GATE_FINAL_GO_LIVE.md`).
-- **Suíte revalidada nesta sessão** (antes da limpeza de docs, sem código
-  alterado depois): backend `php artisan test` 208/208 verde,
-  `vendor/bin/pint --test` limpo, `tsc -b && vite build` sem erros,
-  `oxlint` só o aviso pré-existente não relacionado (`src/lib/auth.tsx`).
+- **Data desta atualização:** 2026-07-23.
+- **`main` (remoto, `origin/main`):** inclui a limpeza estrutural de 6
+  rodadas (`feat/ui-design-system-ela`, mesclada — ver `TASK_ROUTER.md`
+  §42-§44). Último commit em `origin/main`: `c96d460` (inalterado nesta
+  sessão).
+- **`main` local segue 1 commit à frente do remoto, nunca pushado**
+  (inalterado desde a sessão anterior): `8060e18 docs(governance):
+  establish Phase 2 governance model`. Existe também a branch
+  `docs/governance-phase2` (local e em `origin`) com o mesmo commit.
+  **Não investigado nesta sessão** — fora de escopo da missão. Ver §4.
+- **Três branches com PR draft aberta, pendentes de decisão de
+  push/merge, sem relação entre si:**
+  1. `worktree-fix-dev-env` — **PR #78** — correção do ambiente de
+     desenvolvimento local (`composer dev` unificado). Commit mais
+     recente `10a8298`, pushado. Nenhuma ação de código pendente, só
+     decisão de merge. (Inalterado nesta sessão.)
+  2. `docs/ai-constitution-notebooklm` — **PR #79** — `docs/
+     AI_CONSTITUTION.md` reescrita como constituição de engenharia +
+     reenvio do notebook NotebookLM. Commit mais recente `330ca33`,
+     pushado. (Inalterado nesta sessão — a conversa começou nesta
+     branch, mas todo trabalho novo foi feito em branch própria, `git
+     checkout -b docs/locaweb-infrastructure origin/main`.)
+  3. **Nova nesta sessão:** `docs/locaweb-infrastructure` — **PR #80** —
+     `docs/deployment/LOCAWEB.md`, inventário de infraestrutura Locaweb
+     baseado em 10 prints reais do painel. Commit mais recente
+     `cec519d`, pushado.
+- **⚠️ Risco novo desta sessão:** PR #79 e PR #80 partiram de bases
+  diferentes de `main` e **ambas modificam `ESTADO_SESSAO.md`** (todo
+  `/fim` reescreve este arquivo). Vão conflitar no merge, qualquer que
+  seja a ordem — resolver mantendo o conteúdo mais recente (o desta
+  sessão, que é posterior ao de PR #79) na hora do merge.
+- **Working tree desta sessão:** limpo (tudo commitado e pushado).
+- **Go-Live de produção: continua NÃO AUTORIZADO.** Nesta sessão ficou
+  mais claro *por quê*: ver §2 e §4 — a decisão de banco de dados
+  (PostgreSQL vs. MySQL) ficou em aberto com evidência nova de print.
 
-## 2. Última sessão concluída — Missão de limpeza estrutural do repositório, 6 rodadas (2026-07-23)
+## 2. Última sessão concluída — Auditoria de Go-Live + inventário real da
+    infraestrutura Locaweb (2026-07-23)
 
-Sessão longa, autorizada explicitamente pelo responsável do projeto para
-reduzir agressivamente a árvore de arquivos ativa. Cinco commits em
-`feat/ui-design-system-ela`: `fe5ccf8` → `8c001c8` → `4fc6b36` → `eeefbf7`
-→ `3057e79` → `a82d77f`.
+Sessão sem alteração de código de `tear-v2-app/`. Só investigação e
+documentação, em várias frentes sucessivas (mudanças de escopo pedidas
+pelo responsável do projeto ao longo da sessão):
 
-1. **Remoção do Portal legado em Google Apps Script** (`fe5ccf8`):
-   confirmado pelo responsável do projeto como descontinuado/substituído —
-   `tear-v2-app` é a única aplicação oficial. Removidos `src/` (14 `.js` +
-   13 `.html`), `test/` (86 testes Jest + helpers), `eslint.config.js`,
-   `.clasp.json.example`, `.claspignore`, `appsscript.json`,
-   `scripts/preview-server.mjs`, `package.json`/`package-lock.json` da
-   raiz. Antes da remoção, o algoritmo de normalização de
-   `ChaveInfluenciadora` (só existia no código) foi extraído para
-   `docs/specs/SPEC-003-importacao-inicial-da-base.md` §6.1.
-   `PROJECT_GOVERNANCE.md`, `DEPLOY_CHECKLIST.md`, `ROTEIRO_HOMOLOGACAO.md`
-   (100% sobre o legado) inicialmente arquivados, depois removidos de
-   vez na rodada 5. `README.md` e `knowledge/README.md` reescritos para
-   descrever `tear-v2-app` como o produto oficial.
-2. **Consolidação de ADRs e mais documentos superados** (`8c001c8`):
-   `ADR-002` marcado "Superseded by ADR-015" (nunca implementado);
-   5 ADRs do legado ganharam nota histórica (depois removidos na rodada
-   5); `docs/architecture/ARQUITETURA_CAMADAS.md` e
-   `docs/design/stitch-export/screens/` (mockups já implementados como
-   páginas reais) arquivados; `docs/deployment/PLANO_IMPLEMENTACAO.md`
-   arquivado só depois de remapear ~9 citações "Etapa N" em documentos
-   vivos de deploy para a numeração de `PLANO_DE_IMPLANTACAO.md` (as duas
-   versões têm etapas diferentes).
-3. **Redução da raiz** (`4fc6b36`): `knowledge/` incorporado a
-   `docs/knowledge/` (scripts de sync com NotebookLM atualizados para o
-   novo caminho). Confirmado que `mcp/` (servidor MCP real, expõe status
-   de ambiente para sessões de IA) e `scripts/` (sync real com NotebookLM
-   via `nlm`, binário instalado e em uso) são ferramentas ativas, não
-   lixo — mantidos na raiz.
-4. **Padronização de nomenclatura** (`eeefbf7`): as 15 SPECs (só tinham
-   número, ex. `SPEC-003.md`) e `ADR-001` (único slug em UPPERCASE)
-   renomeadas para `ID-slug-descritivo-em-portugues.md`, seguindo o
-   padrão já usado pelos demais ADRs. Numeração preservada (histórica,
-   lacunas 006-009 mantidas). Todas as referências de caminho corrigidas.
-5. **Reversão da estratégia de arquivamento — remoção definitiva**
-   (`3057e79`/`a82d77f`): o responsável do projeto considerou o
-   arquivamento (`git mv` para `docs/archive/`) "conservador demais" e
-   determinou o critério final: **conhecimento já consolidado em fonte
-   vigente = documento antigo removido da árvore (`git rm`), não
-   arquivado.** Removidos: `docs/archive/` inteiro (64 arquivos),
-   `docs/reports/` inteiro (7 arquivos — achados específicos confirmados
-   já presentes em `ESTADO_SESSAO.md`/`TASK_ROUTER.md` antes da remoção),
-   `docs/knowledge/archive/` e `docs/knowledge/references/` (8 arquivos),
-   e mais 8 ADRs sobre o legado removido/nunca implementado (`001`, `002`,
-   `004`, `005`, `010`, `011`, `013`, `014`). Restam 6 ADRs vigentes
-   (`003`, `012`, `015`, `016`, `017`, `018`). Referências corrigidas em
-   todos os documentos vivos que citavam os arquivos removidos.
-6. **Resultado:** `docs/` passa de ~102 arquivos `.md` (linha de base da
-   missão de simplificação documental original, `TASK_ROUTER.md` §28)
-   para 50 arquivos em 9 pastas temáticas, todas vigentes. Raiz do
-   repositório passa de ~15 itens para 10 (`.claude`, `.git`, `.github`,
-   `.gitignore`, `CLAUDE.md`, `docs/`, `mcp/`, `README.md`, `scripts/`,
-   `tear-v2-app`). Detalhe completo de cada decisão em `TASK_ROUTER.md`
-   §42-§44.
+1. **Auditoria P0 de bloqueadores de Go-Live** (fork em background,
+   sem código): confirmou 2 bloqueadores até então — nenhum canal de
+   deploy funcional (zero GitHub Secrets cadastrados, SSH da Locaweb
+   incompatível com chave) e ausência de PostgreSQL de produção
+   provisionado. **Não gerou arquivo** — só relatório na conversa.
+2. **Comparação de plataformas de deploy alternativas** (Railway,
+   Render, Fly.io, VPS+Coolify), depois **restrita a MySQL/gratuito**, e
+   por fim **descartada pelo responsável do projeto** em favor de usar a
+   infraestrutura Locaweb já contratada. **Não gerou arquivo.**
+3. **Verificação de ferramentas oficiais da Locaweb** (API, CLI, MCP) —
+   nenhuma aplicável ao plano de hospedagem compartilhada contratado.
+   **Não gerou arquivo.**
+4. **Sequência mínima de deploy** extraída de
+   `docs/deployment/PLANO_DE_IMPLANTACAO.md` (documento que já existia,
+   17 etapas) para "URL funcional hoje" — recomendação de fazer o
+   primeiro deploy manualmente (sem GitHub Actions) dentro de uma única
+   janela de SSH de 3h. **Não gerou arquivo** — recomendação ficou só na
+   conversa.
+5. **Decisão de arquitetura testada e confirmada pelo responsável do
+   projeto:** ao ser questionado sobre uma instrução para trocar o
+   banco de PostgreSQL para MySQL, o agente identificou que isso
+   contradizia `ARQUITETURA_PRODUCAO.md` §2 (status "Aprovada e
+   definitiva") e perguntou explicitamente — **o responsável do projeto
+   confirmou manter PostgreSQL**, conforme já aprovado.
+6. **`docs/deployment/LOCAWEB.md` criado e depois reescrito por
+   completo** (único artefato de código desta sessão, PR #80): primeira
+   versão a partir de `AUDITORIA_LOCAWEB.md`/`ARQUITETURA_PRODUCAO.md`
+   (sem prints); reescrita integral depois que o responsável do projeto
+   forneceu 10 prints reais do painel (`docs/infrastructure/assets/`).
+7. **Achado crítico dos prints, ainda sem decisão:** todos os 10 prints
+   são da hospedagem `elafashionmkt.com.br` — **decisão do responsável
+   do projeto (não é divergência):** `elafashionmkt.com.br` é o
+   **ambiente inicial** de deploy/homologação/estabilização;
+   `estudioela.com` é o **domínio canônico planejado**, migração futura
+   por alias, sem mudança de infraestrutura.
+8. **Divergência técnica real, registrada e não resolvida:** o wizard
+   de banco de dados do painel mostra PostgreSQL como "Nenhum banco de
+   dados disponível" em `elafashionmkt.com.br`, enquanto MySQL está
+   disponível (0/10 usados). `ARQUITETURA_PRODUCAO.md` §2 e
+   `AUDITORIA_LOCAWEB.md` diziam Postgres disponível. A conclusão do
+   documento foi redigida de forma neutra a pedido do responsável do
+   projeto: separa **fatos observados** (MySQL disponível; PostgreSQL
+   não listado no painel desta hospedagem) de **decisão de arquitetura
+   pendente** (usar PostgreSQL é escolha do projeto, não limitação
+   comprovada da infraestrutura) — sem declarar o deploy "bloqueado".
+9. Itens antes "pendentes de validação" que os prints resolveram:
+   porta SSH (22), porta FTP (21), existência de Web FTP (gerenciador
+   via navegador) e de um scheduler HTTP nativo (Netscheduler, distinto
+   do crontab tradicional). Template exato do "Publicar via Git" da
+   Locaweb capturado (`locaweb/ftp-deploy@1.0.0`, upload FTP, não é
+   deploy real).
+10. Detalhe completo: `docs/_workspace/TASK_ROUTER.md` §45.
 
 ## 3. Próxima tarefa recomendada
 
-Nenhuma pendência de código. Decisão do responsável do projeto entre:
+**Decisão do responsável do projeto, não tarefa de código:** resolver a
+divergência de banco de dados em `docs/deployment/LOCAWEB.md` (seção
+"Divergências encontradas" e "Conclusão desta revisão") — duas opções:
 
-1. **Fase separada já anunciada: reorganização dos repositórios GitHub**
-   (manter só 2 repositórios principais, renomear `jescri-migracao` para
-   `portal-ela`, excluir os demais). Explicitamente **não iniciada nesta
-   sessão** por instrução do responsável do projeto. Quando essa fase
-   começar: `gh repo rename`/`gh repo delete` exigem permissões
-   administrativas e o escopo `delete_repo` do token `gh` — se a sessão
-   que executar não tiver esse escopo, ela deve entregar os comandos
-   `gh` exatos (ou o caminho na interface do GitHub) em vez de parar a
-   tarefa, conforme já orientado pelo responsável do projeto.
-2. **Autorizar preparação de infraestrutura de produção** (Locaweb real,
-   PostgreSQL, DNS/TLS, `.env` de produção, SMTP) — único bloqueio real
-   para o Go-Live, seguindo `docs/release/GATE_FINAL_GO_LIVE.md`.
-3. **Reconciliar `docs/knowledge/.notebook-index.json`** — tem entradas
-   para arquivos já removidos (ver §4 abaixo). Rodar
-   `scripts/clean-notebook.sh` para sincronizar com o notebook real do
-   NotebookLM (não é urgente, é limpeza de estado externo).
+1. **Investigar com o suporte Locaweb** por que PostgreSQL não aparece
+   disponível no wizard de `elafashionmkt.com.br` (pode ser só
+   habilitação/contato, não impossibilidade técnica) e manter a
+   arquitetura aprovada (`ARQUITETURA_PRODUCAO.md` §2).
+2. **Revisar a arquitetura para MySQL** (motor já confirmado disponível
+   nesta hospedagem) — exigiria novo ADR (`CLAUDE.md`: "não alterar
+   arquitetura sem ADR") e ajuste de `.env.production.example`
+   (`DB_CONNECTION=pgsql` → `mysql`) e checagem das 28 migrations.
+
+Em paralelo, seguem as pendências já conhecidas de sessões anteriores
+(§4): resolver o commit `8060e18` órfão, decidir merge das 3 PRs
+abertas (#78, #79, #80 — lembrando do conflito esperado em
+`ESTADO_SESSAO.md` entre #79 e #80), e as ~22 fontes legadas no
+notebook `tear`.
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Nenhum bloqueador funcional (Categoria A) em aberto** no código de
-  `tear-v2-app` — inalterado desde a sessão anterior.
-- **12 decisões de negócio pendentes ficaram só no histórico do Git, não
-  mais na árvore ativa:** `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`
-  §9 tinha uma lista de 12 decisões do responsável do projeto ainda em
-  aberto (recorrência/parcelamento de pagamento é a "de maior
-  alavancagem" — já rastreada separadamente em `ESTADO_SESSAO.md`/
-  `TASK_ROUTER.md` como limitação de escopo conhecida). O arquivo foi
-  removido nesta sessão (rodada 5, junto com todo `docs/archive/`) sem
-  que as outras 11 decisões fossem extraídas para um documento vigente —
-  **só a de recorrência já tinha rastreamento próprio antes**. As demais
-  11 não estão mais em nenhum documento ativo, só recuperáveis via
-  `git log`/`git show` no commit `fe5ccf8`→`3057e79` (arquivo estava em
-  `docs/archive/planejamento-pre-codigo/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`
-  antes de `3057e79`). **Se alguma dessas 11 decisões for real e ainda
-  não resolvida, vale recuperar o arquivo do histórico do Git antes que
-  a memória de qual eram se perca.**
-- **Congelamento de Participação incompleto frente ao gap real**
-  (`ADR-018`): sem cópia de dados da Parceira nem trilha de auditoria. Se
-  algum fluxo (ex.: geração de Contrato no Sprint 3) precisar dessa
-  garantia, o modelo completo precisa ser **refeito como trabalho novo**
-  — o plano de arquitetura original foi removido da árvore (não só
-  arquivado) nesta sessão.
-- **`docs/knowledge/.notebook-index.json`** tem entradas obsoletas
-  (inclusive de antes desta sessão — nomes que não correspondem a
-  nenhuma estrutura já vista no repositório). Não editado à mão para não
-  gerar inconsistência com o notebook remoto real; reconciliar rodando
-  `scripts/clean-notebook.sh`.
+- **Divergência de banco de dados (PostgreSQL vs. MySQL) em
+  `elafashionmkt.com.br`** — nova nesta sessão, ver §2/§3.
+- **Commit `8060e18` em `main` local, nunca pushado** (`docs/
+  governanca/GOVERNANCA_DO_PROJETO.md`) — não investigado nesta sessão,
+  inalterado desde a sessão anterior.
+- **Merge das PRs #78, #79 e #80** — três branches independentes,
+  conflito esperado em `ESTADO_SESSAO.md` entre #79/#80 (ver §1).
+- **~22 fontes legadas no notebook `tear`** não removidas (inalterado).
+- Itens ainda pendentes de validação em `docs/deployment/LOCAWEB.md`:
+  extensões PHP, limite real de bancos (total vs. por motor),
+  disponibilidade de MS SQL, existência de crontab nativo (não
+  capturado nesta rodada de prints), emissão efetiva de SSL, quota de
+  disco/CPU, IP do proxy reverso, host/porta SMTP — todos precisam de
+  SSH habilitado para confirmar.
+- **12 decisões de negócio pendentes só no histórico do Git**
+  (inalterado) — `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`
+  §9, recuperável via `git show fe5ccf8`→`3057e79`.
+- Congelamento de Participação incompleto frente ao gap real
+  (`ADR-018`) — inalterado.
 - Validação ponta a ponta dos 2 fluxos de e-mail (convite, reset) com
   SMTP real — não executada (inalterado).
 - SPF/DKIM/DMARC do domínio `elafashionmkt.com.br` não verificados
-  (inalterado).
-- Limite diário de envio do plano Locaweb não levantado (inalterado).
+  (inalterado — note que este domínio agora é o ambiente inicial de
+  deploy, não só o site da agência, o que aumenta a relevância deste
+  item).
 - Recorrência/parcelamento de pagamento não implementado — limitação de
   escopo conhecida, não bug (inalterado).
-- Estratégia de infraestrutura do PostgreSQL, autenticação de deploy,
-  DNS de `influencia.estudioela.com` — inalterados (ver
-  `docs/release/GATE_FINAL_GO_LIVE.md` para o gate completo de infra).
-- **Categoria B (não bloqueia certificação funcional, registrado
-  integralmente em sessões anteriores, inalterado nesta sessão):**
+- **Categoria B (não bloqueia certificação funcional, inalterado):**
   `Pagamento.valor` editável mesmo com `status=PAGO` sem auditoria;
   Pagamento e cancelamento de Participação não se checam mutuamente;
   Campanha `ENCERRADA`/`CANCELADA` continua 100% editável; Participação
@@ -163,70 +169,110 @@ Nenhuma pendência de código. Decisão do responsável do projeto entre:
 
 ## 5. Riscos ativos
 
-1. **Novo nesta sessão:** perda de rastreabilidade de até 11 decisões de
-   negócio pendentes (ver §4) — mitigável recuperando o arquivo do
-   histórico do Git, mas não feito automaticamente.
-2. PostgreSQL indisponível no plano atual da Locaweb — impacto em
-   custo/cronograma (inalterado).
-3. Pipeline de deploy com incompatibilidade de autenticação não resolvida
-   (inalterado).
-4. DNS de `influencia.estudioela.com` não apontado (inalterado).
-5. Validação comercial concentrada em piloto único ainda não confirmado;
-   bus factor 1 (inalterado).
-6. SPF/DKIM/DMARC não verificados no domínio de envio (inalterado, baixo
-   risco imediato).
-7. **Mitigado nesta sessão:** repositório com dezenas de documentos
-   históricos/redundantes dificultando navegação — `docs/` reduzido de
-   ~102 para 50 arquivos, raiz de ~15 para 10 itens, nomenclatura de
-   SPECs/ADRs padronizada.
+1. **Conflito de merge em `ESTADO_SESSAO.md` entre PR #79 e PR #80**
+   (novo, esta sessão) — ambas partiram de bases diferentes de `main` e
+   reescreveram o arquivo independentemente. Resolver na hora do merge.
+2. **Divergência de histórico entre `main` local e `origin/main`**
+   (commit `8060e18` não pushado, inalterado).
+3. Decisão de banco de dados em aberto (PostgreSQL vs. MySQL) pode
+   atrasar o primeiro deploy se não for resolvida logo — quanto mais
+   tempo sem decisão, maior o retrabalho se a resposta for "trocar para
+   MySQL" depois de mais avanço em cima da arquitetura Postgres.
+4. Três PRs abertas em paralelo (#78, #79, #80) sem decisão de merge —
+   risco crescente de conflito com trabalho futuro (agravado pelo
+   risco #1).
+5. Perda de rastreabilidade de até 11 decisões de negócio pendentes
+   (ver §4) — mitigável recuperando o arquivo do histórico do Git.
+6. PostgreSQL indisponível no plano atual da Locaweb para
+   `elafashionmkt.com.br` — a confirmar se é limitação real ou só falta
+   de habilitação (inalterado quanto ao fato, mudou o contexto: antes se
+   falava de `estudioela.com`, agora o achado é sobre o ambiente que
+   será de fato usado primeiro).
+7. DNS de `influencia.estudioela.com` (domínio canônico futuro) ainda
+   não apontado — mitigado em parte pelo fato de `elafashionmkt.com.br`
+   (ambiente inicial) já ter DNS resolvido, reduzindo a urgência.
+8. Validação comercial concentrada em piloto único ainda não
+   confirmado; bus factor 1 (inalterado).
+9. SPF/DKIM/DMARC não verificados no domínio de envio — relevância maior
+   agora que `elafashionmkt.com.br` é o ambiente inicial de deploy.
 
 ## 6. IA recomendada para a próxima tarefa
 
-- **Reorganização dos repositórios GitHub (fase anunciada, não
-  iniciada):** qualquer IA com acesso a `gh` autenticado; se faltar
-  escopo `delete_repo`, a IA deve entregar os comandos `gh` exatos para
-  o responsável do projeto executar, não travar a tarefa.
-- **Decisão de autorizar infraestrutura/Go-Live:** decisão do
-  responsável do projeto, não requer IA.
-- **Recuperação das 11 decisões de negócio do histórico do Git (se
-  decidido fazer):** qualquer IA — é um `git show` num commit específico,
-  não requer contexto arquitetural profundo.
-- Toda sessão nesta fase de Go-Live segue reportando ao final: Concluído
-  / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima prioridade /
-  Checklist de Go-Live.
+- **Decidir PostgreSQL vs. MySQL / investigar com suporte Locaweb:**
+  decisão do responsável do projeto, não requer IA — mas se optar por
+  investigar tecnicamente (habilitar SSH e testar), qualquer IA de
+  terminal com acesso SSH/`gh` serve.
+- **Esclarecer o commit `8060e18`/branch `docs/governance-phase2`:**
+  qualquer IA de terminal com `git`/`gh` — tarefa de investigação e
+  decisão, não de código.
+- **Merge/push das PRs #78, #79, #80:** qualquer IA de terminal com `gh`
+  autenticado — atenção ao conflito esperado em `ESTADO_SESSAO.md`.
+- Toda sessão nesta fase de Go-Live segue reportando ao final:
+  Concluído / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima
+  prioridade / Checklist de Go-Live.
 
 ## 7. Prompt de handoff
 
 ```
-Contexto: projeto ELÃ | influência (tear-v2-app, Laravel 13+React), branch
-feat/ui-design-system-ela, HEAD a82d77f. Estado completo em
-docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e docs/_workspace/
-TASK_ROUTER.md §42-§44 (missão de limpeza estrutural, 6 rodadas, mais
-recente).
+Contexto: projeto ELÃ | influência / TEAR (Estúdio Elã). origin/main já
+inclui a limpeza estrutural de 6 rodadas (TASK_ROUTER.md §42-§44). ATENÇÃO:
+main local está 1 commit à frente de origin/main (8060e18, "Governança Fase
+2", nunca pushado, inalterado) — investigar antes de mesclar qualquer PR.
 
-Estado: sessão longa de limpeza estrutural agressiva do repositório,
-autorizada explicitamente pelo responsável do projeto. Portal legado em
-Google Apps Script (src/, test/) removido — tear-v2-app é a única
-aplicação oficial. docs/ reduzido de ~102 para 50 arquivos (removido
-docs/archive/, docs/reports/, docs/knowledge/archive+references, 8 ADRs de
-legado — não arquivados, removidos de vez, histórico só no Git). Raiz
-reduzida de ~15 para 10 itens (knowledge/ incorporado a docs/knowledge/).
-SPECs e ADR-001 renomeados com slug descritivo. Nenhum código de
-tear-v2-app alterado — suíte revalidada antes da limpeza: 208/208 backend,
-tsc -b + vite build ok, oxlint só aviso pré-existente.
+Três PRs draft abertas, independentes entre si, sem código pendente, só
+decisão de merge:
+- PR #78 (branch worktree-fix-dev-env): composer dev unificado.
+- PR #79 (branch docs/ai-constitution-notebooklm): AI_CONSTITUTION.md +
+  NotebookLM.
+- PR #80 (branch docs/locaweb-infrastructure, nova nesta sessão):
+  docs/deployment/LOCAWEB.md, inventário real da infraestrutura Locaweb a
+  partir de 10 prints do painel.
+⚠️ PR #79 e #80 vão conflitar em ESTADO_SESSAO.md no merge (ambas
+reescreveram o arquivo a partir de bases diferentes) — resolver mantendo o
+conteúdo mais recente.
 
-Tarefa desta sessão: concluída. Próxima sessão recebe decisão do
-responsável do projeto entre (1) fase separada de reorganização dos
-repositórios GitHub (manter 2 principais, renomear jescri-migracao para
-portal-ela, excluir os demais — gh repo rename/delete exigem permissão
-admin + escopo delete_repo, entregar comandos exatos se faltar escopo),
-(2) autorizar infraestrutura de produção/Go-Live, ou (3) verificar se
-alguma das 11 decisões de negócio que ficaram só no histórico do Git
-(docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md, removido no
-commit 3057e79, recuperável via git show) ainda é relevante.
+Decisão pendente mais importante para o Go-Live: banco de dados. Os prints
+mostram PostgreSQL indisponível no wizard de `elafashionmkt.com.br`
+(ambiente inicial de deploy, decisão do responsável do projeto — domínio
+canônico futuro é estudioela.com, via alias) e MySQL disponível.
+ARQUITETURA_PRODUCAO.md §2 elegeu PostgreSQL, decisão reafirmada nesta
+sessão quando testada — mas a disponibilidade real na hospedagem que será
+usada não está confirmada. Ver docs/deployment/LOCAWEB.md, seção
+"Conclusão desta revisão", para o texto neutro já ajustado (fatos vs.
+decisão de arquitetura).
 
-Regras: não alterar arquitetura sem ADR; não criar documentação
-duplicada; uma frente por vez; validar (testes/lint) antes de commit;
-reportar ao final: Concluído / Bloqueadores (Crítico/Alto/Médio/Baixo) /
-Próxima prioridade / Checklist de Go-Live.
+Leia antes de começar: docs/_workspace/TASK_ROUTER.md §45 (esta sessão) e
+§46 (sessão anterior, numeração histórica do documento).
+
+Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
+uma frente por vez; validar antes de commit; docs/AI_CONSTITUTION.md é
+congelada (não editar sem pedido explícito); reportar ao final: Concluído
+/ Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima prioridade / Checklist
+de Go-Live.
 ```
+
+## 8. Checklist
+
+### Inventário de infraestrutura Locaweb (esta sessão)
+
+- [x] `docs/deployment/LOCAWEB.md` criado e reescrito com prints reais
+      do painel (PR #80, commits `a54f003`/`fb59121`/`cec519d`, pushados)
+- [x] Decisão de domínio documentada (elafashionmkt.com.br = inicial,
+      estudioela.com = canônico futuro)
+- [x] Conclusão neutralizada (fatos vs. decisão de arquitetura) a
+      pedido do responsável do projeto
+- [ ] Decisão sobre PostgreSQL vs. MySQL na hospedagem real
+- [ ] PR #80 mergeada
+
+### Achados de sessões anteriores (inalterados)
+
+- [ ] Esclarecer commit `8060e18` (Governança Fase 2) órfão em `main`
+      local / branch `docs/governance-phase2`
+- [ ] PR #78 mergeada / commits pushados em `main`
+- [ ] PR #79 mergeada
+- [ ] Decisão sobre as ~22 fontes legadas remanescentes no notebook
+
+### Fases anunciadas, não iniciadas
+
+- [ ] Reorganização dos repositórios GitHub
+- [ ] Infraestrutura de produção / Go-Live (`GATE_FINAL_GO_LIVE.md`)
