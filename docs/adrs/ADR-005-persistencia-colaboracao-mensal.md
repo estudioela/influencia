@@ -4,6 +4,11 @@
 **Resolve:** SPEC-005 §21 pendência D-03 (modelo físico de persistência)
 **Contexto:** Contrato Soberano §7 não define aba para o agregado Colaboração Mensal.
 
+> **Nota histórica (2026-07-23):** decisão sobre persistência em planilha
+> Google Sheets do Portal legado (`src/`), removido do repositório —
+> substituído por `tear-v2-app/` (Laravel + PostgreSQL/SQLite, `ADR-015`).
+> Mantido como registro histórico; não orienta trabalho vigente.
+
 ## Decisão
 
 O agregado `ColaboracaoMensal` é persistido em uma **aba nova `COLABORACOES`**

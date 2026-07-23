@@ -12,6 +12,12 @@
   `id_token`; e descarta a arquitetura experimental "frontend separado +
   `doPost` provisório" (branch `feat/frontend-separado`).
 
+> **Nota histórica (2026-07-23):** fluxo desenhado para contornar
+> limitações de hospedagem do `HtmlService` (iframe sandboxed) do Portal
+> legado em Google Apps Script (`src/`), removido do repositório.
+> `tear-v2-app/` usa Laravel Sanctum, mecanismo de autenticação distinto.
+> Mantido como registro histórico; não orienta trabalho vigente.
+
 ---
 
 ## 1. Contexto

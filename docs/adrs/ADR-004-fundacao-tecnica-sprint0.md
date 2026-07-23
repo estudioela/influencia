@@ -5,6 +5,12 @@
 - **Relaciona-se a:** IMPLEMENTATION_ROADMAP_V2 §4; PROJECT_GOVERNANCE §3; ADR-001 (fail-fast/enums); ADR-002 (frontend); ADR-003 (linguagem ubíqua).
 - **Autor da decisão:** (confirmar autor humano)
 
+> **Nota histórica (2026-07-23):** decisão sobre a fundação técnica do
+> Portal legado em Google Apps Script (`src/`, harness Jest via `vm`,
+> `clasp`). Esse código foi removido do repositório — legado descontinuado,
+> substituído por `tear-v2-app/` (Laravel + React, `ADR-015`). Mantido como
+> registro histórico; não orienta trabalho vigente.
+
 ## Contexto
 
 O Sprint 0 prepara o terreno técnico para o primeiro Vertical Slice (M1), sem

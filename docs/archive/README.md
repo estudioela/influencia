@@ -113,6 +113,27 @@ Fase 1 restante).
 |---|---|---|
 | `REPOSITORY_GOVERNANCE_AUDIT.md` | Auditoria de organização documental do repositório (2026-07-21) | Diagnóstico pontual já executado; `docs/governance/` esvaziada e removida |
 | `RELATORIO_CONSOLIDACAO_AUDITORIAS.md` | Consolidação de 3 auditorias externas (CPO, Manus AI) sobre o plano estratégico | Achados já resumidos em `docs/_workspace/TASK_ROUTER.md` §16 |
+| `ARQUITETURA_CAMADAS.md` (de `docs/architecture/`) | Contratos de camada do Portal legado GAS (`domain/acl/repository/service/controller`) | 100% sobre `src/`, removido; `docs/architecture/` esvaziada e removida |
+
+### `deployment-superado/` — planos de deploy substituídos (2026-07-23)
+
+| Arquivo | Origem/tema | Motivo do arquivamento |
+|---|---|---|
+| `PLANO_IMPLEMENTACAO.md` | Runbook original de deploy, 12 etapas (pré-consolidação) | O próprio arquivo já se declarava "Superseded para fins de execução" por `docs/deployment/PLANO_DE_IMPLANTACAO.md` (17 etapas, numeração diferente) desde 2026-07-22. Antes de arquivar, todas as citações "Etapa N" em documentos vivos (`tear-v2-app/docs/DEPLOY.md`, `ARQUITETURA_PRODUCAO.md`, `IMPLEMENTACAO_TECNICA.md`, `TEAR_V2.5_GO_LIVE_CHECKLIST.md`) foram remapeadas para o número de etapa correspondente em `PLANO_DE_IMPLANTACAO.md` — a numeração não é 1:1 entre os dois documentos. Citações em ADRs históricos (`ADR-015`, `ADR-016`) narram eventos que de fato aconteceram contra a numeração antiga e foram mantidas como estão (narrativa histórica, não indicação de fonte vigente). |
+
+### `reports-historicos/` — handoffs e relatórios de sessão superados (2026-07-23)
+
+| Arquivo | Origem/tema | Motivo do arquivamento |
+|---|---|---|
+| `HANDOFF_GO_LIVE.md` | Snapshot de sessão de auditoria Locaweb (2026-07-22) | Próximos passos já concluídos/absorvidos por `docs/deployment/PLANO_DE_IMPLANTACAO.md` |
+| `HANDOFF_PRODUCTIZACAO_TEAR_V2.md` | Handoff de sessão (2026-07-20), o mais antigo do grupo | Cita relatórios já arquivados; sem referência ativa em documentação vigente |
+| `RELATORIO_SPRINT_2_1_PORTAL_INFLUENCIADORA.md` | Relatório de sprint específica (2026-07-20) | Sprint entregue, superada por sprints seguintes; sem referência ativa |
+
+Não arquivados por terem referência ativa e específica em documentos vigentes
+(mantidos em `docs/reports/`): `HANDOFF_FINAL.md` (citado 9+ vezes em
+`ARCHITECTURE_REVIEW_V2_5.md` como fonte de fatos específicos) e
+`RELATORIO_QA_FUNCIONAL_MVP_TEAR_V2.md` (citado como base factual em
+`docs/planning/ELA_INFLUENCIA_ENTREGA_1_ANALISE_ESTRATEGICA.md`).
 
 ### `legado-apps-script/` — governança e operação do Portal em Google Apps Script (2026-07-23)
 
@@ -147,3 +168,10 @@ sem decisão item a item arriscava perder decisões reais em aberto.
 Arquivado íntegro (sem fusão) para não perder nenhuma informação; a
 consolidação seletiva fica para uma sessão dedicada, com decisão do
 responsável do projeto item a item.
+
+`stitch-screens-mockups/` (2026-07-23, de `docs/design/stitch-export/screens/`):
+9 mockups estáticos (`code.html` + `screen.png`) de referência visual por
+tela, usados para guiar a implementação do frontend. Todas as 9 telas já
+têm página real equivalente implementada em `tear-v2-app/frontend/src/pages/`
+— os mockups cumpriram seu papel. `docs/design/stitch-export/DESIGN.md`
+(tokens de design) permanece fora do archive, em uso ativo.

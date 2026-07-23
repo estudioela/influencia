@@ -3028,7 +3028,74 @@ encontrada. **Missão do Agente A nesta frente encerrada.**
 - **Fase 4 (restante, não executada):** arquivamento de
   `docs/deployment/`/`docs/release/` continua gated a "só após o corte de
   produção do Go-Live" — Go-Live segue **NÃO AUTORIZADO**.
-- **Validação pendente de execução nesta sessão antes do commit:** suíte
-  completa de `tear-v2-app/` (backend `php artisan test`, frontend
-  `tsc -b`/`oxlint`/build) — ver resultado abaixo desta entrada quando
-  concluído.
+- **Validação:** suíte completa de `tear-v2-app/` rodada nesta sessão após
+  a remoção do legado — `php artisan test` 208/208 verde, `vendor/bin/pint
+  --test` limpo, `tsc -b && vite build` sem erros, `oxlint` só o aviso
+  pré-existente de `src/lib/auth.tsx`. Nenhum código de `tear-v2-app/`
+  alterado nesta rodada (só documentação).
+- **Commit `fe5ccf8`, push direto para `feat/ui-design-system-ela`**
+  (fast-forward de `ca211f2`).
+
+## 43. Segunda rodada da missão de limpeza — ADR-002 marcado Superseded, ADRs legado com nota histórica, mais 4 pastas de docs consolidadas (2026-07-23)
+
+Continuação da mesma missão (§42), por instrução explícita do responsável
+do projeto de: (a) corrigir o status do `ADR-002` em vez de deixá-lo como
+"Proposed" dando impressão de decisão ainda em aberto; (b) aplicar o
+mesmo critério ao restante do repositório, inclusive corrigindo
+referências para eliminar documentos redundantes em vez de preservá-los
+só por terem links apontando para eles.
+
+- **`ADR-002`:** Status alterado de "Proposed" para "Superseded by
+  ADR-015" — nunca saiu do estágio de proposta (`webapp/` nunca existiu);
+  nota de supersessão adicionada.
+- **5 ADRs do legado GAS com nota histórica** (não tiveram status
+  alterado — foram de fato aceitos e implementados, diferente do
+  ADR-002; a nota só deixa claro que descrevem arquitetura removida, não
+  orientação vigente): `ADR-004` (fundação técnica Sprint 0), `ADR-005`
+  (persistência da Colaboração Mensal em planilha), `ADR-010` (banco
+  oficial do Portal), `ADR-013` (OAuth do Portal via HtmlService
+  sandboxed), `ADR-014` (consolidação de arquivos por módulo GAS).
+- **`docs/architecture/ARQUITETURA_CAMADAS.md`** (100% sobre camadas do
+  Portal GAS, zero menção a `tear-v2-app/`) → arquivado em
+  `docs/archive/legado-apps-script/`; pasta `docs/architecture/` esvaziada
+  e removida.
+- **`docs/design/stitch-export/screens/`** (9 mockups estáticos,
+  `code.html`+`screen.png`) → arquivado em
+  `docs/archive/planejamento-pre-codigo/stitch-screens-mockups/` — todas
+  as 9 telas já têm página real implementada em
+  `tear-v2-app/frontend/src/pages/`. `stitch-export/DESIGN.md` (tokens)
+  permanece ativo.
+- **`docs/deployment/PLANO_IMPLEMENTACAO.md`** (runbook original, 12
+  etapas) → arquivado em `docs/archive/deployment-superado/`, mas só
+  **depois** de corrigir todas as citações "Etapa N" em documentos vivos
+  (`tear-v2-app/docs/DEPLOY.md`, `ARQUITETURA_PRODUCAO.md`,
+  `IMPLEMENTACAO_TECNICA.md`, `TEAR_V2.5_GO_LIVE_CHECKLIST.md`) para o
+  número de etapa correspondente em `docs/deployment/PLANO_DE_IMPLANTACAO.md`
+  (17 etapas — numeração e conteúdo por etapa **não são 1:1** com o
+  documento antigo; mapeamento feito manualmente por comparação de
+  conteúdo, não substituição textual ingênua). Citações de narrativa
+  histórica em `ADR-015`/`ADR-016` (descrevem eventos que de fato
+  aconteceram contra a numeração antiga) mantidas como estão.
+- **3 relatórios de `docs/reports/`** (`HANDOFF_GO_LIVE.md`,
+  `HANDOFF_PRODUCTIZACAO_TEAR_V2.md`,
+  `RELATORIO_SPRINT_2_1_PORTAL_INFLUENCIADORA.md`) → arquivados em
+  `docs/archive/reports-historicos/` — sem referência ativa em
+  documentação vigente.
+- **2 relatórios NÃO arquivados** apesar de terem sido cogitados
+  inicialmente: `HANDOFF_FINAL.md` (citado 9+ vezes como fonte factual
+  específica em `docs/reports/ARCHITECTURE_REVIEW_V2_5.md` — "148/148
+  testes verdes conforme HANDOFF_FINAL.md", achados P1/P2 específicos)
+  e `RELATORIO_QA_FUNCIONAL_MVP_TEAR_V2.md` (citado como base factual em
+  `docs/planning/ELA_INFLUENCIA_ENTREGA_1_ANALISE_ESTRATEGICA.md`) —
+  ambos são evidência ainda ativamente referenciada, não histórico morto;
+  arquivá-los sem primeiro reescrever as citações que dependem deles
+  quebraria fatos específicos em documentos vivos de Go-Live.
+- **`docs/deployment/PLANO_DE_IMPLANTACAO.md` NÃO fundido com
+  `IMPLEMENTACAO_TECNICA.md`** apesar de sobreposição parcial identificada
+  na auditoria — fusão de dois documentos operacionais extensos e ainda
+  em uso ativo durante a preparação do Go-Live é risco desnecessário
+  nesta rodada; ambos mantidos.
+- **Validação:** mudança exclusivamente documental, nenhum código de
+  `tear-v2-app/` alterado. Grep completo confirmou zero referência viva
+  quebrada aos arquivos movidos nesta rodada (as únicas citações
+  restantes são narrativa histórica em ADRs/handoffs já históricos).

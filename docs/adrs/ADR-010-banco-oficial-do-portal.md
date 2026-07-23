@@ -9,6 +9,12 @@ nova); referenciada como Q-10 em `TASK_ROUTER.md`/`PLANILHA_TEAR_2.0_MAPA.md`.
 (Script Properties) sem valor versionado (`PROJECT_GOVERNANCE` §3.5/§3.6);
 faltava decidir se essa chave aponta para a planilha antiga ou para uma nova.
 
+> **Nota histórica (2026-07-23):** decisão sobre qual planilha Google
+> Sheets serviria de banco do Portal legado (`src/`), removido do
+> repositório — substituído por `tear-v2-app/` (Laravel + PostgreSQL/
+> SQLite, `ADR-015`). Mantido como registro histórico; não orienta
+> trabalho vigente.
+
 ## Decisão
 
 Será criada uma **planilha V2 nova**, nome oficial **"Portal Ela"**, como

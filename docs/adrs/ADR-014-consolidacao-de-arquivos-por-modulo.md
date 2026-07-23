@@ -4,6 +4,11 @@
 - **Contexto:** autorização do responsável ("pode aplicar") sobre proposta de
   reorganização apresentada em 2026-07-19.
 
+> **Nota histórica (2026-07-23):** reorganização de arquivos do Portal
+> legado em Google Apps Script (`src/`), removido do repositório —
+> substituído por `tear-v2-app/` (Laravel + React, `ADR-015`). Mantido
+> como registro histórico; não orienta trabalho vigente.
+
 ## Problema
 
 `src/` chegou a 109 arquivos (~12.800 linhas, mediana de ~85 linhas por

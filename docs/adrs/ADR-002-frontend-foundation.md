@@ -1,9 +1,19 @@
 # ADR-002 — Frontend Foundation: elã-native UI Component Library on Apps Script HTML Service
 
-- **Status:** Proposed
+- **Status:** Superseded by `ADR-015-frontend-servido-pelo-laravel.md` (2026-07-23)
 - **Date:** 2026-07-14
 - **Supersedes / relates to:** ADR-001 (fail-fast, enums). Feeds Roadmap V2 Phase 2 ("Portal da Parceira").
 - **Decision owner:** (human author to confirm)
+
+> **Nota de supersessão (2026-07-23):** esta decisão nunca saiu do estágio
+> "Proposed" — o diretório `webapp/` descrito abaixo nunca chegou a existir
+> no repositório. O frontend real do TEAR V2 foi construído em React 19 +
+> Vite, servido pelo Laravel (`tear-v2-app/`), decisão formal em `ADR-015`
+> (Aceito). Mantido aqui só como registro histórico da proposta original;
+> não reflete a arquitetura vigente. Os tokens visuais (paleta, radius
+> "Absolute Flatness") permanecem parcialmente referenciados no CSS real
+> (`tear-v2-app/frontend/src/index.css`, comentário "ADR-002") mesmo com a
+> decisão de entrega (Apps Script HTML Service, sem React) superada.
 
 ## Context
 

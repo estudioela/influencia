@@ -346,7 +346,7 @@ redesenho, habilitáveis individualmente quando fizer sentido:
 - **Provedor de SMTP dedicado** (Resend/Postmark/SES) — se o volume
   transacional superar o limite do relay incluso no plano (§6).
 
-Nenhum destes é pré-requisito para as Etapas do `PLANO_IMPLEMENTACAO.md`
+Nenhum destes é pré-requisito para as Etapas do `PLANO_DE_IMPLANTACAO.md`
 nem para o go-live.
 
 ---
@@ -356,4 +356,4 @@ nem para o go-live.
 Nenhuma decisão acima foi implementada, nenhum recurso foi provisionado,
 nenhum deploy foi feito, nenhum código foi alterado nesta revisão de
 documento. Execução é trabalho de sessão(ões) separada(s), seguindo
-`PLANO_IMPLEMENTACAO.md` (revisado) a partir da Etapa 1.
+`PLANO_DE_IMPLANTACAO.md` a partir da Etapa 1.

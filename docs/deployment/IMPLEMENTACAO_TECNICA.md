@@ -50,7 +50,7 @@ A ordem segue dependência real:
 6. **Backup + monitoramento obrigatório** (§10) — só faz sentido depois
    do ambiente estar de pé.
 7. **Primeiro deploy de homologação → smoke test → produção**, seguindo
-   `PLANO_IMPLEMENTACAO.md` revisado.
+   `PLANO_DE_IMPLANTACAO.md`.
 
 ---
 
@@ -59,7 +59,7 @@ A ordem segue dependência real:
 | Arquivo | Motivo | STATUS |
 |---|---|---|
 | `tear-v2-app/backend/app/Services/GoogleDriveService.php` | Autenticação via OAuth de conta dedicada (`refresh_token`), não Service Account Key — `elafashionmkt-org` bloqueia a criação dessa chave via Org Policy, e o projeto não tem Google Workspace (conta pessoal). Pasta comum no Meu Drive da conta dedicada, não Shared Drive (`corpora=drive`/`driveId` removidos; `supportsAllDrives`/`includeItemsFromAllDrives` mantidos como flags inofensivas). | ✅ ajustado (`ADR-017`, 2026-07-22) |
-| `tear-v2-app/backend/bootstrap/app.php` | `$middleware->trustProxies(at: [...])` — a Locaweb compartilhada expõe a aplicação atrás de um proxy reverso do próprio provedor; sem confiar nesse proxy, `Request::ip()` (rate-limit de `/login`) e a detecção de HTTPS ficam incorretas. O IP/CIDR exato só é confirmável na Etapa 1 do `PLANO_IMPLEMENTACAO.md` — usar variável de ambiente (`TRUSTED_PROXIES`), nunca hardcode. | ✅ ajustado (commit `29a8306`) — `TRUSTED_PROXIES` já lido via `env()`; valor real do CIDR ainda depende da Etapa 1 |
+| `tear-v2-app/backend/bootstrap/app.php` | `$middleware->trustProxies(at: [...])` — a Locaweb compartilhada expõe a aplicação atrás de um proxy reverso do próprio provedor; sem confiar nesse proxy, `Request::ip()` (rate-limit de `/login`) e a detecção de HTTPS ficam incorretas. O IP/CIDR exato só é confirmável na Etapa 2 do `PLANO_DE_IMPLANTACAO.md` — usar variável de ambiente (`TRUSTED_PROXIES`), nunca hardcode. | ✅ ajustado (commit `29a8306`) — `TRUSTED_PROXIES` já lido via `env()`; valor real do CIDR ainda depende da Etapa 1 |
 | `tear-v2-app/backend/composer.json` | Nenhuma dependência nova obrigatória — `resend/resend-laravel` e `sentry/sentry-laravel` saem do caminho crítico (viram melhoria opcional, só entram se/quando habilitadas). | sem mudança obrigatória |
 | `tear-v2-app/backend/.env.production.example` | Remover qualquer referência a host de serviço Docker (`DB_HOST=db`); apontar `DB_*` para o banco gerenciado da Locaweb; `MAIL_MAILER=smtp` com host/porta do relay incluso no plano (não Resend); adicionar `TRUSTED_PROXIES`, `GOOGLE_DRIVE_BACKUP_FOLDER_ID`; manter `SESSION_DOMAIN`/`APP_URL`/`SANCTUM_STATEFUL_DOMAINS` apontando para o subdomínio de produção. | ✅ ajustado (commits `29a8306` + `ac5180f` — `SESSION_DOMAIN`/`FRONTEND_URL` corrigidos para origem única, ver ADR-015); valores `CHANGE_ME` só preenchíveis com credenciais reais (Etapa 1-4) |
 | `tear-v2-app/docker-compose.yml` | **Deixa de ser o artefato de deploy de produção.** Mantido só como ambiente de desenvolvimento local (uso já existente) — nenhuma referência de produção deve apontar para ele. | mantido só para dev local |
@@ -90,7 +90,7 @@ A ordem segue dependência real:
 | `FRONTEND_URL` | sim | `https://influencia.estudioela.com` |
 | `SANCTUM_STATEFUL_DOMAINS` | sim | `influencia.estudioela.com`, sem protocolo |
 | `SESSION_DOMAIN` | sim | `influencia.estudioela.com` (host exato, sem ponto inicial — não o domínio pai) |
-| `DB_CONNECTION`/`HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD` | sim | apontam para o **PostgreSQL gerenciado da Locaweb** (host/porta/credenciais do painel, obtidos na Etapa 2 do `PLANO_IMPLEMENTACAO.md`) |
+| `DB_CONNECTION`/`HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD` | sim | apontam para o **PostgreSQL gerenciado da Locaweb** (host/porta/credenciais do painel, obtidos na Etapa 3 do `PLANO_DE_IMPLANTACAO.md`) |
 | `MAIL_MAILER`/`MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD` | sim | relay SMTP incluso no plano/domínio Locaweb |
 | `GOOGLE_DRIVE_CLIENT_ID` / `_CLIENT_SECRET` / `_REFRESH_TOKEN` / `_ROOT_FOLDER_ID` | sim | OAuth de conta dedicada — pessoal, sem Workspace (`ADR-017`) — não Service Account; `elafashionmkt-org` bloqueia Service Account Key via Org Policy |
 | `GOOGLE_DRIVE_BACKUP_FOLDER_ID` | **não** | pasta dedicada dentro da mesma pasta raiz, destino dos dumps de backup |
@@ -106,7 +106,7 @@ Nenhuma dependência nova é obrigatória para a arquitetura crítica.
 `resend/resend-laravel`, `sentry/sentry-laravel` e `@sentry/react` só
 entram no `composer.json`/`package.json` se/quando uma melhoria opcional
 correspondente for habilitada — não fazem parte desta sprint nem de
-nenhuma etapa do `PLANO_IMPLEMENTACAO.md`.
+nenhuma etapa do `PLANO_DE_IMPLANTACAO.md`.
 
 ---
 
@@ -143,7 +143,7 @@ do repositório:
 |---|---|---|
 | `docker-compose.yml`, serviço `db` | mantido só para **dev local** | Produção não usa esse serviço — usa o banco gerenciado da Locaweb. |
 | `backend/.env.production.example` (`DB_*`) | ✅ ajustado | Template já aponta `DB_CONNECTION=pgsql` com campos `CHANGE_ME` para host/porta/credenciais do banco gerenciado — não referencia mais serviço `db` de compose. |
-| Instância real provisionada/confirmada no painel Locaweb | pendente — só infraestrutura externa | Etapa 2 do `PLANO_IMPLEMENTACAO.md`. |
+| Instância real provisionada/confirmada no painel Locaweb | pendente — só infraestrutura externa | Etapa 3 do `PLANO_DE_IMPLANTACAO.md`. |
 
 ---
 
@@ -221,5 +221,5 @@ concluído. O que resta é exclusivamente infraestrutura/credenciais reais.
   gerenciado; secrets do GitHub Actions (`SSH_HOST`, `SSH_USER`,
   `SSH_PRIVATE_KEY`, `DEPLOY_BASE_PATH`); credenciais reais de Google
   Drive/SMTP/domínio para preencher `.env` de produção; instalação do
-  crontab no host real. Ver `PLANO_IMPLEMENTACAO.md` Etapas 1-4, 7-12 para
-  o detalhe etapa a etapa.
+  crontab no host real. Ver `docs/deployment/PLANO_DE_IMPLANTACAO.md`
+  Etapas 2-5, 11-14 e 16-17 para o detalhe etapa a etapa.

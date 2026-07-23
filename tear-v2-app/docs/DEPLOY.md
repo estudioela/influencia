@@ -195,8 +195,8 @@ Agendar via crontab do host (retenção sugerida: 14 diários + 8 semanais):
 - Provisionamento real do banco gerenciado, da conta dedicada OAuth do
   Google Drive (`ADR-017`) e dos secrets do GitHub Actions — passos
   manuais no painel Locaweb/Google Cloud/GitHub, detalhados em
-  `docs/deployment/PLANO_IMPLEMENTACAO.md`
-  (Etapas 1-6).
+  `docs/deployment/PLANO_DE_IMPLANTACAO.md`
+  (Etapas 2-5 e 9).
 - Limites de CPU/memória/processo da hospedagem compartilhada — só se
   confirmam na execução real (ver `ARQUITETURA_PRODUCAO.md` §14); se
   `composer install --no-dev` não couber no limite do plano, alternativa é
