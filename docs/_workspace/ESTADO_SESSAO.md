@@ -10,9 +10,16 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-23.
-- **`main`:** já inclui a missão de limpeza estrutural de 6 rodadas
-  (`feat/ui-design-system-ela`, mesclada — ver `TASK_ROUTER.md` §42-§44).
-  `docs/` tinha 50 arquivos antes desta sessão.
+- **`main` (remoto, `origin/main`):** inclui a limpeza estrutural de 6
+  rodadas (`feat/ui-design-system-ela`, mesclada — ver `TASK_ROUTER.md`
+  §42-§44). Último commit em `origin/main`: `c96d460`.
+- **Achado nesta sessão — `main` local está 1 commit à frente do
+  remoto, nunca pushado:** `8060e18 docs(governance): establish Phase 2
+  governance model` (cria `docs/governanca/GOVERNANCA_DO_PROJETO.md`,
+  reescreve `ESTADO_SESSAO.md` e altera `docs/handoff/README.md`). Existe
+  também uma branch `docs/governance-phase2` (local e em `origin`) com o
+  mesmo commit. Não investigado a fundo nem tocado nesta sessão — fora
+  de escopo da missão desta sessão. Ver §4.
 - **Duas branches com PR draft aberta, pendentes de decisão de
   push/merge, sem relação entre si:**
   1. `worktree-fix-dev-env` — **PR #78** — correção do ambiente de
@@ -20,93 +27,86 @@
      recente `10a8298`, pushado. Nenhuma ação de código pendente, só
      decisão de merge.
   2. `docs/ai-constitution-notebooklm` — **PR #79** — `docs/
-     AI_CONSTITUTION.md` novo + reenvio completo do notebook do
-     NotebookLM (esta sessão, ver abaixo). Commit `75d5f2e`, pushado.
+     AI_CONSTITUTION.md` (criada na sessão anterior, **reescrita nesta
+     sessão** como constituição de engenharia) + reenvio completo do
+     notebook do NotebookLM (sessão anterior). Commit mais recente
+     `e6892b9`, pushado.
   Nenhuma das duas branches depende da outra; podem ser mescladas em
-  qualquer ordem.
-- **Working tree desta sessão:** limpo (tudo commitado e pushado nas
-  duas branches acima).
+  qualquer ordem. Nenhuma delas inclui o commit `8060e18` de `main`.
+- **Working tree desta sessão:** limpo (tudo commitado e pushado).
 - **Go-Live de produção: continua NÃO AUTORIZADO**, pendente só de
   infraestrutura externa ao código (inalterado — ver
   `docs/release/GATE_FINAL_GO_LIVE.md`).
 
-## 2. Última sessão concluída — Constituição das IAs + base documental no NotebookLM (2026-07-23)
+## 2. Última sessão concluída — `AI_CONSTITUTION.md` reescrita como
+    constituição de engenharia + 3 regras de governança fixadas (2026-07-23)
 
-Missão de encerramento de fase, sem alteração de código. Duas frentes,
-a segunda mudou de escopo no meio da execução por instrução direta do
-responsável do projeto:
+Sessão sem alteração de código de `tear-v2-app/`. Duas frentes:
 
-1. **`docs/AI_CONSTITUTION.md` criado** — documento institucional
-   permanente (não expira, diferente de `ESTADO_SESSAO.md`): papel de
-   cada IA no projeto (Claude como execução principal; ChatGPT/Gemini/
-   Codex como apoio pontual), princípios de engenharia, regras de
-   alteração em código/documentação, critérios para parar e pedir
-   decisão humana, como evitar regressão, como economizar tokens entre
-   sessões. Complementa `CLAUDE.md` (que continua sendo a config do
-   agente neste repositório), não o substitui.
-2. **Curadoria do NotebookLM abandonada a meio caminho, por instrução
-   explícita e mais recente do responsável do projeto:** o plano
-   original previa selecionar só os documentos realmente permanentes
-   (excluindo `_workspace/`, rascunhos, checklists operacionais). No
-   meio da análise, o responsável do projeto informou que já havia
-   apagado manualmente as fontes do notebook `tear` e pediu reenvio de
-   **todos** os arquivos, priorizando velocidade sobre curadoria.
-   Executado: todos os 49 `.md` de `docs/` (incluindo `_workspace/`)
-   enviados em paralelo via `nlm source add`. Notebook resultante: 80
-   fontes, sem títulos duplicados. ~22 fontes legadas que sobraram da
-   limpeza manual do responsável do projeto não foram tocadas (decisão
-   de removê-las é dele — "não apagar dados" sem autorização por item).
-3. **`docs/knowledge/.notebook-index.json` reconstruído** para os 5
-   arquivos de `docs/knowledge/` (única pasta que
-   `scripts/sync-notebook.sh` gerencia de forma incremental), com os
-   `source_id` reais pós-upload — evita duplicar essas 5 fontes numa
-   próxima execução do script. As outras pastas de `docs/` ficam fora
-   do alcance de `sync-notebook.sh`/`clean-notebook.sh` (não foi criada
-   automação nova para cobri-las).
-4. **Housekeeping da branch `worktree-fix-dev-env` (PR #78):** dois
-   arquivos de snapshot de sessão anterior (`ESTADO_SESSAO.md`,
-   `TASK_ROUTER.md` §47) estavam commitados no working tree dessa
-   branch, documentando a própria correção do dev-env — commitados e
-   pushados antes de abrir a branch nova, para não deixar PR #78 com
-   mudanças pendentes.
-5. Detalhe completo: `docs/_workspace/TASK_ROUTER.md` §45.
+1. **Verificação de missão já concluída:** a conversa começou (pós
+   `/clear`) com o reenvio do mesmo prompt de "preparar base para o
+   NotebookLM" já executado antes do clear (commits `75d5f2e`/`9e47c86`,
+   PR #79). Investigado e confirmado que já estava tudo commitado e
+   pushado — nenhuma ação repetida, só relatório do estado real.
+2. **`docs/AI_CONSTITUTION.md` reescrita por completo** a partir de
+   `BASE.docx` (anexado pelo responsável do projeto), substituindo o
+   conteúdo da sessão anterior (papéis de IA) por uma constituição de
+   engenharia: Hierarquia das Verdades, Mandamentos da IA, regras de
+   código/bugs/documentação, critérios de qualidade, critérios de
+   interrupção. `CLAUDE.md` §Fonte de decisão passou a referenciá-la como
+   autoridade máxima de engenharia. Commit `e6892b9`, pushado na PR #79.
+3. **Três regras de governança fixadas pelo responsável do projeto**,
+   registradas na memória do agente (não em arquivo do repositório):
+   `AI_CONSTITUTION.md` congelada (só muda por pedido explícito ou
+   revisão formal), **Lei da Evidência** (rotular toda afirmação como
+   confirmado-no-código / confirmado-na-documentação / inferência /
+   sugestão) e **Lei da Intervenção Mínima** (menor correção localizada
+   primeiro; mudança ampla exige justificativa técnica). O responsável
+   do projeto confirmou explicitamente que as duas últimas são
+   comportamentais, não edições ao documento constitucional.
+4. Detalhe completo: `docs/_workspace/TASK_ROUTER.md` §46.
 
 ## 3. Próxima tarefa recomendada
 
 Nenhuma pendência de código nesta sessão. Decisão do responsável do
 projeto entre:
 
-1. **Merge/push das duas PRs abertas** (#78 dev-env, #79 docs/
-   NotebookLM) — independentes, sem ordem obrigatória.
-2. **Confirmar se as ~22 fontes legadas remanescentes no notebook
-   `tear`** (da limpeza manual do responsável do projeto) devem ser
-   removidas ou mantidas.
-3. **Reorganização dos repositórios GitHub** (fase anunciada em sessão
-   anterior, ainda não iniciada — manter só 2 repositórios principais,
-   renomear `jescri-migracao` para `portal-ela`, excluir os demais).
-4. **Autorizar preparação de infraestrutura de produção** (Locaweb
-   real, PostgreSQL, DNS/TLS, `.env` de produção, SMTP) — único
-   bloqueio real para o Go-Live, seguindo
-   `docs/release/GATE_FINAL_GO_LIVE.md`.
+1. **Esclarecer o commit `8060e18` órfão em `main` local** (§1/§4) —
+   decidir se é pushado para `origin/main`, descartado, ou se pertence
+   só à branch `docs/governance-phase2` e `main` local deve ser
+   realinhado a `origin/main`. Recomendo resolver isso antes de mesclar
+   qualquer uma das PRs abertas, para não gerar divergência de histórico.
+2. **Merge/push das duas PRs abertas** (#78 dev-env, #79 docs/
+   AI_CONSTITUTION+NotebookLM) — independentes entre si, mas ambas
+   partiram de `origin/main` antes do commit `8060e18`.
+3. **Confirmar se as ~22 fontes legadas remanescentes no notebook
+   `tear`** (da limpeza manual do responsável do projeto, sessão
+   anterior) devem ser removidas ou mantidas.
+4. **Reorganização dos repositórios GitHub** (fase anunciada, ainda não
+   iniciada).
+5. **Autorizar preparação de infraestrutura de produção** (único
+   bloqueio real para o Go-Live, ver `docs/release/GATE_FINAL_GO_LIVE.md`).
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Merge das PRs #78 e #79** — ver §3.1.
-- **~22 fontes legadas no notebook `tear`** não removidas nesta sessão
-  — ver §3.2.
+- **Commit `8060e18` em `main` local, nunca pushado, criando
+  `docs/governanca/GOVERNANCA_DO_PROJETO.md`** — não investigado a
+  fundo nesta sessão (fora de escopo). Risco de duas fontes de verdade
+  sobre o mesmo assunto (esse documento já declara os mesmos princípios
+  de "estado ≠ histórico" que `TASK_ROUTER.md`/`ESTADO_SESSAO.md` já
+  seguem na prática) — ver §5.
+- **Merge das PRs #78 e #79** — ver §3.2.
+- **~22 fontes legadas no notebook `tear`** não removidas (inalterado).
 - **Nenhum bloqueador funcional (Categoria A) em aberto** no código de
   `tear-v2-app` — inalterado, nenhum código tocado nesta sessão.
-- **12 decisões de negócio pendentes que ficaram só no histórico do Git,
-  não mais na árvore ativa** (inalterado desde a sessão de limpeza
-  estrutural): `docs/planning/ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md`
-  §9 tinha 12 decisões do responsável do projeto ainda em aberto
-  (recorrência/parcelamento de pagamento já tem rastreamento próprio
-  separado; as outras 11 só são recuperáveis via `git show` no commit
-  `fe5ccf8`→`3057e79`). Se alguma for real e ainda não resolvida, vale
-  recuperar antes que a memória de qual eram se perca.
+- **12 decisões de negócio pendentes só no histórico do Git** (inalterado
+  desde a limpeza estrutural): `docs/planning/
+  ESPECIFICACAO_FUNCIONAL_MVP_COMPLETA.md` §9 tinha 12 decisões do
+  responsável do projeto ainda em aberto (recorrência/parcelamento já
+  tem rastreamento próprio; as outras 11 só recuperáveis via `git show`
+  no commit `fe5ccf8`→`3057e79`).
 - **Congelamento de Participação incompleto frente ao gap real**
-  (`ADR-018`): sem cópia de dados da Parceira nem trilha de auditoria
-  (inalterado).
+  (`ADR-018`) — inalterado.
 - Validação ponta a ponta dos 2 fluxos de e-mail (convite, reset) com
   SMTP real — não executada (inalterado).
 - SPF/DKIM/DMARC do domínio `elafashionmkt.com.br` não verificados
@@ -131,29 +131,35 @@ projeto entre:
 
 ## 5. Riscos ativos
 
-1. Perda de rastreabilidade de até 11 decisões de negócio pendentes
-   (ver §4) — mitigável recuperando o arquivo do histórico do Git, mas
-   não feito automaticamente (inalterado).
-2. PostgreSQL indisponível no plano atual da Locaweb — impacto em
-   custo/cronograma (inalterado).
-3. Pipeline de deploy com incompatibilidade de autenticação não
+1. **Divergência de histórico entre `main` local e `origin/main`**
+   (commit `8060e18` não pushado) — se outra sessão/worktree pushar
+   `main` primeiro sem esse commit, ou se ele for esquecido, o trabalho
+   de "Governança Fase 2" pode se perder ou conflitar (novo, esta sessão).
+2. Perda de rastreabilidade de até 11 decisões de negócio pendentes
+   (ver §4) — mitigável recuperando o arquivo do histórico do Git, não
+   feito automaticamente (inalterado).
+3. PostgreSQL indisponível no plano atual da Locaweb (inalterado).
+4. Pipeline de deploy com incompatibilidade de autenticação não
    resolvida (inalterado).
-4. DNS de `influencia.estudioela.com` não apontado (inalterado).
-5. Validação comercial concentrada em piloto único ainda não
+5. DNS de `influencia.estudioela.com` não apontado (inalterado).
+6. Validação comercial concentrada em piloto único ainda não
    confirmado; bus factor 1 (inalterado).
-6. SPF/DKIM/DMARC não verificados no domínio de envio (inalterado,
+7. SPF/DKIM/DMARC não verificados no domínio de envio (inalterado,
    baixo risco imediato).
-7. Duas PRs abertas em paralelo (#78, #79) sem decisão de merge —
-   quanto mais tempo sem mesclar, maior o risco de conflito com
-   trabalho futuro em `docs/` ou em `backend/`/`frontend/`.
+8. Duas PRs abertas em paralelo (#78, #79) sem decisão de merge — quanto
+   mais tempo sem mesclar, maior o risco de conflito com trabalho futuro
+   em `docs/` ou em `backend/`/`frontend/` (agravado pelo risco #1).
 
 ## 6. IA recomendada para a próxima tarefa
 
+- **Esclarecer o commit `8060e18`/branch `docs/governance-phase2`:**
+  qualquer IA de terminal com `git`/`gh` — tarefa de investigação e
+  decisão, não de código.
 - **Merge/push das PRs #78 e #79:** qualquer IA de terminal com `gh`
   autenticado.
 - **Reorganização dos repositórios GitHub:** qualquer IA com escopo
-  `delete_repo` no token `gh`; se faltar, entregar os comandos exatos
-  em vez de travar a tarefa.
+  `delete_repo` no token `gh`; se faltar, entregar os comandos exatos em
+  vez de travar a tarefa.
 - **Decisão de autorizar infraestrutura/Go-Live:** decisão do
   responsável do projeto, não requer IA.
 - Toda sessão nesta fase de Go-Live segue reportando ao final:
@@ -163,42 +169,56 @@ projeto entre:
 ## 7. Prompt de handoff
 
 ```
-Contexto: projeto ELÃ | influência / TEAR (Estúdio Elã). main já inclui a
-limpeza estrutural de 6 rodadas (TASK_ROUTER.md §42-§44). Duas PRs draft
-abertas, independentes, sem código pendente, só decisão de merge:
-- PR #78 (branch worktree-fix-dev-env): composer dev unificado como único
-  fluxo de dev local.
-- PR #79 (branch docs/ai-constitution-notebooklm): docs/AI_CONSTITUTION.md
-  novo (documento institucional permanente, papel de cada IA no projeto) +
-  reenvio completo de todos os docs/*.md ao notebook "tear" do NotebookLM
-  (a pedido do responsável do projeto, que apagou o notebook manualmente
-  no meio da sessão e pediu reenvio total em vez da curadoria seletiva
-  originalmente planejada).
+Contexto: projeto ELÃ | influência / TEAR (Estúdio Elã). origin/main já
+inclui a limpeza estrutural de 6 rodadas (TASK_ROUTER.md §42-§44). ATENÇÃO:
+main local está 1 commit à frente de origin/main (8060e18, "Governança Fase
+2", nunca pushado) — investigar antes de mesclar qualquer PR.
 
-Leia antes de começar: docs/_workspace/TASK_ROUTER.md §45 (esta sessão) e
-§42-§44 (limpeza estrutural anterior).
+Duas PRs draft abertas, independentes, sem código pendente, só decisão de
+merge:
+- PR #78 (branch worktree-fix-dev-env): composer dev unificado.
+- PR #79 (branch docs/ai-constitution-notebooklm): docs/AI_CONSTITUTION.md
+  reescrita nesta sessão como constituição de engenharia (a partir de
+  BASE.docx) + reenvio completo de docs/*.md ao notebook "tear" do
+  NotebookLM (sessão anterior).
+
+Três regras de governança fixadas pelo responsável do projeto nesta sessão
+(em memória do agente, não em arquivo): AI_CONSTITUTION.md congelada (só
+muda por pedido explícito), Lei da Evidência (rotular fato/inferência/
+sugestão), Lei da Intervenção Mínima (menor correção primeiro, justificar
+mudanças amplas).
+
+Leia antes de começar: docs/_workspace/TASK_ROUTER.md §46 (esta sessão) e
+§45 (sessão anterior).
 
 Tarefa desta sessão: concluída. Próxima sessão recebe decisão do
-responsável do projeto entre (1) merge das duas PRs, (2) confirmar remoção
-ou não das ~22 fontes legadas remanescentes no notebook tear, (3)
-reorganização dos repositórios GitHub (ainda não iniciada), ou (4)
-autorizar infraestrutura de produção/Go-Live.
+responsável do projeto entre (1) resolver o commit 8060e18 órfão, (2)
+merge das duas PRs, (3) confirmar remoção ou não das ~22 fontes legadas no
+notebook tear, (4) reorganização dos repositórios GitHub, ou (5) autorizar
+infraestrutura de produção/Go-Live.
 
 Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
-uma frente por vez; validar antes de commit; reportar ao final: Concluído
+uma frente por vez; validar antes de commit; docs/AI_CONSTITUTION.md é
+congelada (não editar sem pedido explícito); reportar ao final: Concluído
 / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima prioridade / Checklist
 de Go-Live.
 ```
 
 ## 8. Checklist
 
-### AI Constitution + NotebookLM (esta sessão)
+### AI_CONSTITUTION.md como constituição de engenharia (esta sessão)
 
-- [x] `docs/AI_CONSTITUTION.md` criado
-- [x] Todos os `docs/*.md` (49 arquivos) enviados ao notebook `tear`
-- [x] `docs/knowledge/.notebook-index.json` reconciliado (5 arquivos)
-- [x] PR #79 aberta em draft
+- [x] `BASE.docx` lido e transformado (não resumido) em
+      `docs/AI_CONSTITUTION.md`
+- [x] `CLAUDE.md` §Fonte de decisão referenciando a nova autoridade
+- [x] 3 regras de governança do responsável do projeto salvas em memória
+- [x] PR #79 atualizada (commit `e6892b9`, pushado)
 - [ ] Decisão sobre as ~22 fontes legadas remanescentes no notebook
+
+### Achado desta sessão
+
+- [ ] Esclarecer commit `8060e18` (Governança Fase 2) órfão em `main`
+      local / branch `docs/governance-phase2`
 
 ### Ambiente de desenvolvimento (sessão anterior, PR #78)
 
