@@ -2060,12 +2060,14 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
     `docs/archive/` e dos próprios relatórios de auditoria/plano.
 - **Itens do plano ainda não executados** (aguardando decisão/priorização
   do responsável do projeto):
-  - Fase 1 (restante): 3 roadmaps superados (`ROADMAP_MESTRE_TEAR_V2.md`,
-    `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md`,
-    `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` — este último precisa de um
-    ADR novo extraindo a decisão P0-2 antes de arquivar),
+  - Fase 1 (restante): 2 roadmaps superados (`ROADMAP_MESTRE_TEAR_V2.md`,
+    `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md`),
     `docs/governance/REPOSITORY_GOVERNANCE_AUDIT.md`,
     `RELATORIO_CONSOLIDACAO_AUDITORIAS.md` (raiz).
+    `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` — **concluído (2026-07-23,
+    ver §39):** ADR-018 escrita extraindo a decisão P0-2 real (subconjunto
+    bem mais estreito do que o plano propunha), documento arquivado em
+    `docs/archive/pagamento-snapshot/`.
   - Fase 2: 3 remoções diretas já validadas
     (`docs/reports/STATUS_MVP_OPERACIONAL_TEAR_V2.md`,
     `docs/reports/RELATORIO_SPRINT_ESTABILIZACAO_TEAR_V2.md`,
@@ -2762,3 +2764,67 @@ system-ela` continua em `75cf5c4` sem a correção até o merge acontecer.
 Pagamentos, Campanhas, Administração) ficam aptos para a fase de
 migração para a arquitetura definitiva — os itens B/C remanescentes não
 bloqueiam a validação do produto, salvo novo achado crítico.
+
+**Correção factual (2026-07-23, sessão de curadoria documental §39):** o
+texto acima ("Ainda não mergeado") ficou desatualizado — verificado por
+`git log` nesta sessão que o PR #66 **já foi mergeado**
+(`99b5f6a`, merge de `fix/pagamento-gate-pago` em
+`feat/ui-design-system-ela`), e há mais um commit à frente
+(`955bb83`, `feat(portal): adiciona historico da influenciadora (RF-028)`)
+não registrado em nenhuma seção deste arquivo. Registro puramente factual
+(divergência encontrada por checagem de `git log`/`git status`, não nova
+auditoria) — o conteúdo funcional de §37/§38 permanece o mesmo, só o
+status do merge e o novo commit precisam de uma sessão dedicada ao fluxo
+de QA/Homologação para serem documentados corretamente.
+
+## 39. Curadoria documental — decisão P0-2 extraída para ADR-018, plano de congelamento arquivado (2026-07-23)
+
+Continuação da sessão de curadoria documental (Agente C) interrompida por
+limite de contexto. Escopo estritamente documental — nenhum código
+alterado.
+
+- **Item pendente localizado e concluído:** `docs/planning/
+  PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` (P0-2) era o único item
+  faltante da Fase 1 do plano executivo de simplificação documental (§28)
+  com pré-requisito não cumprido (extrair a decisão de arquitetura para
+  ADR antes de arquivar).
+- **Leitura direta do código** (`ParticipacaoNaCampanha.php`,
+  `ParticipacaoController.php`, `routes/api.php`, migration
+  `2026_07_20_180000_...`) confirmou que a implementação real é **muito
+  mais estreita** do que o plano original propunha: só a coluna
+  `congelado_em` + trava de edição de 4 campos comerciais. Não existem
+  `congelado_por`, `dados_congelados` (cópia do cadastro da Parceira) nem
+  `historico_alteracoes_participacao` — o núcleo do problema que o plano
+  original resolvia (histórico não deve vazar alteração posterior do
+  cadastro vivo da Parceira) **não está coberto** pela implementação
+  atual. Achado consistente com
+  `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md` (2026-07-22)
+  e com a pendência Categoria C já registrada em `ESTADO_SESSAO.md` §4
+  ("Congelamento é decorativo fora dos campos comerciais").
+- **`docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md`**
+  criada — documenta o que foi de fato implementado, o gap consciente em
+  relação ao plano original, e mantém o plano completo como referência
+  arquivada para se o Sprint 3 (Contratos) precisar da garantia de
+  integridade histórica completa.
+- **`git mv`** de `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`
+  para `docs/archive/pagamento-snapshot/` (mesmo cluster temático dos 3
+  documentos-fonte que ele já cita em seu próprio §0) — histórico
+  preservado via rename. `docs/archive/README.md` e
+  `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` (linha de governança
+  §"Governança deste documento") atualizados para não referenciar mais o
+  arquivo pelo caminho antigo.
+- **Divergência encontrada e registrada (não corrigida além do registro
+  factual):** ver correção anexada ao final de §38 — `ESTADO_SESSAO.md` e
+  este arquivo estavam desatualizados quanto ao merge do PR #66 e a um
+  commit adicional (RF-028) não documentado; fora do escopo desta sessão
+  (documental) investigar ou fechar essa lacuna, que pertence à trilha de
+  QA/Homologação.
+- **Não executado nesta sessão (fora do escopo da tarefa de continuação,
+  aguardando decisão do responsável do projeto — ver relatório de
+  encerramento da missão do Agente C):** os demais itens de Fase 1
+  (2 roadmaps superados, `REPOSITORY_GOVERNANCE_AUDIT.md`,
+  `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`), Fase 2 (3 remoções diretas já
+  validadas), Fase 3 (2 consolidações) e Fase 4 (arquivamento pós-Go-Live)
+  — todos já listados em §28, nenhum teve autorização explícita de
+  execução nesta sessão. Destino dos 3 relatórios `docs/reports/*.md`
+  (`??`) também segue não decidido.

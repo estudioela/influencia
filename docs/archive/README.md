@@ -46,6 +46,7 @@ reduzir arquivos soltos):
 | `ANALISE_MODELO_PAGAMENTO_RECORRENTE_TEAR_V2.md` | Análise técnica — pagamento recorrente |
 | `CHECKPOINT_POS_ANALISE_PAGAMENTO_SNAPSHOT.md` | Checkpoint de sessão |
 | `IMPLEMENTACAO_P0_GATE_PAGAMENTO.md` | Registro de implementação — gate de pagamento P0-1 |
+| `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` | Plano de arquitetura — congelamento de Participação (P0-2). Decisão real extraída para `docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md` (2026-07-23) — o plano propunha um modelo completo (cópia de dados de Parceira + auditoria) só parcialmente implementado; a ADR documenta o gap. |
 
 ### `consolidacao-branches/` — merges, estado entre sessões paralelas e marcos
 

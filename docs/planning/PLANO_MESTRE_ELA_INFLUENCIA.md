@@ -5,7 +5,7 @@
 **Documentos irmãos:** `ELA_INFLUENCIA_ENTREGA_1_ANALISE_ESTRATEGICA.md` (por quê) e `ELA_INFLUENCIA_ENTREGA_2_PLANO_EXECUTIVO.md` (fases e portões). Este documento é a camada operacional: calendário realista, subfases, entregas, critérios de aceite e auditoria crítica.
 
 **Governança deste documento:**
-- Substitui, como plano vigente, os anteriores `ROADMAP_MESTRE_TEAR_V2.md`, `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md` e `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` (candidatos a `docs/archive`, mover requer sua autorização).
+- Substitui, como plano vigente, os anteriores `ROADMAP_MESTRE_TEAR_V2.md` e `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md` (candidatos a `docs/archive`, mover requer sua autorização). `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` já foi arquivado em `docs/archive/pagamento-snapshot/` (2026-07-23) — decisão extraída para `docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md`.
 - Estado de execução do dia a dia continua no `TASK_ROUTER.md`. Este plano não vira lista de tarefas: vira bússola. Revisar ao cruzar cada portão, não semanalmente.
 
 ---
