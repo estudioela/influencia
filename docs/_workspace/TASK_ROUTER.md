@@ -2828,3 +2828,40 @@ alterado.
   — todos já listados em §28, nenhum teve autorização explícita de
   execução nesta sessão. Destino dos 3 relatórios `docs/reports/*.md`
   (`??`) também segue não decidido.
+
+## 40. PR #66 mergeado, missão de QA/Certificação do Agente B encerrada (2026-07-23)
+
+Continuação da sessão do §38, retomada após interrupção por limite de
+uso. Verificação de estado (não reauditoria): o PR #66
+(`fix/pagamento-gate-pago` → `feat/ui-design-system-ela`) descrito como
+"ainda não mergeado" no §38 **já estava mergeado** ao retomar esta
+sessão — merge commit `99b5f6a`, CI verde (backend + frontend). A branch
+`feat/ui-design-system-ela` avançou mais dois commits depois do merge,
+de uma sessão paralela não documentada aqui até agora:
+
+- `bb44d20` — corrige consentimento LGPD ausente no modo criação de
+  Parceira (`ParceiraFormPage.tsx`); achado por reprodução manual no
+  navegador durante a homologação funcional.
+- `955bb83` — implementa `GET /me/historico` (RF-028) e a tela
+  correspondente no Portal da Influenciadora, fechando a última etapa do
+  ciclo de negócio definido em §32 (`...→ Pagamento → Histórico`).
+  Validado no navegador com campanha real `ENCERRADA`.
+
+**Verificado nesta sessão em `955bb83` (HEAD atual de
+`feat/ui-design-system-ela`):** backend 208/208 testes verdes,
+`pint --test` limpo, `tsc -b` (frontend) limpo — sem regressão
+introduzida pelos dois commits acima nem pelo merge do PR #66.
+
+**Entrega desta sessão:** `docs/reports/CERTIFICACAO_MVP.md` — parecer
+técnico formal de certificação funcional do MVP (`tear-v2-app/`),
+consolidando os achados de §37/§38 e o estado atual pós-merge. Parecer:
+**certificado funcionalmente** para o critério de demonstração a cliente
+(não de Go-Live de produção, gate independente e ainda não autorizado em
+`docs/release/GATE_FINAL_GO_LIVE.md`). Nenhum bloqueador funcional
+(Categoria A) em aberto; pendências B/C mantidas como já registradas em
+`ESTADO_SESSAO.md` §4.
+
+**Missão do Agente B nesta frente (QA/Homologação/Certificação)
+encerrada.** Próximo passo é decisão do responsável do projeto: seguir
+para a frente de infraestrutura/Go-Live (`GATE_FINAL_GO_LIVE.md`) ou
+ampliar a auditoria a fluxos secundários (Marcas, Medidas) antes disso.
