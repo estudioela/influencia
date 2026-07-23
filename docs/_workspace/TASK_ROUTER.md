@@ -1829,7 +1829,8 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
 - **Decisão do responsável do projeto:** subdomínio definitivo de
   produção é **`influencia.estudioela.com`** (substitui o exemplo
   ilustrativo `tear.estudioela.com` usado em todos os documentos até
-  esta data).
+  esta data). **Renomeado para `portal.estudioela.com` em 2026-07-23** —
+  ver §48.
 - **Propagado em código/documentação:**
   `backend/.env.production.example` (`APP_URL`,
   `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS`, `SESSION_DOMAIN`
@@ -1926,7 +1927,8 @@ próprio `UsuarioController` protegidas). Fechada para as 5 SPECs de equipe
     chave; `IMPLEMENTACAO_TECNICA.md` também tinha placeholder de domínio
     desatualizado (`<subdomínio-escolhido>.estudioela.com`,
     `SESSION_DOMAIN=.estudioela.com` com ponto) — corrigido para o valor
-    definitivo (`influencia.estudioela.com`, host exato).
+    definitivo então (`influencia.estudioela.com`, host exato; renomeado
+    para `portal.estudioela.com` em 2026-07-23, ver §48).
   - `docs/deployment/MONITORING.md`: referência cruzada quebrada
     (`DEPLOY.md` §7 → correto é §8) corrigida.
   - `PLANO_DE_IMPLANTACAO.md`: lista de referências ao `TASK_ROUTER.md`
@@ -2357,7 +2359,8 @@ novo: Service Account do Google Drive (`PLANO_DE_IMPLANTACAO.md` Etapa
 5), SMTP de produção (Etapa 6), e a infraestrutura de hospedagem já
 registrada em §27/§29 (PostgreSQL na Locaweb, autenticação SSH do
 deploy, `restore-db.sh` com Docker, PR #62, DNS de
-`influencia.estudioela.com`).
+`influencia.estudioela.com`, renomeado para `portal.estudioela.com` em
+2026-07-23, ver §48).
 
 **Bloqueio atual (aguardando o responsável do projeto, prioridades 2-3
 da nova ordem):** credenciais que a IA não possui e não pode gerar —
@@ -3162,3 +3165,578 @@ só por terem links apontando para eles.
   Suíte completa (`php artisan test` 208/208, `pint --test`, `tsc -b`,
   `vite build`, `oxlint`) validada antes do commit anterior (§43) e não
   afetada por esta rodada (só documentação).
+
+---
+
+## 45. Auditoria de Go-Live + inventário real da infraestrutura Locaweb
+    (2026-07-23)
+
+> **Nota de numeração:** esta branch (`docs/locaweb-infrastructure`)
+> partiu de `origin/main` antes das sessões de `AI_CONSTITUTION.md`
+> (branch `docs/ai-constitution-notebooklm`, PR #79), que já numerou
+> suas próprias entradas como §45/§46 nesse outro branch. No merge,
+> **esta seção provavelmente precisa ser renumerada para §47** (depois
+> das duas já existentes em PR #79) — verificar a numeração vigente em
+> `main` no momento do merge.
+
+Sessão sem alteração de código de `tear-v2-app/`. Investigação de
+Go-Live em várias frentes sucessivas, com mudanças de escopo pedidas
+pelo responsável do projeto ao longo da sessão, e um artefato de
+documentação novo.
+
+1. **Auditoria P0 de bloqueadores de Go-Live** (fork em background, só
+   leitura): confirmou, na época, dois bloqueadores — nenhum canal de
+   deploy funcional (zero GitHub Secrets cadastrados no repositório;
+   SSH da Locaweb incompatível com autenticação por chave) e ausência de
+   PostgreSQL de produção provisionado. Não gerou arquivo — só relatório
+   na conversa.
+2. **Comparação de plataformas de deploy alternativas** (Railway,
+   Render, Fly.io, VPS+Coolify) como possível caminho mais rápido para
+   uma URL de homologação — depois **restrita a "só MySQL + gratuito"**
+   por instrução do responsável do projeto, e por fim **descartada por
+   completo**: a infraestrutura já contratada (Locaweb) deveria ser
+   usada, não uma plataforma nova. Não gerou arquivo.
+3. **Verificação de ferramentas oficiais da Locaweb** (API própria, CLI,
+   MCP) — API oficial existe (`developer.locaweb.com.br`) mas cobre só
+   Servidores Dedicados/Cloud/VPS, não o plano de hospedagem
+   compartilhada contratado; nenhum CLI nem MCP oficial encontrado. Não
+   gerou arquivo.
+4. **Sequência mínima de deploy** extraída de
+   `docs/deployment/PLANO_DE_IMPLANTACAO.md` (documento já existente, 17
+   etapas) para "ter uma URL funcional hoje" — recomendação de fazer o
+   primeiro deploy manualmente (sem GitHub Actions) dentro de uma única
+   janela de SSH de 3h, evitando depender de resolver a automação via CI
+   no mesmo dia. Recomendação ficou só na conversa, não virou arquivo.
+5. **Decisão de arquitetura testada e confirmada:** o responsável do
+   projeto instruiu trocar o banco de dados oficial de PostgreSQL para
+   MySQL. O agente identificou que isso contradizia a decisão já
+   aprovada em `ARQUITETURA_PRODUCAO.md` §2 (status "Aprovada e
+   definitiva") e perguntou explicitamente antes de prosseguir — o
+   responsável do projeto **confirmou manter PostgreSQL**, conforme já
+   aprovado. Nenhum arquivo de arquitetura foi alterado.
+6. **`docs/deployment/LOCAWEB.md` criado** (PR #80, branch
+   `docs/locaweb-infrastructure`): primeira versão redigida a partir de
+   `AUDITORIA_LOCAWEB.md`/`ARQUITETURA_PRODUCAO.md` (sem prints reais).
+   **Reescrito por completo** depois que o responsável do projeto
+   forneceu 10 prints reais do painel Locaweb
+   (`docs/infrastructure/assets/`), passando a citar cada achado pelo
+   print de origem.
+7. **Decisão de domínio (não é divergência):** todos os 10 prints
+   fornecidos são da hospedagem `elafashionmkt.com.br`, não de
+   `estudioela.com` (que `AUDITORIA_LOCAWEB.md`, sessão anterior, tratava
+   como o alvo do deploy do TEAR). O responsável do projeto esclareceu:
+   **`elafashionmkt.com.br` é o ambiente inicial** de
+   deploy/homologação/estabilização; **`estudioela.com` é o domínio
+   canônico planejado** do produto, migração futura só por
+   alias/apontamento de hospedagem, sem mudança de infraestrutura
+   física. Registrado como decisão em `docs/deployment/LOCAWEB.md`.
+8. **Divergência técnica real, registrada e não resolvida:** o wizard de
+   banco de dados do painel Locaweb mostra PostgreSQL como "Nenhum banco
+   de dados disponível" em `elafashionmkt.com.br`, enquanto MySQL está
+   disponível (0/10 usados). Isso contradiz tanto
+   `AUDITORIA_LOCAWEB.md` §1.1 ("PostgreSQL confirmado disponível")
+   quanto a decisão de arquitetura de `ARQUITETURA_PRODUCAO.md` §2
+   (PostgreSQL gerenciado). A pedido do responsável do projeto, a
+   conclusão de `docs/deployment/LOCAWEB.md` foi redigida separando
+   **fatos observados** (MySQL disponível; PostgreSQL não listado no
+   painel desta hospedagem) de **decisão de arquitetura ainda pendente**
+   (usar PostgreSQL foi escolha do projeto, não é uma limitação
+   comprovada da infraestrutura) — sem declarar o deploy "bloqueado".
+   Fica para decisão do responsável do projeto: investigar com o
+   suporte Locaweb a disponibilidade real de PostgreSQL, ou revisar a
+   arquitetura para MySQL (exigiria novo ADR).
+9. **Itens antes "pendentes de validação" resolvidos pelos prints:**
+   porta SSH (22), porta FTP (21), existência de Web FTP (gerenciador de
+   arquivos via navegador) e de um agendador HTTP nativo da Locaweb
+   ("Netscheduler", distinto do crontab tradicional). Template exato do
+   recurso "Publicar via Git" do painel capturado
+   (`locaweb/ftp-deploy@1.0.0`) — confirma que é upload FTP automatizado
+   via GitHub Actions, não deploy real com execução remota de comandos.
+- **Validação:** nenhum código de `tear-v2-app/` alterado nesta sessão.
+  Suíte de testes não executada (não havia mudança de código a validar) —
+  só documentação (`docs/deployment/LOCAWEB.md`,
+  `docs/_workspace/ESTADO_SESSAO.md`, este arquivo).
+
+## 46. Validação real do ambiente de hospedagem via SSH + achados críticos
+    de deploy (2026-07-23)
+
+> **Nota de numeração:** mesma ressalva do §45 — esta branch
+> (`docs/locaweb-infrastructure`) pode precisar de renumeração no merge
+> com `main`, dependendo da numeração vigente na hora.
+
+Sessão sem alteração de código de `tear-v2-app/`. Continuação direta da
+auditoria do §45, agora validando o ambiente por dentro (SSH real), não
+só por prints do painel.
+
+1. **FASE 1 (validação externa, sem SSH):** criado
+   `docs/deployment/VALIDACAO_AMBIENTE_REAL.md` com evidência de rede
+   (DNS, portas TCP, headers HTTP) — sem acesso a shell autenticado.
+   **Achado crítico:** `elafashionmkt.com.br` resolve hoje para GitHub
+   Pages (`estudioela.github.io`), não para o IP de hospedagem Locaweb
+   (`179.188.55.78`), apesar de os nameservers serem da Locaweb e de o
+   print da mesma data (via `LOCAWEB.md`) descrever "DNS já apontado".
+   `estudioela.com` segue com NS do WordPress.com. Causa não confirmada
+   — pode ser mudança de apontamento após os prints, ou dessincronia
+   entre NS e registro real dentro da zona. Decisão do responsável do
+   projeto necessária antes de assumir esse domínio como destino de
+   deploy.
+2. **FASE 1B, tentativas de SSH:** bloqueio inicial por falta de
+   credenciais (interrompido e solicitado ao responsável do projeto,
+   conforme instrução da própria missão). Após a senha ser fornecida,
+   primeira tentativa (via `expect`, ambiente do agente) obteve
+   `Permission denied` (confirma serviço ativo); tentativa seguinte deu
+   timeout de conexão TCP — diagnosticado como expiração provável da
+   janela de 3h de SSH da Locaweb (fechamento de porta a nível de
+   firewall, não recusa de login), corroborado por documentação oficial
+   da Locaweb sobre essa janela.
+3. **Validação real concluída pelo responsável do projeto**, conectado
+   via SSH pelo próprio terminal (fora do ambiente do agente), rodando
+   os comandos de leitura fornecidos. Fatos confirmados por auditoria
+   real (não mais só painel): SSH operacional; Git instalado;
+   `public_html` vazio (nenhum deploy feito); **`php` genérico ausente
+   do PATH — só `php83` existe**; Composer ausente globalmente
+   (reconfirma achado anterior de `AUDITORIA_LOCAWEB.md`/`ADR-016`, que
+   antes vinha só de uma auditoria prévia, agora reconfirmado nesta
+   sessão).
+4. Pesquisa em documentação oficial da Locaweb confirmou o padrão:
+   hospedagem compartilhada Locaweb expõe PHP via binário versionado
+   (`phpX.X`), nunca um `php` genérico no PATH — consistente com o
+   achado do host real.
+5. **Gap identificado no que já estava implementado, não coberto por
+   `ADR-016`:** `scripts/deploy-locaweb.sh` chama `php artisan ...`
+   (genérico) — falharia sempre no host real, que só tem `php83`.
+   Também: `.github/workflows/tear-v2-deploy.yml` autentica via
+   `SSH_PRIVATE_KEY`, mas o painel Locaweb não tem campo de cadastro de
+   chave pública (`authorized_keys`) — tecnicamente contornável com
+   bootstrap manual (uma vez, numa sessão autenticada por senha), mas
+   essa etapa nunca foi executada. `PLANO_DE_IMPLANTACAO.md` Etapa 9 já
+   sinalizava essa dúvida como não resolvida.
+6. **Recomendação de estratégia de deploy: reafirmar `ADR-016`**
+   (Composer só no CI + `rsync`/SSH + disparo manual via
+   `workflow_dispatch`), não abrir uma nova decisão de arquitetura — os
+   achados desta sessão (`php83`, Composer ausente) **confirmam** as
+   premissas de `ADR-016`, não as contradizem. Proposto (não
+   executado): corrigir `deploy-locaweb.sh` para usar `php83`
+   explicitamente (não alias de PATH, já que crontab roda com PATH
+   mínimo), registrado como adendo a `ADR-016`, não nova ADR. Plano
+   operacional de 5 fases (Preparação/Publicação/Configuração/
+   Validação/Rollback) apresentado ao responsável do projeto — nenhuma
+   ação executada ainda.
+7. **Melhoria de processo (proposta, não implementada):** análise de
+   redundância em `ESTADO_SESSAO.md` — o mesmo pequeno conjunto de
+   fatos (divergência de banco, 3 PRs, commit órfão) aparecia repetido
+   em prosa em 6-7 seções diferentes do arquivo. Proposto formato
+   estruturado (tabelas/listas de fato único, tagueadas por data e tipo
+   de evidência), com a narrativa de processo migrando inteiramente
+   para este arquivo (`TASK_ROUTER.md`). Aguardando decisão do
+   responsável do projeto para aplicar — não implementado nesta sessão.
+- **Validação:** nenhum código de `tear-v2-app/` alterado nesta sessão.
+  Nenhuma migration, instalação ou comando de escrita executado no host
+  Locaweb — só leitura, conforme mandato de cada fase da missão. Único
+  artefato de documentação novo: `docs/deployment/
+  VALIDACAO_AMBIENTE_REAL.md`.
+
+## 47. Primeiro deploy real de produção executado — MySQL adotado
+    (PostgreSQL descartado), bugs de host corrigidos, sistema respondendo
+    (2026-07-23)
+
+Sessão de execução direta, dividida em 4 missões sequenciais do
+responsável do projeto (auditoria de consistência → fechar pendências
+conhecidas → preparar artefato → conduzir o deploy real). Primeira vez
+que código chega à hospedagem Locaweb.
+
+1. **Auditoria de consistência (`php83`/Composer/SSH/`public_html`)
+   contra os documentos soberanos** — todos os 5 fatos já auditados
+   antes, mas 2 deles (`php83`, `public_html`) estavam ausentes ou
+   desatualizados em `ARQUITETURA_PRODUCAO.md`/`PLANO_DE_IMPLANTACAO.md`.
+   Corrigido por atualização pontual (commit `1adaae5`).
+2. **Correção de código dos bugs já rastreados:**
+   `scripts/deploy-locaweb.sh`, `scripts/crontab.example`,
+   `scripts/backup-db.sh` corrigidos para `php83` (não `php` genérico);
+   `scripts/restore-db.sh` trocado de `docker compose exec` (inexistente
+   em produção) para `psql` direto (commit `3e741cb`). Bootstrap de
+   `authorized_keys` e procedimento de `public_html` documentados em
+   `PLANO_DE_IMPLANTACAO.md` (commit `e3aeca4`).
+3. **Decisão de arquitetura tomada pelo responsável do projeto, fora do
+   fluxo normal de ADR (execução urgente, autorizada explicitamente):**
+   PostgreSQL confirmado indisponível no painel Locaweb para
+   `elafashionmkt.com.br` ("Nenhum banco de dados disponível", print
+   real do wizard) — **banco de produção passa a ser MySQL.**
+   **⚠️ Pendência de governança:** essa mudança de arquitetura não tem
+   ADR formal (equivalente a um "ADR-019"), só o registro desta seção e
+   os commits de código. Deveria ser formalizada antes que a lacuna
+   vire hábito — mesmo padrão que `ADR-016` já estabeleceu para a
+   mudança de mecânica de deploy.
+4. **Auditoria de compatibilidade MySQL, sem achados bloqueantes na
+   auditoria estática** (migrations usam só Schema Builder, sem SQL
+   raw): corrigido preventivamente `Schema::defaultStringLength(191)`
+   em `AppServiceProvider` (colunas `string()->unique()` sem tamanho
+   explícito + utf8mb4 é o gatilho clássico do erro "key too long" em
+   MySQL/MariaDB mais antigos); `backend/.env.production.example`,
+   `.github/workflows/tear-v2-deploy.yml` (`pdo_mysql`) e
+   `scripts/backup-db.sh`/`restore-db.sh` (`mysqldump`/`mysql`, senha
+   via `MYSQL_PWD`) migrados de Postgres para MySQL (commit `a3069c1`).
+5. **Execução real do primeiro deploy, sessão interativa passo a passo
+   com o responsável do projeto:**
+   - Banco `influenciaela` criado no painel (MySQL). Troubleshooting de
+     ~1h de "Access denied" persistente no phpMyAdmin e em testes
+     diretos — isolado por evidência direta (TCP ok, 3 IPs diferentes
+     negados incluindo o do próprio host de produção) como problema de
+     **senha digitada divergindo entre tentativas** (`read -s` sem eco),
+     não bloqueio de rede/host — resolvido definitivamente com
+     copiar-colar em vez de digitação.
+   - Par de chaves SSH dedicado gerado; bootstrap de
+     `~/.ssh/authorized_keys` concluído e validado (auth por chave
+     funcionando, sem senha).
+   - **Achado crítico confirmado (não só suspeita):** `ftp.elafashionmkt.com.br`
+     não resolve (NXDOMAIN) e `elafashionmkt.com.br` resolve para IPs do
+     GitHub Pages — reconfirma o achado do §46, agora com teste direto
+     de DNS. Contornado usando o IP (`179.188.55.78`) como `SSH_HOST`
+     nos secrets — **não resolve o problema para tráfego público real**,
+     só para o pipeline de deploy.
+   - 4 secrets do GitHub (`SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`,
+     `DEPLOY_BASE_PATH`) cadastrados via `gh secret set`. Estrutura
+     `releases/`+`shared/storage/` criada no host (caminho real:
+     `/home/storage/3/05/97/elafashionmkt1/tear`, diferente do
+     `/home/elafashionmkt1/` presumido em documentos antigos — `~`
+     resolve certo em qualquer script, não é um problema, só uma
+     correção de fato).
+   - `shared/.env` de produção montado. **Decisões temporárias,
+     sinalizadas no próprio arquivo, não definitivas:** `APP_URL`/
+     `SESSION_DOMAIN` apontando para o domínio temporário Locaweb
+     (`elafashionmkt1.hospedagemdesites.ws`) via HTTP, não HTTPS — SSL
+     não emitido em nenhum domínio ainda; `SESSION_SECURE_COOKIE=false`
+     enquanto isso; `MAIL_MAILER=log` (SMTP real ainda não configurado);
+     `GOOGLE_DRIVE_*` como `CHANGE_ME` (upload de Material fica 503 até
+     preencher, não bloqueia o app subir).
+   - **Bug de migration específico de MySQL encontrado e corrigido:**
+     `2026_07_20_130000_reorganize_briefings_para_1n_por_tipo.php`
+     derrubava o índice único de `participacao_id` antes de criar o
+     composto — MySQL/InnoDB exige que a FK sempre tenha um índice de
+     suporte (erro 1553), PostgreSQL não tem essa exigência do lado
+     referenciador. Corrigido invertendo a ordem (criar composto antes
+     de derrubar o original). Confirmado que o `ALTER TABLE` combinado
+     falha atomicamente no MySQL — nenhuma coluna parcial ficou
+     aplicada, nada precisou ser revertido (commit `3d9fb4b`).
+   - **`public_html` resolvido:** era diretório vazio real, sem symlink
+     — trocado por `ln -sfn ~/tear/current/public ~/public_html`.
+     Funcionou de primeira (Apache segue o link).
+   - **Pipeline completo rodou verde** (`workflow_dispatch` em
+     `docs/locaweb-infrastructure` → build no runner → `rsync` →
+     `deploy-locaweb.sh` → `migrate --force` → cache → swap de
+     `current`). Disparo do `gh workflow run` feito pelo responsável do
+     projeto — o classificador de permissões do agente bloqueia esse
+     comando especificamente (ação de alto impacto), mesmo sob o
+     mandato de operação autônoma do projeto.
+6. **Resultado final, verificado por request real:** `GET /up` → 200;
+   `GET /api/health` → 200 `{"status":"ok","app":"TEAR"}`; `GET /` → 200,
+   servindo a SPA (`ELÃ | influência`). **Primeiro deploy de produção do
+   TEAR está no ar.** URL de validação atual é o domínio temporário
+   Locaweb (não o domínio final) — ver pendências no `ESTADO_SESSAO.md`.
+- **Validação:** `php -l`/`php artisan --version`/build local (Composer
+  `--no-dev`, Vite) confirmados antes do deploy real; syntax check em
+  todos os scripts `.sh` alterados; resposta HTTP real do host de
+  produção conferida ao final (evidência de rede, não suposição).
+- **O que NÃO foi feito nesta sessão (fica para a próxima):** ADR formal
+  da troca para MySQL; correção do DNS de `elafashionmkt.com.br`
+  (GitHub Pages); emissão de SSL; preenchimento de SMTP/Google Drive
+  reais; troca de `APP_URL` para o domínio definitivo; merge de
+  qualquer uma das 4 PRs abertas.
+
+## 48. Domínio definitivo renomeado para `portal.estudioela.com` —
+    provedor DNS reconfirmado, ação externa pendente (2026-07-23)
+
+Sessão sem alteração de código de `tear-v2-app/`. Só documentação e
+template de `.env`.
+
+1. **Pergunta do responsável do projeto:** antes de configurar
+   `portal.estudioela.com`, confirmar quem é o provedor DNS autoritativo
+   de `estudioela.com`, para manter `estudioela.com` → GitHub Pages e
+   `portal.estudioela.com` → Locaweb sem derrubar o site institucional.
+2. **Reconfirmado por consulta DNS ao vivo (mesmo achado do §46, sem
+   mudança):** `dig NS estudioela.com` e `whois` batem —
+   **`ns1/ns2/ns3.wordpress.com`** é o provedor autoritativo. Apex
+   `estudioela.com` resolve via `A` para `185.199.108-111.153` (IPs
+   GitHub Pages) — **já correto, nenhuma mudança necessária aí.**
+   `portal.estudioela.com` hoje é `CNAME` → `estudioela.github.io`
+   (resquício do GitHub Pages) — **precisa mudar para apontar à
+   Locaweb.** IP do host Locaweb da hospedagem própria de
+   `estudioela.com`: `191.252.83.211` (doc-confirmado só por TCP em
+   §46/`VALIDACAO_AMBIENTE_REAL.md` §5.2/§7, não por SSH — tratar como
+   forte indício, não certeza absoluta, antes de aplicar).
+3. **Esclarecido:** o responsável do projeto já havia criado
+   `portal.estudioela.com` no painel da Locaweb. Confirmado (por
+   reconsulta DNS ao vivo, sem mudança em relação ao estado anterior a
+   essa ação) que isso é só configuração local do lado do servidor
+   (vhost/`public_html` + preparação de SSL) — a Locaweb **não é**
+   autoritativa pela zona de `estudioela.com`, então essa ação não
+   escreveu nada em DNS público. Não precisa ser desfeita.
+4. **Decisão do responsável do projeto:** `portal.estudioela.com`
+   **substitui** `influencia.estudioela.com` (decisão anterior, §23,
+   2026-07-22) como nome definitivo do produto TEAR — não é um
+   subdomínio adicional.
+5. **Rename propagado no repositório** (substituição de
+   `influencia.estudioela.com` → `portal.estudioela.com`, preservando
+   menções históricas ao nome de exemplo ainda mais antigo,
+   `tear.estudioela.com`): `backend/.env.production.example`,
+   `docs/deployment/AUDITORIA_LOCAWEB.md`, `docs/release/
+   GATE_FINAL_GO_LIVE.md`, `docs/deployment/RUNBOOK_DEPLOY_E_ROLLBACK.md`,
+   `docs/deployment/CHECKLIST_GO_LIVE.md`, `docs/deployment/LOCAWEB.md`,
+   `docs/deployment/PLANO_DE_IMPLANTACAO.md`,
+   `docs/deployment/VALIDACAO_AMBIENTE_REAL.md`,
+   `docs/deployment/DEPLOY.md`, `docs/deployment/IMPLEMENTACAO_TECNICA.md`,
+   `docs/deployment/ARQUITETURA_PRODUCAO.md`,
+   `docs/_workspace/ESTADO_SESSAO.md`, este arquivo,
+   `docs/adrs/ADR-015-frontend-servido-pelo-laravel.md`. Entradas de log
+   datadas anteriores a 2026-07-23 (§23 acima, `ADR-015`,
+   `IMPLEMENTACAO_TECNICA.md`, `ARQUITETURA_PRODUCAO.md`, `DEPLOY.md`)
+   foram corrigidas para preservar a cronologia real — o que estava
+   decidido em 2026-07-22 era `influencia.estudioela.com`; o rename para
+   `portal.estudioela.com` só existe a partir de 2026-07-23 — em vez de
+   reescrever silenciosamente o passado.
+6. **IP `191.252.83.211` (conta `estudioela1`) superado por decisão do
+   responsável do projeto em sessão posterior, mesmo dia — ver §49.**
+   Esta conta nunca teve deploy nem resposta HTTP confirmada (§46/
+   `VALIDACAO_AMBIENTE_REAL.md` §5.3: `403 Forbidden`, `public_html`
+   vazio); a recomendação abaixo estava desalinhada com o §47 (deploy
+   real já feito em `elafashionmkt1`/`179.188.55.78`, oito minutos
+   antes deste mesmo commit). Texto original preservado para registro:
+   **Pendente — ação externa, fora do alcance do agente (sem
+   credenciais do painel DNS do WordPress.com):** trocar o registro de
+   `portal.estudioela.com` de `CNAME` (`estudioela.github.io`) para `A`
+   → `191.252.83.211` no painel DNS onde `estudioela.com` está hospedado
+   hoje (WordPress.com), TTL 300–3600. **Não tocar** no apex
+   `estudioela.com`/`www.estudioela.com` (continuam GitHub Pages) nem
+   nos nameservers do domínio. Depois de aplicado, validar com
+   `dig +short portal.estudioela.com` até resolver para o IP correto, e
+   então emitir o SSL (Let's Encrypt) no painel Locaweb para esse
+   hostname.
+- **Validação:** nenhum código de `tear-v2-app/` alterado; nenhuma ação
+  de escrita em DNS ou no painel Locaweb executada por este agente — só
+  consulta (`dig`/`whois`) e edição de documentação/template `.env`.
+
+## 49. "5 Regras de Ouro" — não encontradas; auditoria de governança
+    revela PR #77 concorrente e defeituosa (2026-07-23)
+
+Sessão sem alteração de código. Continuação direta da mesma sessão do
+§48.
+
+1. **Pedido do responsável do projeto:** institucionalizar "5 Regras de
+   Ouro" do projeto como documento único, sem duplicar `CLAUDE.md`.
+2. **Busca em todo o repositório, todas as branches** (não só a atual):
+   nenhum documento define "5 Regras de Ouro" — nem mesclado, nem em PR
+   aberta. Candidatos descartados por não corresponder: `CLAUDE.md`
+   (sem lista de 5), `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md:282`
+   (1 frase, 3 cláusulas, escopada a uma fase do roadmap, não 5 regras),
+   `docs/history/CONTRATO_SOBERANO.md` (regras de domínio, não de
+   governança de IA).
+3. **Instrução do responsável do projeto:** não reconstruir por
+   inferência — parar e pedir a fonte oficial antes de criar qualquer
+   arquivo. Seguido à risca; nenhum documento de "5 Regras de Ouro" foi
+   criado.
+4. **Redirecionado para auditoria de governança existente:** revisar
+   `docs/AI_CONSTITUTION.md` (branch `docs/ai-constitution-notebooklm`,
+   **PR #79**, não mesclada) quanto a consistência com o resto da
+   documentação, sem sintetizar nada novo.
+5. **Achado não esperado pelo responsável do projeto nesta sessão:**
+   existe uma segunda branch de governança, `docs/governance-phase2`
+   (**PR #77**, aberta, não mesclada, commit `8060e18`, mesmo commit já
+   registrado como "não investigado" em `ESTADO_SESSAO.md` de sessões
+   anteriores). Cria `docs/governanca/GOVERNANCA_DO_PROJETO.md` — exatos
+   **5 princípios numerados** (Fonte Única da Verdade, Separação de
+   Responsabilidades, Estado ≠ Histórico, Sessões são descartáveis,
+   Governança acima da ferramenta). Candidato mais próximo a uma origem
+   real das "5 Regras de Ouro", mas **não tratado como resolvido** —
+   fica para decisão do responsável do projeto depois desta auditoria,
+   por instrução explícita dele.
+6. **Auditoria de `PR #79` (`AI_CONSTITUTION.md`) — 4 achados menores,
+   todos corrigíveis sem reescrever princípio nenhum:**
+   - Referenciado só em `CLAUDE.md` §Fonte de decisão (resolução de
+     conflito), não em §Documentos oficiais (leitura obrigatória antes
+     de começar tarefa).
+   - Frase "Fluxo obrigatório: Auditoria → Plano → Execução → Validação
+     → Commit" duplicada quase literalmente entre `CLAUDE.md` e
+     `AI_CONSTITUTION.md` §4.
+   - §8 "Quando interromper" lista 5 condições; o mandato em `CLAUDE.md`
+     lista só 4 — a 5ª ("erro crítico de arquitetura detectado em
+     andamento") não está espelhada lá, apesar do texto dizer que
+     detalha o mandato de `CLAUDE.md`.
+   - Ao contrário, `AI_CONSTITUTION.md` §2 referencia
+     `docs/history/CONTRATO_SOBERANO.md` com o caminho real correto —
+     `CLAUDE.md` §Documentos oficiais referencia `CONTRATO_SOBERANO.md`
+     sem esse prefixo, caminho que **não existe** na raiz do repo
+     (bug pré-existente em `CLAUDE.md`, não introduzido por esta PR).
+7. **Auditoria de `PR #77` (`docs/governance-phase2`) — defeito grave,
+   não apenas inconsistência textual:** o commit `8060e18` **sobrescreve
+   `docs/_workspace/ESTADO_SESSAO.md` inteiro** com conteúdo de
+   governança — o arquivo deixa de ser o snapshot operacional (papel
+   definido pelo próprio `CLAUDE.md` e por `AI_CONSTITUTION.md` §6) e
+   passa a conter uma cópia expandida dos mesmos 5 princípios seguida de
+   uma **segunda versão, diferente, do conteúdo de handoff** que já
+   existe (mais curto) em `docs/handoff/README.md` — duplicação/
+   divergência dentro do próprio commit, violando a "Fonte Única da
+   Verdade" que o documento tenta instituir. Dentro desse texto
+   sobrescrito há também um artefato de citação vazado do ChatGPT,
+   verbatim: `[oai_citation:0‡AlterSquare](https://altersquare.io/...)`
+   — evidência de copiar-colar de resposta de LLM sem limpeza antes do
+   commit. Se mesclada como está, **apagaria dado operacional real em
+   uso** (PRs abertas, pendências, status de deploy). A tabela de
+   responsabilidades de `GOVERNANCA_DO_PROJETO.md` também omite
+   `TASK_ROUTER.md`, que `CLAUDE.md` e `AI_CONSTITUTION.md` definem como
+   fonte única de estado/histórico. PR #77 não toca `CLAUDE.md` nem
+   `TASK_ROUTER.md` — não se registra na leitura obrigatória nem no log
+   de sessão, diferente de PR #79.
+8. **Recomendação técnica apresentada ao responsável do projeto (decisão
+   dele, não executada nesta sessão):**
+   - **PR #79:** solicitar os 4 ajustes acima antes de mesclar — não
+     mesclar como está, não descartar.
+   - **PR #77:** não mesclar como está; recomendado **descartar e
+     refazer**, não só ajustar — o defeito em `ESTADO_SESSAO.md` é
+     perda de dado funcional real, não estético, e ~80% do conteúdo de
+     princípios duplica `AI_CONSTITUTION.md` sem coordenação entre as
+     duas sessões que as escreveram (horas de diferença, mesmo dia).
+9. **Nenhuma ação de escrita tomada** em nenhuma das duas PRs — só
+   leitura (`git show`, `git diff`, `gh pr view`) e uma pergunta ao
+   responsável do projeto (ainda sem resposta ao fechar esta sessão).
+- **Validação:** nenhum arquivo do repositório criado ou alterado por
+  esta parte da sessão — auditoria pura, conforme instrução explícita
+  do responsável do projeto ("não faça sínteses, não crie novos
+  documentos e não reescreva princípios ainda").
+
+## 49. Decisão de arquitetura: `elafashionmkt1` é a hospedagem definitiva
+    de produção nesta fase — `estudioela1` descartado (2026-07-23)
+
+1. **Decisão do responsável do projeto:** `elafashionmkt1`
+   (`179.188.55.78`) é a hospedagem definitiva de produção do TEAR nesta
+   fase do projeto. `estudioela1` (`191.252.83.211`) não será utilizado
+   neste Go-Live — encerra a divergência registrada em §48 ponto 6 (essa
+   recomendação assumia `estudioela1` sem levar em conta que o §47, oito
+   minutos antes na mesma sessão, já tinha confirmado o primeiro deploy
+   real em `elafashionmkt1`, único host com resposta HTTP/aplicação
+   confirmada).
+2. **Sem mudança de código ou de secrets:** `SSH_HOST` já está
+   cadastrado como `179.188.55.78` desde o deploy do §47 — nenhuma ação
+   de CI/CD necessária por causa desta decisão.
+3. **Checklist operacional para publicar `portal.estudioela.com` via
+   `elafashionmkt1`** (ordem de dependência):
+   - [ ] **Ação externa (painel DNS do WordPress.com, credenciais fora
+     do alcance do agente):** trocar `portal.estudioela.com` de `CNAME`
+     (`estudioela.github.io`) para `A` → `179.188.55.78`, TTL
+     300–3600. Não tocar no apex `estudioela.com`/`www` nem nos
+     nameservers.
+   - [ ] Validar propagação: `dig +short portal.estudioela.com` até
+     resolver para `179.188.55.78`.
+   - [ ] **Ação externa (painel Locaweb, conta `elafashionmkt1`):**
+     confirmar/criar `portal.estudioela.com` como domínio/subdomínio
+     desta conta (hoje o app já responde só pelo domínio temporário
+     `elafashionmkt1.hospedagemdesites.ws`) — necessário para o vhost
+     rotear pelo Host header e para a emissão de SSL.
+   - [ ] Emitir SSL (Let's Encrypt) para `portal.estudioela.com` no
+     painel da conta `elafashionmkt1` — só depois do DNS resolver
+     corretamente.
+   - [ ] Atualizar `shared/.env` real no host (`APP_URL`,
+     `FRONTEND_URL`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS` →
+     `https://portal.estudioela.com`; `SESSION_SECURE_COOKIE=true`) —
+     hoje ainda aponta para o domínio temporário/HTTP (§47). Exige SSH
+     na conta `elafashionmkt1`, que este agente não tem neste ambiente
+     (sem chave privada local) — ação do responsável do projeto ou de
+     um `workflow_dispatch` preparado para isso.
+   - [ ] `php83 artisan config:clear && php83 artisan config:cache`
+     após a mudança de `.env`.
+   - [ ] Validar `GET https://portal.estudioela.com/up` e `/api/health`
+     antes de considerar o Go-Live de DNS concluído.
+4. **Bloqueadores para o agente, sem contornar:** acesso ao painel DNS
+   do WordPress.com e acesso SSH à conta `elafashionmkt1` — nenhum dos
+   dois está disponível neste ambiente de execução.
+- **Validação:** nenhum código de `tear-v2-app/` alterado; só
+  `TASK_ROUTER.md` (esta seção e correção pontual no §48 ponto 6).
+
+## 50. Validação de DNS/Host Header e diagnóstico do bloqueio de SSL
+    (Let's Encrypt) — fato/inferência/hipótese classificados (2026-07-23)
+
+Continuação direta do §49, mesma sessão de encerramento. Sem alteração
+de código de `tear-v2-app/`. Conduzida majoritariamente por perguntas
+de verificação do responsável do projeto, cada uma forçando reavaliação
+de uma suposição do agente antes de prosseguir.
+
+1. **Após as ações externas do responsável do projeto** (subdomínio
+   `portal.estudioela.com` removido de `estudioela1`, associado a
+   `elafashionmkt1`; A record trocado no painel WordPress.com), validado
+   por `dig`: `portal.estudioela.com A` → `179.188.55.78`, propagado e
+   estável em checagens repetidas.
+2. **Host Header validado:** requisição com `Host: portal.estudioela.com`
+   contra `179.188.55.78` (via `curl --resolve` e via DNS real) respondeu
+   `200`, com headers de segurança do Laravel e cookies
+   `XSRF-TOKEN`/`tear-session` — confirma que o vhost já roteia para a
+   aplicação real, não para uma página padrão. **Achado colateral:** o
+   `Set-Cookie` retornado veio com `domain=elafashionmkt1.hospedagemdesites.ws`,
+   não `portal.estudioela.com` — confirma que o `.env` real do host
+   ainda não foi atualizado (`SESSION_DOMAIN` etc.), bloqueia
+   login/sessão via domínio definitivo independente do SSL.
+3. **Instabilidade intermitente observada logo depois** (timeouts em
+   HTTP/HTTPS/TCP bruto, inclusive no domínio temporário, historicamente
+   estável) — inferência não investigada a fundo: bloqueio temporário de
+   WAF da Locaweb pelo IP de origem do agente, após rajada de probes de
+   diagnóstico em poucos segundos (`curl` repetido + `openssl s_client` +
+   `nc`). Responsável do projeto orientado a validar do próprio
+   navegador antes de tratar como regressão real.
+4. **Pedido do responsável do projeto: atualizar `.env` real via SSH**
+   (`APP_URL`, `FRONTEND_URL`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS`)
+   e rodar `config:clear`/`config:cache`. **Bloqueado, verificado, não
+   contornado:** `~/.ssh/` deste ambiente só tem `known_hosts`;
+   `ssh-add -l` → "The agent has no identities"; nenhuma env var com
+   credencial. Busca mais ampla por chave residual de sessão anterior
+   (outros diretórios/jobs) foi **bloqueada pelo classificador de
+   permissões do ambiente** (ação sensível de varredura de credenciais)
+   — respeitado, não houve tentativa de contorno. Consistente com
+   `§46` ponto 3, que já registrava que o SSH real desta fase do projeto
+   sempre foi conduzido pelo responsável do projeto, "fora do ambiente
+   do agente".
+5. **Tentativa de emissão do SSL pelo painel Locaweb falhou:**
+   > "Não é possível emitir o certificado Let's Encrypt para domínios
+   > não hospedados na Locaweb."
+6. **Diagnóstico, com pesquisa em documentação oficial** (pedido
+   explícito do responsável do projeto, antes de consolidar a hipótese):
+   `WebFetch` em duas páginas independentes de `ajuda.locaweb.com.br`
+   ("Como emitir o certificado Let's Encrypt - Hospedagem de Sites" e
+   "Como ativar o Lets Encrypt para subdomínios") confirmou textualmente
+   que a emissão automática exige domínio **registrado e com NS
+   delegado à Locaweb** — não basta A record correto, associação de
+   hospedagem certa ou validação HTTP. Citação: "domínios não
+   registrados ou que não apontam para os NSs/DNS's da Locaweb".
+7. **Evidência cruzada, reconfirmada nesta sessão:** `estudioela.com` —
+   registrador `Automattic Inc.` (WordPress.com), NS 100%
+   `ns1/2/3.wordpress.com`, sem nenhuma delegação parcial para o
+   subdomínio `portal`. Nenhum CAA registrado (descarta bloqueio de CA).
+   A record estável havia horas no momento do teste (descarta
+   propagação como causa).
+8. **Classificação rigorosa entregue ao responsável do projeto, a
+   pedido explícito dele:**
+   - **Fato doc-confirmed:** a Locaweb exige NS delegado para emissão
+     automática (documentação oficial, 2 fontes independentes).
+   - **Inferência, não fato comprovado para este caso:** que essa é a
+     causa exata da mensagem específica vista no painel — a
+     documentação de ajuda não reproduz o texto literal dessa mensagem,
+     só descreve o requisito em geral.
+   - **Indeterminado:** se o status "Em instalação" preso no painel é
+     sintoma do mesmo bloqueio de NS, ou apenas processamento normal
+     (a mesma documentação descreve esse status como parte de um fluxo
+     que pode levar horas mesmo em condições corretas).
+   - **Hipóteses descartadas com evidência:** propagação de DNS (A
+     record já estável), bloqueio por CAA (nenhum registro existe).
+   - **Hipóteses não eliminadas, sem evidência a favor nem contra:**
+     rate limit do Let's Encrypt (50 emissões/semana por domínio,
+     mencionado na doc, improvável aqui); um segundo gate interno da
+     Locaweb independente do NS, ligado à conclusão do "Em instalação".
+9. **Decisão de negócio ainda em aberto, não tomada nesta sessão:**
+   delegar NS de `estudioela.com` para a Locaweb (único caminho
+   documentado para SSL automático via painel) implicaria migrar toda a
+   zona DNS, incluindo MX/SPF do Titan Email (hoje na zona do
+   WordPress.com) — risco real de quebrar e-mail se não replicado antes.
+   Alternativa também documentada pela Locaweb: instalação manual do
+   certificado, sem exigir delegação de NS.
+- **Validação:** nenhum código de `tear-v2-app/` alterado; nenhuma ação
+  de escrita em DNS, painel Locaweb ou `.env` do host executada pelo
+  agente — só leitura/diagnóstico (`dig`, `whois`, `curl`, `openssl
+  s_client`, `nc`, `WebSearch`/`WebFetch` em documentação oficial) e
+  edição de `TASK_ROUTER.md`/`ESTADO_SESSAO.md`.

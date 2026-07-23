@@ -9,7 +9,7 @@ autorização em `docs/release/GATE_FINAL_GO_LIVE.md`.
 ## Premissas
 
 - Produção usa PostgreSQL gerenciado e uma origem única:
-  `https://influencia.estudioela.com`.
+  `https://portal.estudioela.com`.
 - O build React está em `backend/public/build`.
 - Cada release deve estar em `releases/<release-id>` e `current` deve apontar
   para a release ativa.
@@ -39,9 +39,9 @@ autorização em `docs/release/GATE_FINAL_GO_LIVE.md`.
    DB_CONNECTION=pgsql
    SESSION_DRIVER=database
    SESSION_SECURE_COOKIE=true
-   APP_URL=https://influencia.estudioela.com
-   FRONTEND_URL=https://influencia.estudioela.com
-   SANCTUM_STATEFUL_DOMAINS=influencia.estudioela.com
+   APP_URL=https://portal.estudioela.com
+   FRONTEND_URL=https://portal.estudioela.com
+   SANCTUM_STATEFUL_DOMAINS=portal.estudioela.com
    ```
 
 7. Garantir que o `.env` tem permissão restrita (`chmod 600`) e não contém
@@ -76,10 +76,10 @@ autorização em `docs/release/GATE_FINAL_GO_LIVE.md`.
 6. Executar, na nova release:
 
    ```bash
-   php artisan migrate --force
-   php artisan config:cache
-   php artisan route:cache
-   php artisan view:cache
+   php83 artisan migrate --force
+   php83 artisan config:cache
+   php83 artisan route:cache
+   php83 artisan view:cache
    ```
 
 7. Trocar o symlink `current` para a nova release.
@@ -91,8 +91,8 @@ autorização em `docs/release/GATE_FINAL_GO_LIVE.md`.
 Executar imediatamente:
 
 ```bash
-curl -fsS https://influencia.estudioela.com/up
-curl -fsS https://influencia.estudioela.com/api/health
+curl -fsS https://portal.estudioela.com/up
+curl -fsS https://portal.estudioela.com/api/health
 ```
 
 Depois validar pelo navegador:
@@ -117,10 +117,10 @@ Use quando um gatilho do gate for atingido.
 4. Limpar e recriar caches na release reativada:
 
    ```bash
-   php artisan optimize:clear
-   php artisan config:cache
-   php artisan route:cache
-   php artisan view:cache
+   php83 artisan optimize:clear
+   php83 artisan config:cache
+   php83 artisan route:cache
+   php83 artisan view:cache
    ```
 
 5. Reexecutar os smoke tests.

@@ -29,7 +29,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: mbstring, pdo_pgsql, fileinfo, zip, intl, gd, imagick, openssl
+          extensions: mbstring, pdo_mysql, fileinfo, zip, intl, gd, imagick, openssl
           coverage: none
 
       - name: Cache Composer packages

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // MySQL/MariaDB + utf8mb4 (charset padrão do projeto) excede o limite
+        // de índice em colunas string() indexadas/únicas sem isto — banco de
+        // produção é MySQL (PostgreSQL indisponível na Locaweb), recomendação
+        // oficial do Laravel para esse cenário.
+        Schema::defaultStringLength(191);
+
         Gate::before(fn (User $user, string $ability) => $user->hasRole('ADMIN') ? true : null);
 
         // Aponta o link nativo do broker de senha para a tela do frontend

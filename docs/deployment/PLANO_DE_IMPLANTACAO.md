@@ -34,7 +34,7 @@ só para não ser confundido com trabalho pendente:
 |---|---|
 | CI de testes/lint (backend + frontend) | `.github/workflows/tear-v2-ci.yml` |
 | Job de build do frontend + deploy via SSH (Etapas 5/6 da Macrofase A, `ac5180f` — numeração de commit histórico, não as Etapas deste documento) | `.github/workflows/tear-v2-deploy.yml` — ⚠️ presume SSH por chave, não suportado pelo painel real (ver nota na Etapa 9) |
-| Script de deploy atômico (`releases/` + symlink `current`) | `scripts/deploy-locaweb.sh` — ⚠️ mesma ressalva acima |
+| Script de deploy atômico (`releases/` + symlink `current`) | `scripts/deploy-locaweb.sh` — ⚠️ mesma ressalva acima; **✅ corrigido (2026-07-23):** script chamava `php artisan ...` genérico, mas o host só tem o binário `php83` (sem `php` no PATH) — corrigido, junto com `scripts/crontab.example` e `scripts/restore-db.sh` (este último também trocou `docker compose exec` por `psql` direto, Docker não existe em produção) |
 | Suporte a Shared Drive institucional (`supportsAllDrives`, `corpora=drive`) | `backend/app/Services/GoogleDriveService.php` |
 | `TRUSTED_PROXIES` condicionado a variável de ambiente (proxy reverso da Locaweb) | `backend/bootstrap/app.php` |
 | Backup do banco sem Docker (`pg_dump` direto) + upload ao Drive + alerta de falha por e-mail | `scripts/backup-db.sh`, `app/Console/Commands/BackupDatabaseToDrive.php`, `app/Notifications/BackupFalhouNotification.php` |
@@ -89,12 +89,19 @@ credencial ou decisão que só o responsável do projeto tem.
   Substitui o exemplo ilustrativo `tear.estudioela.com` usado nos
   documentos anteriores a esta data — onde aparecer, é o nome antigo de
   exemplo, não uma decisão diferente.
+- **Renomeado (responsável do projeto, 2026-07-23): `portal.estudioela.com`.**
+  Substitui `influencia.estudioela.com` como nome definitivo do produto
+  TEAR — onde `influencia.estudioela.com` aparecer em documentos
+  anteriores a esta data, é o nome antigo, já propagado para
+  `portal.estudioela.com` em todo o repositório (`.env.production.example`,
+  `ADR-015`, `ARQUITETURA_PRODUCAO.md`, runbooks e checklists). Ver
+  `TASK_ROUTER.md` para o registro completo da sessão.
 - **Onde configurar:** propagado às Etapas 4 (DNS) e 8 (`.env` real —
   `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS`, `SESSION_DOMAIN`
   já preenchidos com este valor em
   `backend/.env.production.example`, restam só os campos que
   dependem de credencial externa).
-- **Como validar:** o nome `influencia.estudioela.com` aparece de forma
+- **Como validar:** o nome `portal.estudioela.com` aparece de forma
   idêntica em `APP_URL`, `FRONTEND_URL`, `SANCTUM_STATEFUL_DOMAINS`,
   `SESSION_DOMAIN` e no registro DNS (Etapa 4) — nenhuma variação de
   `www.`/subdomínio diferente.
@@ -104,7 +111,7 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ---
 
-### Etapa 2 — Confirmar acesso à hospedagem Locaweb ⏳ parcialmente validada (2026-07-22)
+### Etapa 2 — Confirmar acesso à hospedagem Locaweb ⏳ parcialmente validada (2026-07-23)
 
 - **Auditoria completa do painel realizada (read-only) — ver
   `docs/deployment/AUDITORIA_LOCAWEB.md`.** Confirmado: hospedagem correta
@@ -121,10 +128,14 @@ credencial ou decisão que só o responsável do projeto tem.
   corrigido nesta sessão, só documentado (auditoria, sem execução de
   etapa). Ver nota na Etapa 9 e checklist de decisão em
   `AUDITORIA_LOCAWEB.md` §5.
-- **Ainda pendente para fechar esta etapa:** validar via SSH (usuário
-  precisa habilitar no painel, ação manual) — `php -v`, `which composer`,
-  `crontab -l`, conexão de teste ao Postgres. Não feito nesta sessão por
-  exigir habilitação manual do SSH pelo responsável do projeto.
+- **Validado via SSH real (2026-07-23, conduzido pelo responsável do
+  projeto — ver `docs/deployment/VALIDACAO_AMBIENTE_REAL.md`):** Git
+  instalado; `public_html` vazio (nenhum deploy anterior); Composer
+  ausente globalmente (confirma `ADR-016`); **PHP só existe como binário
+  `php83` — não há `php` genérico no PATH**, o que quebra os comandos
+  literais de `scripts/deploy-locaweb.sh` e desta etapa (ver ressalva em
+  §0 e correção pendente registrada em `TASK_ROUTER.md`). Conexão de
+  teste ao banco gerenciado **ainda não confirmada** por essa via.
 - **Objetivo:** validar que o plano já contratado tem, de fato, os
   recursos que a arquitetura assume, antes de depender deles nas etapas
   seguintes.
@@ -138,17 +149,18 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Como validar (via SSH, depois de habilitar no painel):**
   ```bash
   ssh <usuario>@<host-locaweb>   # autenticação por senha, não por chave
-  php -v            # confirmar versão do PHP
+  php83 -v           # binário confirmado; `php` genérico NÃO existe no PATH
   crontab -l         # confirmar acesso a crontab
   git --version
   psql --version     # ou testar conexão ao gerenciado
   ```
 - **Critérios de aceite:** SSH conecta (usuário/senha, habilitado no
-  painel); PHP confirmado (`^8.3`); `crontab -e` funciona; conexão de
-  teste ao banco gerenciado bem-sucedida. **`which composer` não é mais
-  critério de aceite** — `ADR-016` decidiu que Composer nunca roda no
-  host (auditoria já confirmou, à parte, que está ausente globalmente);
-  `vendor/` é gerado no runner do CI e enviado pronto via `rsync`.
+  painel); PHP confirmado — ✅ feito, binário é `php83` (não `php`
+  genérico); `crontab -e` funciona; conexão de teste ao banco gerenciado
+  **ainda pendente**. **`which composer` não é mais critério de aceite**
+  — `ADR-016` decidiu que Composer nunca roda no host (✅ confirmado
+  ausente globalmente via SSH real); `vendor/` é gerado no runner do CI e
+  enviado pronto via `rsync`.
 - **Risco (resolvido, `ADR-016`):** o limite de CPU/memória do plano para
   `composer install --no-dev` deixou de ser um risco — essa etapa nunca
   roda no host, só no runner do GitHub Actions.
@@ -184,7 +196,7 @@ credencial ou decisão que só o responsável do projeto tem.
   subdomínio escolhido, TTL 300–3600).
 - **Como validar:**
   ```bash
-  dig +short influencia.estudioela.com
+  dig +short portal.estudioela.com
   ```
 - **Critérios de aceite:** resolve para o IP/host correto a partir de
   pelo menos duas redes diferentes. Resto de `estudioela.com` (e-mail,
@@ -329,18 +341,34 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ---
 
-### Etapa 9 — Cadastrar secrets do GitHub Actions ⚠️ pressupõe SSH por chave — não suportado pelo painel (nota de 2026-07-22)
+### Etapa 9 — Cadastrar secrets do GitHub Actions ⚠️ bootstrap de `authorized_keys` pendente, nunca executado (nota de 2026-07-23)
 
-- **⚠️ Achado da auditoria (`AUDITORIA_LOCAWEB.md` §4.1):** o texto original
-  desta etapa (abaixo) presume `SSH_PRIVATE_KEY` + `authorized_keys`, mas o
-  painel Locaweb **não oferece cadastro de chave pública** — só habilitação
-  manual por sessão de 3h, autenticado por usuário/senha. Um par de chaves
-  gerado para CI não tem onde ser instalado no host. **Esta etapa não pode
-  ser executada como descrita até a decisão de estratégia de deploy ser
-  tomada** (`AUDITORIA_LOCAWEB.md` §5, recomendação de análise: modelo
-  híbrido — FTP automatizado para código/build, SSH manual só para
-  `migrate`/cache quando necessário). Mantido o texto original abaixo como
-  registro do desenho anterior, para referência na hora de decidir.
+- **Decisão de estratégia já tomada, não reabrir (`ADR-016`):** `rsync`/SSH
+  permanece o mecanismo de publicação; Composer roda só no CI; disparo é
+  manual (`workflow_dispatch`). A recomendação anterior de modelo híbrido
+  FTP (`AUDITORIA_LOCAWEB.md` §5) foi avaliada e **rejeitada** por
+  `ADR-016` §3 opção C — não é mais um caminho em aberto.
+- **O que efetivamente falta, confirmado nesta revisão (2026-07-23):** o
+  painel Locaweb não tem campo de cadastro de chave pública, mas isso é
+  **contornável com um bootstrap manual único**, numa sessão SSH
+  autenticada por senha — nunca executado até agora. Procedimento exato:
+  1. Gerar, localmente, um par de chaves dedicado só ao CI (não
+     reaproveitar chave pessoal): `ssh-keygen -t ed25519 -f deploy_key -N ""`.
+  2. Habilitar o SSH no painel Locaweb (Configurações → SSH → Habilitar,
+     janela de 3h).
+  3. Conectar com usuário/senha: `ssh elafashionmkt1@ftp.elafashionmkt.com.br`.
+  4. Dentro da sessão: `mkdir -p ~/.ssh && chmod 700 ~/.ssh`, colar o
+     conteúdo de `deploy_key.pub` em `~/.ssh/authorized_keys` (ex.: via
+     `echo "<conteúdo>" >> ~/.ssh/authorized_keys`), depois
+     `chmod 600 ~/.ssh/authorized_keys`.
+  5. **Validar na mesma janela de 3h**, de outra sessão de terminal:
+     `ssh -i deploy_key elafashionmkt1@ftp.elafashionmkt.com.br` deve
+     conectar **sem pedir senha**. Se pedir senha ou for recusado, o
+     `sshd` do host pode ter autenticação por chave desabilitada
+     globalmente — **isso só se confirma tentando de fato**, não há como
+     verificar isso só pelo painel ou pelo repositório.
+  6. Só depois desse teste passar, cadastrar `SSH_PRIVATE_KEY` (conteúdo
+     de `deploy_key`, a privada) nos secrets do GitHub.
 - **Objetivo:** permitir que `.github/workflows/tear-v2-deploy.yml`
   publique de fato no host — hoje o workflow já existe e falha rápido e
   visível (`::error::`) exatamente por faltar isto.
@@ -382,6 +410,45 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Critérios de aceite:** estrutura criada; `deploy-locaweb.sh` (rodado
   na Etapa 11) encontra `shared/.env` e não aborta com a mensagem
   "Faltando .../shared/.env".
+- **Procedimento operacional para `public_html` (2026-07-23) —
+  confirmado não implementado em nenhum script do repositório, é
+  configuração manual, executar como parte desta etapa, antes da Etapa
+  11:**
+  1. **Verificar o estado atual, via SSH:**
+     ```bash
+     ls -la ~/public_html          # existe? é diretório real ou symlink?
+     readlink -f ~/public_html     # se symlink, para onde aponta?
+     ```
+     Já confirmado (VALIDACAO_AMBIENTE_REAL.md): `public_html` existe e
+     está **vazio** — é diretório real, não symlink, nenhum deploy
+     anterior.
+  2. **Opção 1 — symlink (tentar primeiro):** não depende de nenhum
+     recurso do painel, só de SSH (já disponível) e do Apache seguir
+     symlinks (padrão na maioria das hospedagens compartilhadas, mas não
+     confirmável sem testar). Depois da Etapa 11 publicar a primeira
+     release em `~/tear/current`:
+     ```bash
+     rmdir ~/public_html   # falha se não estiver vazio — checagem de segurança
+     ln -sfn ~/tear/current/public ~/public_html
+     ```
+     Validar imediatamente com `curl -fsS https://elafashionmkt.com.br/up`
+     (ou o domínio real usado). Erro 403/500 aqui é o sinal de que o
+     Apache do host não segue symlinks para fora de `public_html` — nesse
+     caso, reverter (`rm ~/public_html && mkdir ~/public_html`) e tentar
+     a Opção 2.
+  3. **Opção 2 — DocumentRoot customizável no painel (fallback):**
+     painel Locaweb → seção "Domínios" → configuração do domínio
+     principal. **Não confirmado nesta auditoria se esse campo existe**
+     para o domínio principal de uma hospedagem compartilhada (os prints
+     de `LOCAWEB.md` não cobrem essa tela) — só é possível confirmar
+     entrando de fato no painel durante o primeiro deploy.
+  4. **Se nenhuma das duas funcionar:** abrir chamado com o suporte
+     Locaweb perguntando explicitamente se é possível apontar o
+     document root de `elafashionmkt.com.br` para um subdiretório fora
+     de `public_html`. Fora do escopo deste documento decidir um
+     workaround alternativo (ex.: mover a aplicação para dentro de
+     `public_html` abandonando o padrão releases/current) — decisão do
+     responsável do projeto se a Opção 1 falhar.
 
 ---
 
@@ -398,10 +465,11 @@ credencial ou decisão que só o responsável do projeto tem.
   Habilitar o SSH no painel antes de acionar o workflow.
 - **Como validar:**
   ```bash
-  curl -f https://influencia.estudioela.com/up
-  curl -f https://influencia.estudioela.com/api/health
-  # via SSH, dentro de current/:
-  php artisan migrate:status   # todas as migrations "Ran"
+  curl -f https://portal.estudioela.com/up
+  curl -f https://portal.estudioela.com/api/health
+  # via SSH, dentro de current/ — usar o binário php83, "php" genérico
+  # não existe no PATH do host (achado de SSH real, 2026-07-23):
+  php83 artisan migrate:status   # todas as migrations "Ran"
   ```
 - **Critérios de aceite:** workflow conclui sem erro até o swap do
   symlink `current`; `/up` e `/api/health` respondem 200; certificado
@@ -419,9 +487,9 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Dependências:** Etapa 11 concluída (aplicação respondendo).
 - **Onde configurar:** via SSH, dentro de `~/tear/current/`:
   ```bash
-  php artisan admin:create --name="Nome Completo" --email="admin@estudioela.com"
+  php83 artisan admin:create --name="Nome Completo" --email="admin@estudioela.com"
   ```
-- **Como validar:** login bem-sucedido em `https://influencia.estudioela.com`
+- **Como validar:** login bem-sucedido em `https://portal.estudioela.com`
   com o e-mail/senha cadastrados.
 - **Critérios de aceite:** papel `ADMIN` confirmado após login. Comando
   é idempotente — rodar de novo com o mesmo e-mail reseta a senha.
@@ -439,11 +507,11 @@ credencial ou decisão que só o responsável do projeto tem.
   `~/tear/current` for outro:
   ```cron
   0 3 * * * cd ~/tear/current && ./scripts/backup-db.sh \
-    && php artisan backup:upload-to-drive --latest \
+    && php83 artisan backup:upload-to-drive --latest \
     && find ./backups -name '*.sql.gz' -mtime +14 -delete
   ```
 - **Como validar:** rodar manualmente uma vez antes de agendar
-  (`./scripts/backup-db.sh` + `php artisan backup:upload-to-drive --latest`)
+  (`./scripts/backup-db.sh` + `php83 artisan backup:upload-to-drive --latest`)
   e confirmar que o dump aparece na pasta de backup do Shared Drive.
   Testar o alerta forçando uma falha controlada (credencial temporariamente
   inválida) e confirmar que o e-mail de falha chega.
@@ -460,8 +528,8 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Dependências:** Etapa 11.
 - **Onde configurar:** `crontab -e` no host:
   ```cron
-  * * * * * cd ~/tear/current && php artisan schedule:run >> /dev/null 2>&1
-  * * * * * cd ~/tear/current && php artisan queue:work --stop-when-empty >> /dev/null 2>&1
+  * * * * * cd ~/tear/current && php83 artisan schedule:run >> /dev/null 2>&1
+  * * * * * cd ~/tear/current && php83 artisan queue:work --stop-when-empty >> /dev/null 2>&1
   ```
 - **Como validar:** enfileirar um job de teste e confirmar que é
   processado em até 1-2 minutos.
@@ -482,7 +550,7 @@ credencial ou decisão que só o responsável do projeto tem.
   Better Uptime) apontando direto para `/up` e `/api/health` — decisão
   de preferência do responsável do projeto, ambos cobrem o mesmo cenário.
   ```cron
-  */5 * * * * TEAR_URL=https://influencia.estudioela.com /caminho/scripts/healthcheck.sh
+  */5 * * * * TEAR_URL=https://portal.estudioela.com /caminho/scripts/healthcheck.sh
   ```
 - **Como validar:** derrubar a aplicação propositalmente por um instante
   (ou simular via `TEAR_URL` apontando para uma porta fechada) e
@@ -503,7 +571,7 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Como validar (checklist executável):**
   - [ ] `/up` e `/api/health` → 200.
   - [ ] Certificado HTTPS válido (sem aviso no navegador).
-  - [ ] `php artisan migrate:status` sem pendências.
+  - [ ] `php83 artisan migrate:status` sem pendências.
   - [ ] Login funcional na SPA com o `ADMIN` real (Etapa 12).
   - [ ] Uma rota autenticada de leitura responde sem 500 (confirma
         sessão/cookie/CORS/Sanctum coerentes).
@@ -550,7 +618,7 @@ credencial ou decisão que só o responsável do projeto tem.
 # via SSH, dentro de ~/tear/:
 ln -sfn releases/<release-anterior-boa>/ current
 # só se a migration do release problemático precisar ser desfeita:
-cd current && php artisan migrate:rollback --step=1
+cd current && php83 artisan migrate:rollback --step=1
 ```
 
 Sempre rodar `./scripts/backup-db.sh` **antes** de qualquer
