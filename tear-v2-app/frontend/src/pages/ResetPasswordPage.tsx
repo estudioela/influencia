@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { resetPassword } from '../lib/passwordReset';
 import AuthSplitLayout from '../components/AuthSplitLayout';
@@ -18,6 +18,7 @@ export default function ResetPasswordPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [isTokenError, setIsTokenError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
 
@@ -38,6 +39,7 @@ export default function ResetPasswordPage() {
     event.preventDefault();
     setFormError(null);
     setFieldErrors({});
+    setIsTokenError(false);
     setIsSubmitting(true);
 
     try {
@@ -58,6 +60,7 @@ export default function ResetPasswordPage() {
             errors?.email?.[0] ??
               'Não foi possível concluir a redefinição de senha. Verifique o link enviado por e-mail.',
           );
+          setIsTokenError(true);
         }
       } else {
         setFormError('Não foi possível definir sua senha. Tente novamente.');
@@ -116,6 +119,11 @@ export default function ResetPasswordPage() {
         <Button type="submit" isLoading={isSubmitting} loadingText="salvando…" className={styles.submit}>
           definir senha
         </Button>
+        {isTokenError && (
+          <Link to="/esqueci-senha" className={styles.forgotLink}>
+            solicitar novo link
+          </Link>
+        )}
       </form>
     </AuthSplitLayout>
   );
