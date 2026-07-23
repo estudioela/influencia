@@ -33,9 +33,8 @@ tear-v2-app/    — aplicação oficial (Laravel + React), único produto do rep
   docs/         — deploy, configuração de produção, monitoramento
 
 docs/           — documentação oficial do projeto (ver "Documentação" abaixo)
-knowledge/      — pesquisa de referência e baseline de arquitetura/domínio
-mcp/            — servidor MCP interno do projeto
-scripts/        — utilitários de manutenção da base de conhecimento (knowledge/)
+mcp/            — servidor MCP interno do projeto (ambiente para sessões de IA)
+scripts/        — utilitários de manutenção da base de conhecimento (docs/knowledge/)
 ```
 
 ---
@@ -46,21 +45,18 @@ scripts/        — utilitários de manutenção da base de conhecimento (knowle
 docs/
 ├── adrs/         — decisões arquiteturais (nunca reabertas sem novo ADR)
 ├── specs/        — especificação de cada SPEC-NNN
-├── architecture/ — modelo de dados, persistência e contratos de camada
 ├── design/       — sistema de design e fluxos de UX
 ├── history/      — Contrato Soberano e histórico de migração
 ├── deployment/   — arquitetura e runbooks de produção
 ├── release/      — checklists e critérios de go-live
 ├── reports/      — auditorias e handoffs ainda ativos (não históricos)
 ├── planning/     — roadmaps, backlog e especificações funcionais
+├── knowledge/    — pesquisa de referência e baseline de arquitetura/domínio
+│   ├── archive/      — pesquisa e artefatos de processo já consumidos
+│   ├── references/   — pesquisa técnica profunda (OAuth, sessão, identidade)
+│   └── sistema-b/     — baseline de arquitetura/domínio do tear-v2-app
 ├── archive/      — relatórios e planos históricos já superados
 └── _workspace/   — TASK_ROUTER.md (fonte única de estado) e checklists
-
-knowledge/
-├── README.md
-├── archive/      — pesquisa de referência e artefatos de processo já consumidos
-├── references/   — pesquisa técnica profunda (OAuth, sessão, identidade)
-└── sistema-b/    — baseline de arquitetura/domínio do tear-v2-app
 ```
 
 ## Documentos Principais

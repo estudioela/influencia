@@ -1,4 +1,4 @@
-# knowledge/
+# docs/knowledge/
 
 Base de conhecimento de apoio ao desenvolvimento do **ELÃ | influência**
 (`tear-v2-app/`, Laravel + React) — pesquisa de referência e baseline de
