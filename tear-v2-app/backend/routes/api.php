@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me/parceira', [ParceiraController::class, 'me']);
     Route::get('/me/participacoes', [MeParticipacaoController::class, 'index']);
+    Route::get('/me/historico', [MeParticipacaoController::class, 'historico']);
     Route::get('/me/participacoes/{participacao}', [MeParticipacaoController::class, 'show']);
 
     Route::apiResource('parceiras', ParceiraController::class)->except(['destroy', 'store']);

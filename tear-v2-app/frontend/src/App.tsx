@@ -24,6 +24,7 @@ import PortalDashboardPage from './pages/portal/PortalDashboardPage';
 import PortalPerfilPage from './pages/portal/PortalPerfilPage';
 import PortalCampanhasListPage from './pages/portal/PortalCampanhasListPage';
 import PortalParticipacaoPage from './pages/portal/PortalParticipacaoPage';
+import PortalHistoricoPage from './pages/portal/PortalHistoricoPage';
 import PlaceholderPage from './components/PlaceholderPage';
 import { useAuth } from './lib/auth';
 import styles from './App.module.css';
@@ -55,6 +56,7 @@ function App() {
         <Route element={<PortalShell />}>
           <Route path="/" element={<PortalDashboardPage />} />
           <Route path="/campanhas" element={<PortalCampanhasListPage />} />
+          <Route path="/historico" element={<PortalHistoricoPage />} />
           <Route path="/perfil" element={<PortalPerfilPage />} />
           <Route path="/participacoes/:participacaoId" element={<PortalParticipacaoPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

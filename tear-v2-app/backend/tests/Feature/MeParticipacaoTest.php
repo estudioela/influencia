@@ -84,4 +84,50 @@ class MeParticipacaoTest extends TestCase
         $response->assertJsonPath('data.proximo_prazo_briefing', '2026-09-01');
         $response->assertJsonPath('data.entregaveis_contratados.REELS', 2);
     }
+
+    public function test_historico_exige_autenticacao(): void
+    {
+        $this->getJson('/api/me/historico')->assertUnauthorized();
+    }
+
+    public function test_historico_traz_participacao_cancelada_e_campanha_encerrada_mas_nao_a_ativa(): void
+    {
+        $parceira = $this->autenticarComoInfluenciadora();
+
+        $campanhaAtiva = Campanha::factory()->for(Marca::factory())->create(['status' => 'ATIVA']);
+        ParticipacaoNaCampanha::factory()->create([
+            'campanha_id' => $campanhaAtiva->id,
+            'parceira_id' => $parceira->id,
+            'status' => 'ATIVA',
+        ]);
+
+        $campanhaEncerrada = Campanha::factory()->for(Marca::factory())->create(['status' => 'ENCERRADA']);
+        ParticipacaoNaCampanha::factory()->create([
+            'campanha_id' => $campanhaEncerrada->id,
+            'parceira_id' => $parceira->id,
+            'status' => 'ATIVA',
+        ]);
+
+        $campanhaParaCancelada = Campanha::factory()->for(Marca::factory())->create(['status' => 'ATIVA']);
+        ParticipacaoNaCampanha::factory()->create([
+            'campanha_id' => $campanhaParaCancelada->id,
+            'parceira_id' => $parceira->id,
+            'status' => 'CANCELADA',
+        ]);
+
+        // participação encerrada de outra parceira - nunca deve aparecer
+        ParticipacaoNaCampanha::factory()->create([
+            'campanha_id' => Campanha::factory()->for(Marca::factory())->create(['status' => 'ENCERRADA'])->id,
+            'status' => 'ATIVA',
+        ]);
+
+        $response = $this->getJson('/api/me/historico');
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+        $nomes = collect($response->json('data'))->pluck('campanha.nome');
+        $this->assertTrue($nomes->contains($campanhaEncerrada->nome));
+        $this->assertTrue($nomes->contains($campanhaParaCancelada->nome));
+        $this->assertFalse($nomes->contains($campanhaAtiva->nome));
+    }
 }

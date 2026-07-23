@@ -14,6 +14,7 @@ export type MeParticipacao = {
   campanha: {
     id: number;
     nome: string;
+    status: 'PLANEJADA' | 'ATIVA' | 'ENCERRADA' | 'CANCELADA';
     data_inicio: string | null;
     data_fim: string | null;
     marca: { nome: string };
@@ -35,5 +36,10 @@ export async function getMeParticipacoes(): Promise<MeParticipacao[]> {
 
 export async function getMeParticipacao(id: string | number): Promise<MeParticipacao> {
   const response = await apiClient.get<MeParticipacaoResponse>(`/me/participacoes/${id}`);
+  return response.data.data;
+}
+
+export async function getMeHistorico(): Promise<MeParticipacao[]> {
+  const response = await apiClient.get<MeParticipacaoListResponse>('/me/historico');
   return response.data.data;
 }

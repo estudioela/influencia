@@ -36,4 +36,29 @@ class MeParticipacaoController extends Controller
 
         return new MeParticipacaoResource($participacao->load(['campanha.marca', 'briefings', 'pagamento']));
     }
+
+    /**
+     * Histórico (RF-028, PRD.md §9): participações que não aparecem mais
+     * no painel ativo — cancelada ou de uma campanha já encerrada/cancelada.
+     */
+    public function historico(Request $request): AnonymousResourceCollection
+    {
+        $parceira = $request->user()->parceira;
+
+        abort_if($parceira === null, 404);
+
+        $participacoes = $parceira->participacoes()
+            ->where(function ($query) {
+                $query->where('status', 'CANCELADA')
+                    ->orWhereHas('campanha', function ($query) {
+                        $query->whereIn('status', ['ENCERRADA', 'CANCELADA']);
+                    });
+            })
+            ->with(['campanha.marca', 'briefings', 'pagamento'])
+            ->get()
+            ->sortByDesc(fn (ParticipacaoNaCampanha $p) => $p->campanha->data_fim)
+            ->values();
+
+        return MeParticipacaoResource::collection($participacoes);
+    }
 }

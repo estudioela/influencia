@@ -5,6 +5,7 @@ import styles from './AppShell.module.css';
 const NAV_ITEMS: { label: string; to: string }[] = [
   { label: 'Painel', to: '/' },
   { label: 'Campanhas', to: '/campanhas' },
+  { label: 'Histórico', to: '/historico' },
   { label: 'Perfil', to: '/perfil' },
 ];
 

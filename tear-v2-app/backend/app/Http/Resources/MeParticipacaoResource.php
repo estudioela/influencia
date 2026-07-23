@@ -17,6 +17,7 @@ class MeParticipacaoResource extends JsonResource
             'campanha' => [
                 'id' => $this->campanha->id,
                 'nome' => $this->campanha->nome,
+                'status' => $this->campanha->status,
                 'data_inicio' => $this->campanha->data_inicio?->toDateString(),
                 'data_fim' => $this->campanha->data_fim?->toDateString(),
                 'marca' => ['nome' => $this->campanha->marca->nome],
