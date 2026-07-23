@@ -78,26 +78,15 @@ ativa. O histórico completo continua disponível pelo Git (`git log`).
 
 # Primeiros Passos
 
-## Backend (Laravel)
-
 ```bash
 cd backend
 composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan test
+composer setup   # .env (backend + frontend), APP_KEY, migrations, npm install
+composer dev      # comando único: API + fila + logs + Vite do frontend/
 ```
 
-## Frontend (React + Vite)
-
-```bash
-cd frontend
-npm install
-npm run dev      # desenvolvimento
-npm run build    # build de produção
-npm run lint      # oxlint
-```
+- Aplicação: `http://localhost:5173`
+- API: `http://localhost:8000/api`
 
 Detalhes de configuração de produção e deploy: `docs/deployment/DEPLOY.md` e `docs/deployment/CONFIGURACAO_PRODUCAO.md`.
 
