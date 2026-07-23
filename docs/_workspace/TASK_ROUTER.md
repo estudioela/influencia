@@ -3494,7 +3494,14 @@ template de `.env`.
    decidido em 2026-07-22 era `influencia.estudioela.com`; o rename para
    `portal.estudioela.com` só existe a partir de 2026-07-23 — em vez de
    reescrever silenciosamente o passado.
-6. **Pendente — ação externa, fora do alcance do agente (sem
+6. **IP `191.252.83.211` (conta `estudioela1`) superado por decisão do
+   responsável do projeto em sessão posterior, mesmo dia — ver §49.**
+   Esta conta nunca teve deploy nem resposta HTTP confirmada (§46/
+   `VALIDACAO_AMBIENTE_REAL.md` §5.3: `403 Forbidden`, `public_html`
+   vazio); a recomendação abaixo estava desalinhada com o §47 (deploy
+   real já feito em `elafashionmkt1`/`179.188.55.78`, oito minutos
+   antes deste mesmo commit). Texto original preservado para registro:
+   **Pendente — ação externa, fora do alcance do agente (sem
    credenciais do painel DNS do WordPress.com):** trocar o registro de
    `portal.estudioela.com` de `CNAME` (`estudioela.github.io`) para `A`
    → `191.252.83.211` no painel DNS onde `estudioela.com` está hospedado
@@ -3595,3 +3602,51 @@ Sessão sem alteração de código. Continuação direta da mesma sessão do
   esta parte da sessão — auditoria pura, conforme instrução explícita
   do responsável do projeto ("não faça sínteses, não crie novos
   documentos e não reescreva princípios ainda").
+
+## 49. Decisão de arquitetura: `elafashionmkt1` é a hospedagem definitiva
+    de produção nesta fase — `estudioela1` descartado (2026-07-23)
+
+1. **Decisão do responsável do projeto:** `elafashionmkt1`
+   (`179.188.55.78`) é a hospedagem definitiva de produção do TEAR nesta
+   fase do projeto. `estudioela1` (`191.252.83.211`) não será utilizado
+   neste Go-Live — encerra a divergência registrada em §48 ponto 6 (essa
+   recomendação assumia `estudioela1` sem levar em conta que o §47, oito
+   minutos antes na mesma sessão, já tinha confirmado o primeiro deploy
+   real em `elafashionmkt1`, único host com resposta HTTP/aplicação
+   confirmada).
+2. **Sem mudança de código ou de secrets:** `SSH_HOST` já está
+   cadastrado como `179.188.55.78` desde o deploy do §47 — nenhuma ação
+   de CI/CD necessária por causa desta decisão.
+3. **Checklist operacional para publicar `portal.estudioela.com` via
+   `elafashionmkt1`** (ordem de dependência):
+   - [ ] **Ação externa (painel DNS do WordPress.com, credenciais fora
+     do alcance do agente):** trocar `portal.estudioela.com` de `CNAME`
+     (`estudioela.github.io`) para `A` → `179.188.55.78`, TTL
+     300–3600. Não tocar no apex `estudioela.com`/`www` nem nos
+     nameservers.
+   - [ ] Validar propagação: `dig +short portal.estudioela.com` até
+     resolver para `179.188.55.78`.
+   - [ ] **Ação externa (painel Locaweb, conta `elafashionmkt1`):**
+     confirmar/criar `portal.estudioela.com` como domínio/subdomínio
+     desta conta (hoje o app já responde só pelo domínio temporário
+     `elafashionmkt1.hospedagemdesites.ws`) — necessário para o vhost
+     rotear pelo Host header e para a emissão de SSL.
+   - [ ] Emitir SSL (Let's Encrypt) para `portal.estudioela.com` no
+     painel da conta `elafashionmkt1` — só depois do DNS resolver
+     corretamente.
+   - [ ] Atualizar `shared/.env` real no host (`APP_URL`,
+     `FRONTEND_URL`, `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS` →
+     `https://portal.estudioela.com`; `SESSION_SECURE_COOKIE=true`) —
+     hoje ainda aponta para o domínio temporário/HTTP (§47). Exige SSH
+     na conta `elafashionmkt1`, que este agente não tem neste ambiente
+     (sem chave privada local) — ação do responsável do projeto ou de
+     um `workflow_dispatch` preparado para isso.
+   - [ ] `php83 artisan config:clear && php83 artisan config:cache`
+     após a mudança de `.env`.
+   - [ ] Validar `GET https://portal.estudioela.com/up` e `/api/health`
+     antes de considerar o Go-Live de DNS concluído.
+4. **Bloqueadores para o agente, sem contornar:** acesso ao painel DNS
+   do WordPress.com e acesso SSH à conta `elafashionmkt1` — nenhum dos
+   dois está disponível neste ambiente de execução.
+- **Validação:** nenhum código de `tear-v2-app/` alterado; só
+  `TASK_ROUTER.md` (esta seção e correção pontual no §48 ponto 6).
