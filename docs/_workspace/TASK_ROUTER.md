@@ -3162,3 +3162,47 @@ só por terem links apontando para eles.
   Suíte completa (`php artisan test` 208/208, `pint --test`, `tsc -b`,
   `vite build`, `oxlint`) validada antes do commit anterior (§43) e não
   afetada por esta rodada (só documentação).
+
+## 45. `AI_CONSTITUTION.md` criada + notebook do NotebookLM inteiramente
+    reenviado a pedido do responsável do projeto (2026-07-23)
+
+- **Contexto:** missão de fechamento de fase, pedida como "preparar a
+  base oficial do projeto para o NotebookLM". Escopo original previa
+  curadoria seletiva (Partes 2/3), mas o responsável do projeto
+  interrompeu no meio da curadoria informando que já havia apagado as
+  fontes do notebook `tear` manualmente e pediu reenvio de **todos** os
+  arquivos, priorizando velocidade. A curadoria seletiva planejada foi
+  abandonada em favor dessa instrução explícita e mais recente.
+- **`docs/AI_CONSTITUTION.md` criado** — documento institucional
+  permanente (não é `ESTADO_SESSAO.md`/`TASK_ROUTER.md`, não expira):
+  papel de cada IA do projeto (Claude como execução principal;
+  ChatGPT/Gemini/Codex como apoio pontual via prompts de handoff),
+  princípios de engenharia, regras de alteração em código/documentação,
+  critérios para parar e pedir decisão humana (mesmos do mandato de
+  `CLAUDE.md`), como evitar regressão, como economizar tokens entre
+  sessões. Não substitui `CLAUDE.md` (que continua sendo a config do
+  agente neste repositório) — é a camada de princípios permanentes,
+  agnóstica de ferramenta.
+- **Notebook `tear` no NotebookLM:** todos os 49 arquivos `.md` de
+  `docs/` (inclusive `_workspace/`, por instrução explícita de "todos os
+  arquivos" — fora do critério de curadoria original, que teria excluído
+  `_workspace`) enviados em paralelo via `nlm source add`. Resultado: 80
+  fontes no notebook, sem títulos duplicados (`~22` fontes legadas
+  remanescentes da limpeza manual do responsável do projeto não foram
+  tocadas — decisão de removê-las ou não fica para o responsável do
+  projeto, "não apagar dados" sem autorização explícita por item).
+- **`docs/knowledge/.notebook-index.json` reconstruído** só para os 5
+  arquivos de `docs/knowledge/` (única pasta que `scripts/sync-notebook.sh`
+  gerencia de forma incremental) — o índice antigo apontava para
+  `source_id`s já inexistentes (achado de §44, nunca reconciliado).
+  Reconciliação completa das outras pastas de `docs/` fica fora do
+  escopo de `sync-notebook.sh`/`clean-notebook.sh` (que só cobrem
+  `docs/knowledge/`) — não foi criada automação nova para isso.
+- **Branch/PR:** trabalho feito em `docs/ai-constitution-notebooklm`
+  (branch nova, a partir de `origin/main` já com a limpeza do §42-§44
+  mesclada), commit `75d5f2e`, PR #79 aberta em draft. Não usada a
+  branch `worktree-fix-dev-env` (PR #78, correção não relacionada do
+  ambiente de dev) para não misturar os dois assuntos no mesmo PR.
+- **Validação:** nenhum código alterado. `nlm source list tear --json`
+  conferido (80 fontes, `uniq -c` de títulos sem nenhum >1);
+  `docs/knowledge/.notebook-index.json` validado como JSON bem formado.
