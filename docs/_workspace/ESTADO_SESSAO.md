@@ -10,83 +10,87 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-23
-- **HEAD de `feat/ui-design-system-ela`:** `75cf5c4`, pushado e sincronizado
-  com `origin/feat/ui-design-system-ela`. **Não inclui ainda** a correção
-  desta sessão (ver abaixo) — está numa branch separada, aguardando merge.
+- **HEAD de `feat/ui-design-system-ela`:** `955bb83`, sincronizado com
+  `origin/feat/ui-design-system-ela`.
 - **Branch:** `feat/ui-design-system-ela`.
 - **Working tree:** limpo, exceto os mesmos 3 arquivos `??` de sessões
   anteriores, intocados por instrução explícita (destino ainda não
-  decidido, ver §4): `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
+  decidido): `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
   `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`,
   `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`.
 - **Sistema em foco:** `tear-v2-app/` (Laravel 13 + React), fase de
-  Homologação Funcional.
-- **Esta sessão (papel QA/Auditor, em paralelo à sessão de Homologação do
-  `TASK_ROUTER.md` §37):** 1 commit de código (`4138c04`), numa branch
-  separada `fix/pagamento-gate-pago` (a partir de `f3c20b4`), **não
-  mergeada** em `feat/ui-design-system-ela`. PR draft aberto:
-  `https://github.com/estudioela/jescri-migracao/pull/66`. Suíte completa
-  do backend verde (206/206) na branch da correção.
+  Certificação do MVP concluída nesta sessão.
+- **PR #66 (`fix/pagamento-gate-pago` → `feat/ui-design-system-ela`):
+  MERGEADO** (merge commit `99b5f6a`, CI verde). A correção do único bug
+  Categoria A (gate de material aprovado contornável em Pagamentos,
+  commit `4138c04`) está de fato em vigor na branch principal de
+  trabalho.
+- **Verificado nesta sessão em `955bb83`:** backend 208/208 testes
+  verdes, `vendor/bin/pint --test` limpo, `tsc -b` (frontend) limpo.
 
-## 2. Última sessão concluída — Auditoria de regras de negócio, 1 bug Categoria A corrigido (2026-07-23)
+## 2. Última sessão concluída — Retomada pós-interrupção: PR #66 confirmado mergeado, MVP certificado funcionalmente (2026-07-23)
 
-Sessão no papel de QA/Auditor Técnico (não implementa por conta própria —
-alimenta uma fila priorizada de bugs), rodando em paralelo à sessão de
-Homologação Funcional que fechou o `TASK_ROUTER.md` §37. Histórico
-completo em `TASK_ROUTER.md` §38 — aqui só o resumo operacional.
+Continuação da sessão de QA/Auditor Técnico do §38 do `TASK_ROUTER.md`
+(interrompida por limite mensal de uso do Claude, retomada como Agente B).
+Não foi uma nova auditoria — verificação de estado do trabalho já
+entregue e produção da documentação final de certificação pendente.
 
-1. **Rodada 1 (tela por tela):** reauditoria independente de Login,
-   Recuperação de senha, Convite, Cadastro e Aprovação — confirma por
-   auditoria cruzada os achados já registrados no §4 abaixo (throttle
-   assimétrico, e-mail sem unicidade, erro genérico no Login).
-2. **Rodada 2 (mudança de estratégia, a pedido do responsável do
-   projeto):** de tela por tela para regra de negócio — "existe alguma
-   forma de o sistema chegar a um estado impossível?", rastreando
-   Pagamento/Participação/Campanha/Briefing/Material/Envio direto no
-   código (controllers, models, FormRequests, migrations). Achado mais
-   importante: **o §37 tinha classificado Pagamento como "demonstrável
-   sem bug bloqueador conhecido" — não estava.** O gate de material
-   aprovado (regra documentada no código como `P0-1`) só era checado na
-   transição explícita a `APROVADO`; pular direto para `PAGO` contornava
-   a regra por completo (dinheiro liberado sem entrega aprovada).
-3. **Rodada 3 (reclassificação A/B/C):** a pedido do responsável do
-   projeto, todos os achados das duas rodadas foram reclassificados sob
-   o critério "validar fluxos de negócio para demonstração, não
-   hardening de produção" (mesmo critério já fixado no §37.3). Resultado:
-   **só 1 item Categoria A** (bloqueador de verdade) em ~10 achados —
-   ver lista completa em `TASK_ROUTER.md` §38.
-4. **Correção do único item Categoria A** (commit `4138c04`):
-   `PagamentoController::update()` agora bloqueia avanço a `PAGO` (não só
-   a `APROVADO`) quando há material da participação ainda não aprovado.
-   3 testes novos cobrindo o bypass; suíte completa 206/206; `pint`
-   limpo. **PR draft #66 aberto, ainda não mergeado.**
-5. **Itens Categoria B/C não corrigidos** (registrados como pendência,
-   não bloqueiam a validação do produto) — ver §4.
+1. **Verificação do PR #66:** ao contrário do que o snapshot anterior
+   registrava ("aguardando merge"), o PR já estava **mergeado**
+   (`99b5f6a`) quando esta sessão retomou o trabalho — merge feito fora
+   desta sessão, entre a interrupção e a retomada.
+2. **Descoberta de trabalho adicional não documentado:** a branch tinha
+   avançado mais dois commits depois do merge, de uma sessão paralela:
+   `bb44d20` (corrige consentimento LGPD ausente no cadastro/convite de
+   Parceira, achado por reprodução manual no navegador) e `955bb83`
+   (implementa Histórico do Portal, RF-028 — fecha a última etapa do
+   ciclo de negócio certificável definido em `TASK_ROUTER.md` §32).
+   Registrado em `TASK_ROUTER.md` §40.
+3. **Verificação de regressão:** suíte completa do backend, `pint` e
+   `tsc` rodados nesta sessão contra o HEAD atual (`955bb83`) — todos
+   verdes, sem regressão introduzida pelo merge nem pelos dois commits
+   acima.
+4. **Entrega:** `docs/reports/CERTIFICACAO_MVP.md` — parecer técnico
+   formal respondendo "o MVP está funcionalmente certificado?" com
+   **sim**, para o critério de demonstração a cliente (não confundir com
+   autorização de Go-Live de produção, gate separado e ainda **não
+   autorizado** em `docs/release/GATE_FINAL_GO_LIVE.md`, que depende só
+   de itens de infraestrutura externos ao código).
+5. **Missão do Agente B nesta frente (QA/Homologação/Certificação)
+   encerrada** — não há mais tarefa pendente de auditoria funcional do
+   ciclo core; próximos passos são decisão do responsável do projeto (ver
+   §3).
 
 ## 3. Próxima tarefa recomendada
 
-1. **Decidir e mergear (ou não) o PR #66** (`fix/pagamento-gate-pago` →
-   `feat/ui-design-system-ela`) — enquanto não mergeado, a correção do
-   único bug Categoria A não está de fato na branch principal de
-   trabalho, e a afirmação "fluxos aptos para migração" fica condicional
-   a esse merge.
-2. Depois do merge: reproduzir o fluxo de **Login manualmente no
-   navegador** (pendência herdada do §37 — nenhum bug funcional no
-   código, só falta validação visual).
-3. Decidir com o responsável do projeto se a homologação/QA continua
-   para fluxos secundários (Logística/Envio, Marcas, Medidas, Histórico
-   de Alterações — não cobertos ainda) ou se o ciclo atual já é
-   suficiente para a fase de migração.
+Não há tarefa de QA/certificação pendente nesta frente. Decisão do
+responsável do projeto entre:
 
-Ver `docs/_workspace/TASK_ROUTER.md` §38 (esta sessão), §37 (Homologação
-Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
+1. **Seguir para a frente de infraestrutura/Go-Live**
+   (`docs/release/GATE_FINAL_GO_LIVE.md`, `docs/deployment/
+   CHECKLIST_GO_LIVE.md`, `docs/deployment/RUNBOOK_DEPLOY_E_ROLLBACK.md`)
+   — hoje **NÃO AUTORIZADO**, bloqueado só por itens de infraestrutura
+   externa (SSH real da Locaweb, PostgreSQL de produção, DNS/TLS,
+   `.env` de produção, SMTP em ambiente real). Nenhum bloqueador de
+   código.
+2. **Ampliar a auditoria funcional a fluxos secundários** não cobertos
+   ainda (Marcas, Medidas) antes de avançar ao Go-Live — mesma
+   recomendação já registrada em sessões anteriores, ainda não decidida.
+3. Reproduzir manualmente o fluxo de **Login** isolado no navegador —
+   único item do ciclo core sem reprodução manual dedicada registrada
+   (auditorias de código não encontraram bug; ver `CERTIFICACAO_MVP.md`
+   §5). Baixa prioridade — não bloqueia a certificação.
+
+Ver `docs/reports/CERTIFICACAO_MVP.md` (parecer completo desta sessão),
+`docs/_workspace/TASK_ROUTER.md` §40 (esta sessão), §38/§37 (auditorias
+de origem) e §32 (mandato de Certificação do MVP).
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Bloqueador ativo, não técnico:** PR #66 aberto e verde, aguardando
-  decisão de merge (ver §3.1).
+- **Nenhum bloqueador funcional (Categoria A) em aberto** — o único
+  identificado (gate de Pagamento) foi corrigido e mergeado.
 - **Categoria B (compromete robustez/segurança/concorrência/manutenção,
-  não bloqueia validar o produto — herdadas desta sessão e do §37):**
+  não bloqueia a certificação funcional):**
   - `Pagamento.valor` editável mesmo com `status=PAGO`, sem trava nem
     auditoria de quem alterou.
   - Pagamento e cancelamento de Participação não se checam mutuamente
@@ -119,11 +123,14 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
   - `reenviarConvite` não distingue parceira já ativa de uma que nunca
     definiu senha (reenvia "boas-vindas" mesmo para conta já em uso).
   - Item de menu "Logística" no `AppShell.tsx` é um `<PlaceholderPage>`
-    desabilitado — Envio só é alcançável por drill-down de Campanha.
+    desabilitado — Envio só é alcançável por drill-down de Campanha
+    (funcional, rótulo enganoso).
+  - `GESTOR_MARCA` não funcional, validação de formato Instagram, rótulo
+    "(em breve)" na sidebar — não bloqueiam o ciclo certificado.
 - Destino dos 3 relatórios `docs/reports/*.md` (`??` há múltiplas
   sessões) não decidido.
 - Validação ponta a ponta dos 2 fluxos reais de e-mail (convite, reset)
-  com o SMTP real — ainda não executada.
+  com o SMTP real — ainda não executada (item de infraestrutura).
 - SPF/DKIM/DMARC do domínio `elafashionmkt.com.br` não verificados.
 - Limite diário de envio do plano Locaweb não levantado.
 - `MAIL_FROM_NAME=TEAR` diverge da marca usada no corpo dos e-mails
@@ -132,8 +139,6 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
 - Recorrência/parcelamento de pagamento não implementado (`Pagamento` é
   estritamente 1:1 com `ParticipacaoNaCampanha`) — limitação de escopo
   conhecida, não bug.
-- GESTOR_MARCA não funcional, validação de formato Instagram, rótulo
-  "(em breve)" na sidebar — não bloqueiam o ciclo certificado.
 - `tear-v2-app/docs/CONFIGURACAO_PRODUCAO.md` linha ~164 — item de
   checklist ainda cita "TVs and Limited Input devices" (Google Drive,
   abandonado) — não confirmado se foi corrigido.
@@ -145,7 +150,8 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
 - Estratégia de infraestrutura do PostgreSQL, autenticação de deploy
   (ADR-016), DNS de `influencia.estudioela.com`, PR #62 vs.
   `worktree-agente-b-deploy-infra` — inalterados desde sessões
-  anteriores.
+  anteriores (ver `docs/release/GATE_FINAL_GO_LIVE.md`,
+  `docs/deployment/CHECKLIST_GO_LIVE.md` para o gate completo de infra).
 
 ## 5. Riscos ativos
 
@@ -158,23 +164,25 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
    bus factor 1 (inalterado).
 5. SPF/DKIM/DMARC não verificados no domínio de envio — risco de spam em
    volume real, ainda não avaliado (inalterado, baixo risco imediato).
-6. **Mitigado nesta sessão:** o gate de material aprovado do fluxo de
-   Pagamentos (regra `P0-1`) tinha um desvio trivial (pular direto para
-   `PAGO`) que permitia liberar pagamento sem entrega aprovada — corrigido
-   no commit `4138c04`, mas só entra em vigor na branch principal quando
-   o PR #66 for mergeado (ver §3.1).
+6. **Mitigado (sessão anterior, confirmado nesta):** o gate de material
+   aprovado do fluxo de Pagamentos (regra `P0-1`) tinha um desvio trivial
+   (pular direto para `PAGO`) que permitia liberar pagamento sem entrega
+   aprovada — corrigido no commit `4138c04`, **agora em vigor na branch
+   principal** (merge `99b5f6a` confirmado nesta sessão).
 
 ## 6. IA recomendada para a próxima tarefa
 
-- **Decisão de merge do PR #66:** decisão do responsável do projeto, não
-  requer IA — é revisão humana de um diff pequeno e já validado
-  (206/206 verde, pint limpo).
+- **Decisão de seguir para infraestrutura/Go-Live ou ampliar
+  auditoria:** decisão do responsável do projeto, não requer IA.
 - **Reprodução manual do fluxo de Login no navegador:** qualquer IA com
   acesso a ferramenta de browser (Claude com Chrome/Playwright MCP,
   ChatGPT com navegador) — tarefa mecânica e curta.
-- **Continuação da auditoria/homologação para fluxos secundários (se
-  decidido):** **Claude**, mesmo motivo das sessões anteriores (volume de
-  fluxos, necessidade de cruzar com `docs/specs/`/`docs/PRD.md`).
+- **Continuação da frente de infraestrutura/Go-Live (se decidido):**
+  Claude, mesmo agente que já mantém `docs/deployment/` e
+  `docs/release/GATE_FINAL_GO_LIVE.md`.
+- **Auditoria de fluxos secundários (Marcas, Medidas), se decidido:**
+  Claude, mesmo motivo das sessões anteriores (volume de fluxos,
+  necessidade de cruzar com `docs/specs/`/`docs/PRD.md`).
 - Toda sessão nesta fase de Go-Live segue reportando ao final: Concluído
   / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima prioridade /
   Checklist de Go-Live (convenção registrada em sessões anteriores).
@@ -182,37 +190,26 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
 ## 7. Prompt de handoff
 
 ```
-Contexto: projeto ELÃ | influência (tear-v2-app, Laravel 13+React), fase
-de Homologação Funcional, branch feat/ui-design-system-ela. Estado e
-pendências completos em docs/_workspace/ESTADO_SESSAO.md (leia primeiro)
-e docs/_workspace/TASK_ROUTER.md §38 (esta sessão), §37 (Homologação
-Funcional) e §35-§36 (Drive/SMTP).
+Contexto: projeto ELÃ | influência (tear-v2-app, Laravel 13+React), branch
+feat/ui-design-system-ela, HEAD 955bb83. Estado completo em
+docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e docs/_workspace/
+TASK_ROUTER.md §40 (esta sessão), §38/§37 (auditorias de origem), §32
+(mandato de Certificação do MVP).
 
-Estado: feat/ui-design-system-ela em 75cf5c4, working tree limpo (exceto
-3 arquivos docs/reports/*.md untracked de sempre). Uma sessão paralela de
-QA/Auditor rastreou regras de negócio (não telas) em Pagamentos,
-Campanhas e Administração, e encontrou que o gate de material aprovado
-(P0-1) do fluxo de Pagamentos tinha um desvio: pular direto para
-status=PAGO contornava a checagem que só valia para a transição a
-APROVADO. Corrigido no commit 4138c04 (branch fix/pagamento-gate-pago,
-a partir de f3c20b4), com 3 testes novos e suíte completa 206/206 verde.
-PR draft aberto: https://github.com/estudioela/jescri-migracao/pull/66 —
-AINDA NÃO MERGEADO em feat/ui-design-system-ela.
+Estado: a fase de Certificação Funcional do MVP foi CONCLUÍDA nesta
+sessão. PR #66 (gate de Pagamento, bug Categoria A) confirmado mergeado
+(99b5f6a). Suíte verificada em 955bb83: backend 208/208, pint limpo, tsc
+limpo. Parecer técnico completo em docs/reports/CERTIFICACAO_MVP.md —
+resposta: MVP funcionalmente certificado (critério de demonstração a
+cliente), sem confundir com autorização de Go-Live de produção (gate
+separado, docs/release/GATE_FINAL_GO_LIVE.md, hoje NÃO AUTORIZADO por
+itens de infraestrutura externa).
 
-Tarefa desta sessão: (1) decidir e mergear o PR #66; (2) depois do merge,
-reproduzir o fluxo de Login manualmente no navegador (pendência herdada,
-sem bug funcional conhecido); (3) decidir com o responsável do projeto se
-a auditoria/homologação continua para fluxos secundários (Logística/
-Envio, Marcas, Medidas, Histórico) ou se o ciclo atual já é suficiente
-para a fase de migração para a arquitetura definitiva.
-
-Critério desta fase (decisão explícita do responsável do projeto):
-validar fluxos de negócio ponta a ponta para demonstração a cliente, não
-hardening de produção. Achados classificados A (bloqueia validar o
-produto) / B (compromete robustez, não bloqueia) / C (pode esperar) —
-só corrigir A sem pedido explícito; B/C ficam registrados como pendência
-(ESTADO_SESSAO.md §4), não reabrir sem necessidade real ou novo achado
-crítico.
+Tarefa desta sessão: nenhuma pendente de QA/certificação. Próxima sessão
+deve receber decisão do responsável do projeto entre (1) avançar para a
+frente de infraestrutura/Go-Live, (2) ampliar a auditoria a fluxos
+secundários (Marcas, Medidas), ou (3) reproduzir manualmente o fluxo de
+Login isolado (baixa prioridade, não bloqueia).
 
 Regras: não alterar arquitetura sem ADR; não criar documentação
 duplicada; uma frente por vez; validar (testes/lint) antes de commit;
