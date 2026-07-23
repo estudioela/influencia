@@ -3162,3 +3162,159 @@ só por terem links apontando para eles.
   Suíte completa (`php artisan test` 208/208, `pint --test`, `tsc -b`,
   `vite build`, `oxlint`) validada antes do commit anterior (§43) e não
   afetada por esta rodada (só documentação).
+
+## 45. Arquitetura de comandos do Claude Code (Fases 1-2) + base de conhecimento de referências arquiteturais OSS (2026-07-23)
+
+- **Fase 1 — arquitetura de comandos definida e aprovada:**
+  `.claude/commands/<nome>.md` escolhido como mecanismo (não
+  `.claude/skills/`) — Claude Code 2.1.218 resolve ambos os formatos pelo
+  mesmo `/<nome>`, mas os comandos do projeto são workflows explícitos de
+  sessão sem necessidade de auto-trigger ou arquivos auxiliares, então
+  Commands é a forma correta (mais simples, já em uso por
+  `/comecar`/`/fim`). Critério de quando migrar um comando para Skill
+  (múltiplos arquivos de apoio) documentado em `CLAUDE.md` §Comandos
+  padrão, sem criar pasta `skills/` vazia. `/prompt-gpt` criado como
+  placeholder estrutural (frontmatter + escopo pretendido, sem lógica).
+- **Fase 2 — `/comecar` e `/fim` implementados e aprovados:** rotina
+  completa de leitura de documentos (condicional, só o relevante à
+  missão), checagem cruzada entre documentos + PR aberta via `gh pr
+  list`, estrutura de resposta fixa (6 headers), nunca corrige
+  automaticamente inconsistência encontrada — só avisa. `/fim`: releitura
+  rápida de `CLAUDE.md`/governança antes de escrever, só pergunta se
+  faltar informação crítica, atualização condicional de `TASK_ROUTER.md`
+  (decisão de arquitetura/domínio) vs. `handoff/README.md` (marco) como
+  gatilhos distintos, proibição explícita de alterar SPEC/ADR/PRD no
+  encerramento.
+- **Pesquisa de mercado OSS aprovada e consolidada:** levantamento de
+  projetos open source com funcionalidades análogas ao Influencia (CRM,
+  workflow/aprovação, contratos, upload, notificações, portais,
+  dashboards etc.) via GitHub Search API, publicado primeiro como artifact
+  e depois consolidado (sem métricas efêmeras — estrelas/atividade) em
+  `docs/knowledge/referencias-externas/REFERENCIAS_ARQUITETURAIS.md`.
+  `docs/knowledge/README.md` atualizado para descrever as duas categorias
+  hoje existentes (`sistema-b/` e `referencias-externas/`). 5 projetos
+  priorizados para estudo profundo: Payload, Medusa (motor de workflow),
+  Frappe (motor de workflow declarativo), Documenso, Atrium — justificativa
+  completa no documento.
+- **Achado de governança corrigido:** o commit `8060e18` ("establish Phase
+  2 governance model") havia gravado o conteúdo completo de
+  `GOVERNANCA_DO_PROJETO.md` e a entrada histórica que deveria estar em
+  `handoff/README.md` **dentro de `ESTADO_SESSAO.md`** (que chegou a 767
+  linhas), violando os próprios princípios de Fonte Única da Verdade /
+  Estado ≠ Histórico que a governança define — e deixando
+  `docs/handoff/README.md` real sem nenhuma entrada de histórico. Reportado
+  ao responsável do projeto nesta sessão; corrigido como efeito colateral
+  da reescrita completa de `ESTADO_SESSAO.md` pelo `/fim` desta sessão (a
+  duplicação não foi reintroduzida) e pelo registro da primeira entrada
+  real em `docs/handoff/README.md`.
+- **Não implementado ainda:** lógica de `/prompt-gpt` (Fase 3, aguardando
+  aprovação) e, mencionados pelo responsável do projeto para quando a
+  Fase 3 chegar, possíveis `/prompt-cursor`/`/prompt-codex` reaproveitando
+  lógica compartilhada em vez de duplicar.
+- **Não commitado nesta sessão:** todas as mudanças acima ficaram no
+  working tree (branch `docs/governance-phase2`) — ver `ESTADO_SESSAO.md`
+  §Pendências.
+- **Próxima sessão:** nova pesquisa de mercado focada em arquiteturas
+  modernas baseadas em MySQL (mesmo padrão: artifact primeiro, consolidar
+  em `docs/knowledge/` só se aprovado).
+
+## 46. Missão de documentação arquitetural — CLAUDE.md revisado, Etapa 2 bloqueada (2026-07-23)
+
+- **Contexto:** sessão recebeu missão de atuar como "Arquiteto de
+  Documentação" — revisar `CLAUDE.md` (Etapa 1) e os 4 documentos de
+  `docs/arquitetura/` (Etapa 2), validando contra `provisorios/` (legado)
+  e um artifact de pesquisa arquitetural consolidada.
+- **`/comecar` revelou divergência não documentada:** `docs/arquitetura/
+  {README,01,02,03}.md` já existiam no working tree com 513 linhas
+  não commitadas, sem nenhum registro em `ESTADO_SESSAO.md` ou aqui —
+  provável trabalho de sessão anterior nunca fechado por `/fim`. Commit
+  `cad13ac` havia criado esses 4 arquivos **vazios** (blob vazio); todo o
+  conteúdo estava só no working tree.
+- **Achado bloqueante (Etapa 2 não executada):** os 4 arquivos são
+  esqueletos de template, não conteúdo real — `02-arquitetura-alvo.md`
+  contém a instrução literal, nunca executada, "cole abaixo, sem
+  alterações, o documento arquitetural produzido pelo Codex";
+  `01-mineracao-do-legado.md` tem seções com `"..."` e `"Observações:
+  ..."` vazias; `03-plano-mestre-de-implementacao.md` começa na "Fase 3",
+  referenciando "Bootstrap"/"Autenticação" como dependências nunca
+  definidas no documento.
+- **Fontes candidatas descartadas após checagem:**
+  `provisorios/documento_de_arquitetura_influencia.md` propõe stack
+  **Next.js + Prisma + MySQL**, contradizendo a stack oficial (Laravel +
+  React + MySQL, confirmada por `backend/composer.json` e ADR-015) — não
+  serve como fonte de `02`. `provisorios/deep-research-report.md` é a
+  pesquisa OSS já consolidada em `docs/knowledge/referencias-externas/`
+  — não é mineração de legado, não serve como fonte de `01`. O artifact
+  de pesquisa arquitetural (URL fornecida pelo responsável) **não pôde
+  ser acessado** — erro de permissão de leitura pública.
+- **Achado de duplicação real, não resolvido:**
+  `docs/arquitetura/03-plano-mestre-de-implementacao.md` (esqueleto) e
+  `docs/planning/PLANO_MESTRE_ELA_INFLUENCIA.md` (real, vigente, v1.0,
+  2026-07-21, referenciado por este documento) cobrem o mesmo papel de
+  "plano mestre". Não decidido qual prevalece ou se têm escopos
+  distintos — registrado como nota em `CLAUDE.md`, não resolvido no
+  conteúdo.
+- **Achado lateral:** `provisorios/documento_de_arquitetura_influencia.md`
+  parece já ser um rascunho da "próxima pesquisa de mercado sobre
+  MySQL" recomendada na sessão anterior (título interno "MISSÃO 2",
+  foco em padrões MySQL 8+) — mas propõe stack divergente da oficial, e
+  não foi revisado nem aprovado. Não tratar como pesquisa concluída sem
+  decisão do responsável.
+- **Decisão do responsável durante a sessão:** diante do bloqueio,
+  perguntado como proceder; escolheu **"só CLAUDE.md por agora"** —
+  Etapa 2 (docs/arquitetura/01-03) explicitamente não executada,
+  aguardando uma de quatro opções levantadas (fornecer conteúdo real,
+  habilitar acesso ao artifact, autorizar rascunho do agente, ou manter
+  como está).
+- **Executado (Etapa 1):** `CLAUDE.md` revisado — adicionadas seções
+  `Projeto`, `Como entender este projeto` (com nota sobre o bloqueio
+  acima), `Documentação complementar` (mapa de responsabilidade única
+  das 12 pastas de `docs/`), `Convenções permanentes` (só regras
+  verificáveis em ADR/código: Policies em `backend/app/Policies/`,
+  Services em `backend/app/Services/`, ausência de classes `Generic*`,
+  frontend servido pelo Laravel via ADR-015) e `Fluxo de trabalho`
+  (pipeline de entrega macro, distinto do `Fluxo obrigatório` por
+  tarefa). Removidos dois stubs nunca preenchidos (`Leitura obrigatória
+  antes de alterar código`, `Regras de arquivos` — eram texto de
+  template, redundantes com seções já reais). Corrigido caminho de
+  `CONTRATO_SOBERANO.md` (apontava para a raiz; está em `docs/history/`).
+- **Não alterado:** os 4 documentos de `docs/arquitetura/`, `docs/
+  planning/PLANO_MESTRE_ELA_INFLUENCIA.md`, nenhum ADR/SPEC/PRD.
+- **Não commitado nesta sessão.** Nenhum push.
+- **Achado não relacionado a esta missão:** dois arquivos não rastreados
+  apareceram no working tree durante a sessão sem relação com o trabalho
+  realizado aqui — `backend/package-lock.json` e `dev.sh` (criados
+  2026-07-23 11:42 e 11:50). Origem desconhecida; não foram tocados.
+
+## 2026-07-23 — §47 Correção do ambiente de desenvolvimento local (composer dev)
+
+Sessão paralela à do §46, sem relação com a missão de documentação
+arquitetural. Resolve inclusive a origem "desconhecida" de
+`backend/package-lock.json`/`dev.sh` apontada no achado lateral do §46:
+eram produto desta sessão, rodando em paralelo.
+
+- **Sintoma relatado:** `composer dev` iniciava dois processos Vite
+  concorrentes na porta 5173; `http://localhost:5173` mostrava a tela
+  padrão "Laravel + Vite" em vez da aplicação React.
+- **Causa raiz:** `backend/composer.json` script `dev` rodava `npm run
+  dev` com `cwd` em `backend/` — disparava o Vite do scaffold padrão do
+  Laravel (`backend/resources/js/app.js`, `backend/vite.config.js`,
+  Tailwind), nunca referenciado por nenhuma view (`grep @vite` vazio),
+  competindo pela porta 5173 com o Vite real de `frontend/` (React).
+- **Corrigido:** `composer.json` (`dev` chama `npm --prefix ../frontend
+  run dev`; `setup` instala deps do frontend e copia `frontend/.env`);
+  `backend/package.json` reduzido a só `concurrently`; removidos
+  `backend/vite.config.js`, `backend/resources/js/app.js`,
+  `backend/resources/css/app.css`; removido script `dev:all` e dep
+  `concurrently` não usada de `frontend/package.json`; `dev.sh`
+  (script improvisado) apagado; `README.md`/`backend/README.md`
+  atualizados para `composer dev` como único fluxo.
+- **Validado por navegação real** (Chrome DevTools): `localhost:5173`
+  carrega a SPA (login, navegação client-side, `POST
+  localhost:8000/api/login` via CORS/Sanctum sem erro).
+- **Entrega:** PR #78 (branch `worktree-fix-dev-env`), draft. Mesmos
+  commits aplicados via `cherry-pick` em `docs/governance-phase2`
+  (checkout principal) para teste imediato — push/merge ainda pendente,
+  decisão do responsável do projeto.
+- Comando oficial: `cd backend && composer dev`. Aplicação:
+  `http://localhost:5173`. API: `http://localhost:8000/api`.
