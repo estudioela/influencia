@@ -4,8 +4,8 @@
 **Data:** 2026-07-21
 **Sistema-alvo:** `tear-v2-app/` (Laravel 12 + Sanctum + Spatie Permission /
 React 19 + Vite + TypeScript) — o sistema em preparação para produção
-(ver `docs/reports/HANDOFF_FINAL.md`: **APTO PARA GO-LIVE COM RESSALVAS**, pendências
-exclusivamente de infraestrutura).
+(**APTO PARA GO-LIVE COM RESSALVAS**, pendências exclusivamente de
+infraestrutura — ver `docs/release/GATE_FINAL_GO_LIVE.md`).
 
 Este documento **não propõe implementação**. Nenhum item aqui foi
 desenhado em nível de tarefa técnica — isso é trabalho de uma SPEC/ADR
@@ -299,7 +299,7 @@ pós-merge `worktree-spec-mvp-completa` (ver `docs/_workspace/TASK_ROUTER.md` §
 - **Alterações frontend:** aba "Métricas" em `PortalPerfilPage` + gatilho
   administrativo "solicitar métricas".
 - **Dependências:** Google Drive configurado (mesma dependência já
-  existente para upload de Material — ver `docs/reports/HANDOFF_FINAL.md`).
+  existente para upload de Material).
 - **Riscos:** escopo de "quais métricas" e "que formato" não está definido
   — tratar como descoberta antes de estimar.
 

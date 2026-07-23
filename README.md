@@ -43,21 +43,22 @@ scripts/        — utilitários de manutenção da base de conhecimento (docs/k
 
 ```text
 docs/
-├── adrs/         — decisões arquiteturais (nunca reabertas sem novo ADR)
-├── specs/        — especificação de cada SPEC-NNN
+├── adrs/         — decisões arquiteturais vigentes (nunca reabertas sem novo ADR)
+├── specs/        — especificação de cada SPEC-NNN vigente
 ├── design/       — sistema de design e fluxos de UX
 ├── history/      — Contrato Soberano e histórico de migração
 ├── deployment/   — arquitetura e runbooks de produção
 ├── release/      — checklists e critérios de go-live
-├── reports/      — auditorias e handoffs ainda ativos (não históricos)
-├── planning/     — roadmaps, backlog e especificações funcionais
-├── knowledge/    — pesquisa de referência e baseline de arquitetura/domínio
-│   ├── archive/      — pesquisa e artefatos de processo já consumidos
-│   ├── references/   — pesquisa técnica profunda (OAuth, sessão, identidade)
-│   └── sistema-b/     — baseline de arquitetura/domínio do tear-v2-app
-├── archive/      — relatórios e planos históricos já superados
+├── planning/     — roadmaps, backlog e especificações funcionais vigentes
+├── knowledge/    — baseline de arquitetura/domínio do tear-v2-app
+│   └── sistema-b/    — ARCHITECTURE.md, DOMAIN_MODEL.md, BUSINESS_FLOWS.md
 └── _workspace/   — TASK_ROUTER.md (fonte única de estado) e checklists
 ```
+
+Sem pasta de arquivo morto: histórico de sessões, auditorias pontuais,
+planos superados e handoffs são removidos assim que seu conteúdo
+acionável é absorvido por um documento vigente — não ficam na árvore
+ativa. O histórico completo continua disponível pelo Git (`git log`).
 
 ## Documentos Principais
 
@@ -68,13 +69,11 @@ docs/
 | `docs/_workspace/TASK_ROUTER.md` | Fonte única de estado de cada SPEC |
 | `docs/PRD.md` | Requisitos de produto |
 | `docs/history/CONTRATO_SOBERANO.md` | Domínio soberano (termos, VOs, agregados) |
-| `docs/adrs/` | Registro das decisões arquiteturais |
-| `docs/specs/` | Especificação de cada SPEC-NNN |
+| `docs/adrs/` | ADRs vigentes |
+| `docs/specs/` | Especificação de cada SPEC-NNN vigente |
 | `docs/deployment/` | Arquitetura e implementação de produção |
 | `docs/release/` | Checklists de go-live e release readiness |
-| `docs/reports/` | Auditorias e handoffs ativos |
-| `docs/planning/` | Roadmaps, backlog e especificações funcionais |
-| `docs/archive/` | Documentos históricos já absorvidos por fontes vigentes |
+| `docs/planning/` | Roadmaps, backlog e especificações funcionais vigentes |
 
 ---
 

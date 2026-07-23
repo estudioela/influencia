@@ -5,7 +5,7 @@
 **Documentos irmãos:** `ELA_INFLUENCIA_ENTREGA_1_ANALISE_ESTRATEGICA.md` (por quê) e `ELA_INFLUENCIA_ENTREGA_2_PLANO_EXECUTIVO.md` (fases e portões). Este documento é a camada operacional: calendário realista, subfases, entregas, critérios de aceite e auditoria crítica.
 
 **Governança deste documento:**
-- Substitui, como plano vigente, os anteriores `ROADMAP_MESTRE_TEAR_V2.md` e `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md` (candidatos a `docs/archive`, mover requer sua autorização). `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` já foi arquivado em `docs/archive/pagamento-snapshot/` (2026-07-23) — decisão extraída para `docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md`.
+- Substitui, como plano vigente, os anteriores `ROADMAP_MESTRE_TEAR_V2.md` e `TEAR_V2.5_PRODUCTIZACAO_ROADMAP.md` (removidos da árvore ativa). `PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` também removido — decisão extraída para `docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md`.
 - Estado de execução do dia a dia continua no `TASK_ROUTER.md`. Este plano não vira lista de tarefas: vira bússola. Revisar ao cruzar cada portão, não semanalmente.
 
 ---
@@ -266,7 +266,7 @@ Mantida integralmente pós-1.0. Motivos: (1) IA introduz não-determinismo num p
 | 7 | Meta numérica de adoção das influs (sugestão: 70%) | antes de C1 | G2 |
 | 8 | Revisão jurídica de termos/privacidade: contratar ou assumir template | outubro | D4 |
 | 9 | Quem é "a equipe" com acesso admin além de você | agosto | B |
-| 10 | Arquivar os planos superados em `docs/archive` | quando quiser | higiene |
+| 10 | ~~Remover planos superados da árvore ativa~~ — concluído (2026-07-23) | — | higiene |
 
 ---
 

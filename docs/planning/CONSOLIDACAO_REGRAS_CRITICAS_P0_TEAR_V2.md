@@ -1,8 +1,8 @@
 # Consolidação de Regras Críticas P0 — TEAR V2
 
 **Tipo:** Plano (etapa 1 de 3 antes do Portal completo).
-**Base:** `docs/archive/auditorias/AUDITORIA_REGRAS_NEGOCIO_LEGADO_TEAR.md` (auditoria aprovada em
-2026-07-20).
+**Base:** auditoria de regras de negócio do legado vs. `tear-v2-app`, aprovada em
+2026-07-20 (documento de auditoria já consolidado neste plano, removido da árvore ativa).
 **Sequência acordada:**
 
 1. **Consolidar regras críticas P0** — este documento.

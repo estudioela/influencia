@@ -44,7 +44,7 @@ só a trava de edição sobre a própria `ParticipacaoNaCampanha`, nada mais:
   (constante `CAMPOS_COMERCIAIS`). `status` continua editável — cancelamento
   não é termo comercial.
 - **Nada além disso.** Confirmado por leitura direta do código nesta sessão
-  e por `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md`
+  e por reconciliação da especificação funcional contra o código
   (2026-07-22): não existem `congelado_por`, `dados_congelados` nem
   `historico_alteracoes_participacao`. `Briefing` vinculado a uma
   participação congelada continua 100% editável — não há nenhuma checagem
@@ -69,10 +69,9 @@ permanecer íntegro mesmo quando o cadastro vivo da Parceira mudar depois"**
   registrado como pendência Categoria C em `ESTADO_SESSAO.md` §4 ("Congelamento
   é decorativo fora dos campos comerciais da própria Participação").
 
-Isso está consistente com a leitura de
-`docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md`: a decisão real
-foi tomada **pela implementação**, não formalizada conscientemente — esta
-ADR é o ato de formalizá-la a posteriori, não de expandi-la.
+A decisão real foi tomada **pela implementação**, não formalizada
+conscientemente — esta ADR é o ato de formalizá-la a posteriori, não de
+expandi-la.
 
 ## Consequências
 
@@ -84,12 +83,15 @@ ADR é o ato de formalizá-la a posteriori, não de expandi-la.
   ver §9 do plano arquivado), o modelo completo (`dados_congelados`,
   `historico_alteracoes_participacao`) precisa ser retomado como trabalho
   novo, não como algo já coberto por este ADR.
-- `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` fica arquivado em
-  `docs/archive/planejamento-pre-codigo/` como referência de desenho
-  completo (útil se/quando o Sprint 3 retomar Contratos/Logística), não como
-  descrição do estado atual do sistema.
+- O plano original completo (`PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`) foi
+  removido da árvore ativa do repositório (conhecimento já consolidado
+  nesta ADR); se/quando o Sprint 3 retomar Contratos/Logística e precisar
+  do desenho completo (`dados_congelados`, `historico_alteracoes_participacao`),
+  ele precisa ser refeito como trabalho novo, não recuperado de um
+  documento antigo.
 
 ## Documento de origem
 
-`docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md` — arquivado nesta
-mesma sessão de curadoria, ver `docs/archive/README.md`.
+Plano de arquitetura original do congelamento de Participação (P0-2),
+removido da árvore ativa nesta sessão — a decisão real está formalizada
+nesta ADR.

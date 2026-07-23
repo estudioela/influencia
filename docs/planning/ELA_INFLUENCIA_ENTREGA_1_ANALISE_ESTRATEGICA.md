@@ -2,7 +2,7 @@
 
 Data: 2026-07-21
 Papel: CEO Advisor / CTO / Head de Produto
-Base factual: auditoria direta do repositório nesta data (TASK_ROUTER, PRD, ADRs, `docs/release/TEAR_V2.5_RELEASE_READINESS.md`, `docs/reports/RELATORIO_QA_FUNCIONAL_MVP_TEAR_V2.md`, `docs/deployment/ARQUITETURA_PRODUCAO.md`, código de `tear-v2-app/`).
+Base factual: auditoria direta do repositório nesta data (TASK_ROUTER, PRD, ADRs, `docs/release/TEAR_V2.5_RELEASE_READINESS.md`, relatório de QA funcional do MVP, `docs/deployment/ARQUITETURA_PRODUCAO.md`, código de `tear-v2-app/`).
 
 Estado real verificado antes da análise:
 
@@ -51,7 +51,7 @@ A ressalva: o plano, como está, valida um sistema interno, não um SaaS. Usar d
 
 - Qualquer esforço restante para destravar o login do portal GAS V2. Congelar `src/` hoje: sem correção de OAuth, sem deploy, sem versão nova. Vira biblioteca de regras de negócio, como você mesmo definiu. O item pendente "validar login ponta a ponta no /exec" morre sem execução.
 - Os 9 itens de menu "Em construção" da sidebar: remover as entradas do menu, não construir as páginas. Menu que mente é pior que menu curto.
-- A proliferação de documentos de planejamento. Já existem 5 roadmaps/planos sobrepostos em `docs/planning` e `docs/reports`. O Plano Mestre (Entrega 3) substitui todos; os anteriores vão para `docs/archive`.
+- A proliferação de documentos de planejamento. Já existem 5 roadmaps/planos sobrepostos em `docs/planning` e `docs/reports`. O Plano Mestre (Entrega 3) substitui todos; os anteriores devem ser removidos da árvore ativa (recomendação já executada — `docs/reports/` e `docs/archive/` não existem mais neste repositório, histórico fica só no Git).
 
 ## 6. O que eu adiaria
 

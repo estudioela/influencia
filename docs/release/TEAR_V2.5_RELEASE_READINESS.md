@@ -10,9 +10,9 @@ Permission / React 19 + Vite + TypeScript). Não cobre o Portal legado GAS
 (`src/`) nem reabre o domínio soberano (`CONTRATO_SOBERANO.md`).
 
 Metodologia: verificação direta no código e execução real da suíte de
-testes/lint desta sessão — não é uma repetição do texto de
-`docs/reports/HANDOFF_FINAL.md` / `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md`, é uma
-confirmação independente das alegações desses documentos.
+testes/lint desta sessão — não é uma repetição de um handoff anterior nem
+de `docs/release/TEAR_V2.5_GO_LIVE_CHECKLIST.md`, é uma confirmação
+independente das alegações desses documentos.
 
 ---
 
