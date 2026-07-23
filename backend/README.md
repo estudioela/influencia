@@ -1,3 +1,16 @@
+## Desenvolvimento local
+
+```bash
+composer install
+composer setup   # .env (backend + frontend), APP_KEY, migrations, npm install
+composer dev     # comando único: API + fila + logs + Vite do frontend/
+```
+
+- Aplicação: `http://localhost:5173`
+- API: `http://localhost:8000/api`
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
