@@ -17,9 +17,10 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-23
-- **HEAD de `feat/ui-design-system-ela`:** merge de `0e52516` (curadoria,
-  Agente C) com `7cc7594` (certificação, Agente B) — a sincronizar com
-  `origin/feat/ui-design-system-ela` no push desta sessão.
+- **HEAD de `feat/ui-design-system-ela`:** `c17b775`, sincronizado com
+  `origin/feat/ui-design-system-ela` (inclui o merge `13dc315` de
+  curadoria documental + certificação, seguido do commit dos 3 documentos
+  de Go-Live do Agente A).
 - **Branch:** `feat/ui-design-system-ela`.
 - **Working tree:** os 3 documentos de Go-Live
   (`docs/deployment/CHECKLIST_GO_LIVE.md`,
