@@ -2674,3 +2674,91 @@ tela real de Envio só é alcançável por drill-down a partir do detalhe
 de Campanha. Não verificado a fundo; achado do relatório
 `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md` de sessão
 anterior.
+
+## 38. Auditoria de regras de negócio (papel QA, em paralelo ao §37) — 1 bug Categoria A corrigido, fluxos reclassificados para a fase de migração (2026-07-23)
+
+Sessão conduzida em paralelo à sessão de Homologação Funcional do §37
+(mesmo dia, commits `75cf5c4` e `4138c04` a poucos segundos de
+distância), num papel dedicado de QA/Auditor Técnico: alimentar uma
+fila priorizada de bugs sem implementar, até o passo final em que o
+responsável do projeto pediu a correção de um achado específico.
+
+**Rodada 1 (tela por tela, P0/P1):** reauditoria independente de Login,
+Recuperação de senha, Convite de influenciadora, Cadastro e Aprovação —
+sem saber do trabalho do §37 em andamento na outra sessão. Achados
+coincidem em boa parte com os do §37 (throttle assimétrico do
+reenvio de convite, falta de unicidade de e-mail em Parceira,
+mensagens de erro genéricas no Login) — nenhuma divergência relevante,
+confirma por auditoria cruzada independente que os achados do §37 eram
+reais.
+
+**Rodada 2 (mudança de estratégia — regras de negócio, não telas):** a
+pedido explícito do responsável do projeto, a auditoria passou a
+perguntar "existe alguma forma de o sistema chegar a um estado
+impossível?", rastreando Pagamento, ParticipacaoNaCampanha, Campanha,
+Briefing, Material e Envio (controllers, models, FormRequests,
+migrations) em vez de telas. Achados (arquiteturais, não de tela):
+
+1. **Gate de material aprovado (regra P0-1) contornável pulando direto
+   para `status=PAGO`** — `PagamentoController::update()` só chamava
+   `existeMaterialNaoAprovado()` na transição explícita a `APROVADO`.
+   **Corrige uma lacuna que o §37 não pegou**: aquela sessão classificou
+   Pagamento como "demonstrável ponta a ponta sem bug bloqueador
+   conhecido" — não estava, a regra central do fluxo (não pagar sem
+   material aprovado) tinha um desvio trivial.
+2. `Pagamento.valor` editável mesmo com `status=PAGO`, sem trava nem
+   auditoria.
+3. Pagamento e cancelamento de Participação não se checam mutuamente
+   (dá pra pagar cancelada, ou cancelar já paga).
+4. Campanha `ENCERRADA`/`CANCELADA` continua 100% editável (inclusive
+   reabrindo status ou trocando marca).
+5. Participação pode ser criada numa Campanha já `ENCERRADA`/`CANCELADA`.
+6. Congelamento (`congelado_em`) é decorativo fora dos campos comerciais
+   da própria Participação — confirmado em código que também não cobre
+   Material nem Envio, além do Briefing já registrado no §4 do
+   `ESTADO_SESSAO.md`.
+7. `PagamentoController` sem `DB::transaction`/lock — mesma classe de
+   race condition já corrigida em `ParceiraController::aprovar` (§37
+   item 1), ainda não replicada aqui.
+
+**Rodada 3 (reclassificação A/B/C):** a pedido do responsável do
+projeto, todos os achados (rodadas 1 e 2) foram reclassificados sob o
+critério já fixado no §37.3 ("validar fluxos de negócio, não hardening
+de produção"):
+
+- **Categoria A** (bloqueia validar o produto) — só o item 1 acima
+  (gate de material aprovado contornável): é a única regra com
+  referência explícita de spec no próprio código (`P0-1`), e a pergunta
+  central do roteiro ("é possível pagar sem material aprovado?") tinha
+  resposta positiva.
+- **Categoria B** (funciona, mas compromete robustez/segurança/
+  concorrência/manutenção) — itens 2, 3, 4, 5, 7 acima, mais a falta de
+  unicidade de e-mail em Parceira (já em `ESTADO_SESSAO.md` §4) e a
+  máscara de erro genérica do Login (idem).
+- **Categoria C** (pode esperar) — item 6 (congelamento decorativo,
+  decisão de produto já em aberto), `reenviarConvite` não distinguir
+  parceira já ativa.
+
+**Correção aplicada (único item Categoria A, commit `4138c04`):**
+`PagamentoController::update()` agora chama `existeMaterialNaoAprovado()`
+para qualquer avanço a `APROVADO` **ou** `PAGO`, não só à transição
+específica a `APROVADO`. 3 testes novos em `PagamentoTest.php` cobrindo
+o bypass (bloqueia PAGO direto com material pendente/reprovado, permite
+PAGO direto com material aprovado). Suíte completa do backend: 206/206
+verde. `vendor/bin/pint --test`: limpo.
+
+**Importante — branch e PR ainda não mergeados:** o commit `4138c04`
+está na branch `fix/pagamento-gate-pago` (criada a partir de
+`feat/ui-design-system-ela` em `f3c20b4`, **antes** do commit de
+fechamento `75cf5c4` do §37 — as duas sessões divergiram do mesmo ponto
+em paralelo). PR draft aberto:
+`https://github.com/estudioela/jescri-migracao/pull/66`, alvo
+`feat/ui-design-system-ela`. **Ainda não mergeado** — `feat/ui-design-
+system-ela` continua em `75cf5c4` sem a correção até o merge acontecer.
+
+**Conclusão da sessão (comunicada pelo responsável do projeto):** com o
+único bloqueador Categoria A corrigido, os fluxos de negócio auditados
+(Login, Recuperação de senha, Convite, Cadastro, Aprovação, Upload,
+Pagamentos, Campanhas, Administração) ficam aptos para a fase de
+migração para a arquitetura definitiva — os itens B/C remanescentes não
+bloqueiam a validação do produto, salvo novo achado crítico.
