@@ -19,7 +19,7 @@ estruturais exigem nova ADR.
 ## 2. Fontes normativas congeladas (hierarquia)
 
 1. `CONTRATO_SOBERANO.md` — domínio soberano (VOs, agregados, eventos, ACL).
-2. `docs/adrs/ADR-001-FECHAMENTO-DE-CONTRATO-E-ENUMS.md` — enums, `MesReferencia` (`AAAA-MM`), promoção.
+2. `docs/adrs/ADR-001-fechamento-de-contrato-e-enums.md` — enums, `MesReferencia` (`AAAA-MM`), promoção.
 3. `docs/adrs/ADR-003-linguagem-ubiqua-do-dominio.md` — Linguagem Ubíqua oficial (⚠️ numeração a confirmar — ver §6).
 4. `docs/adrs/ADR-002-frontend-foundation.md` — fundação de frontend (HTML Service).
 5. `docs/PRD.md` — fonte exclusiva de requisitos.

@@ -144,7 +144,7 @@ substituído e que `tear-v2-app/` (Laravel + React) é a única aplicação
 oficial. Antes da remoção, o algoritmo de normalização de
 `ChaveInfluenciadora` (único detalhe de regra de negócio que só existia no
 código, sem essa precisão em nenhuma SPEC) foi extraído para
-`docs/specs/SPEC-003.md` §6.1. Ferramentagem raiz específica do GAS também
+`docs/specs/SPEC-003-importacao-inicial-da-base.md` §6.1. Ferramentagem raiz específica do GAS também
 removida: `eslint.config.js`, `.clasp.json.example`, `.claspignore`,
 `appsscript.json`, `scripts/preview-server.mjs`, `package.json`/
 `package-lock.json` (só serviam ao legado). `README.md` (raiz) e

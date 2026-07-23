@@ -90,7 +90,7 @@ Termos banidos permanecem admissíveis apenas em conversas informais de time, qu
 7. `06_MODELO_CONCEITUAL_DOS_DADOS.md`: renomear C12/C13/C14/C15 conforme §4 desta decisão; atualizar todas as referências cruzadas e a seção de relacionamentos.
 
 **Fase M2 — Especificações (dias 2–3)**
-8. `SPEC-005.md`: publicar a v2.0 já revisada (que adota o novo vocabulário) como versão oficial.
+8. `SPEC-005-colaboracao-mensal.md`: publicar a v2.0 já revisada (que adota o novo vocabulário) como versão oficial.
 9. Verificar SPECs adjacentes (004, 006…) por eventuais menções remanescentes.
 
 **Fase M3 — Guarda-corpos (contínuo)**

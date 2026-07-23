@@ -95,8 +95,8 @@ divergente do canônico), todas em `knowledge/`:
 |---|---|---|
 | `knowledge/CLAUDE.md` | `/CLAUDE.md` | `diff` vazio |
 | `knowledge/specs/CONTRATO_SOBERANO.md` | `docs/history/CONTRATO_SOBERANO.md` | `diff` vazio |
-| `knowledge/specs/SPEC-025.md` | `docs/specs/SPEC-025.md` | `diff` vazio |
-| `knowledge/specs/SPEC-035.md` | `docs/specs/SPEC-035.md` | `diff` vazio |
+| `knowledge/specs/SPEC-025.md` | `docs/specs/SPEC-025-acesso-ao-portal-da-parceira.md` | `diff` vazio |
+| `knowledge/specs/SPEC-035.md` | `docs/specs/SPEC-035-identidade-e-acesso.md` | `diff` vazio |
 | `knowledge/specs/README.md` | `knowledge/README.md` | cópia obsoleta (citava `Envelope.js`, renomeado para `Nucleo.js` pela ADR-014) |
 | `knowledge/specs/TASK_ROUTER.md` | `docs/_workspace/TASK_ROUTER.md` | cópia divergente e desatualizada (849 vs 1457 linhas) do documento declarado "fonte única de estado" |
 

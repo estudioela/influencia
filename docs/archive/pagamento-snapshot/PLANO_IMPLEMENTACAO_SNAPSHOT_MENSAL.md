@@ -3,7 +3,7 @@
 **Data:** 2026-07-20
 **Tipo:** Revisão conceitual (Business Analyst + Arquitetura). **Nenhuma
 migration, model ou código foi criado para este documento.** Só leitura de
-`docs/history/CONTRATO_SOBERANO.md`, `docs/specs/SPEC-005.md`, models e
+`docs/history/CONTRATO_SOBERANO.md`, `docs/specs/SPEC-005-colaboracao-mensal.md`, models e
 migrations de `tear-v2-app/backend`.
 **Gatilho:** antes de implementar P0-3 (`docs/CONSOLIDACAO_REGRAS_CRITICAS_P0_TEAR_V2.md`),
 validar se `campanha_snapshots` é o agregado certo, a pedido do responsável
@@ -109,7 +109,7 @@ schema já implementado, não de preferência de estilo:
    compartilham uma Campanha — uma participação nova, ainda em negociação,
    ficaria presa pelo congelamento de outra já paga.
 3. **Precedente do próprio legado.** `CondicaoComercialSnapshot`
-   (`SPEC-005.md` §6) já era por Parceira × MesReferência — nunca por um
+   (`SPEC-005-colaboracao-mensal.md` §6) já era por Parceira × MesReferência — nunca por um
    agregado maior que agrupasse várias Parceiras. O equivalente estrutural
    em Sistema B é por `ParticipacaoNaCampanha`, não por `Campanha`.
 

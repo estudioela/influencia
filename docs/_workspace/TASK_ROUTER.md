@@ -34,7 +34,7 @@
 | `WORKFLOW.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; dependências entre SPECs já absorvidas por este roteador, ver SPEC-003 D-01) |
 | `PRD.md` | `docs/PRD.md` | no repo |
 | `CONTRATO_SOBERANO.md` | `docs/history/CONTRATO_SOBERANO.md` | no repo |
-| `ADR-001` (enums/MesReferencia/promoção) | `docs/adrs/ADR-001-FECHAMENTO-DE-CONTRATO-E-ENUMS.md` | no repo |
+| `ADR-001` (enums/MesReferencia/promoção) | `docs/adrs/ADR-001-fechamento-de-contrato-e-enums.md` | no repo |
 | `ADR — Linguagem Ubíqua` | `docs/adrs/ADR-003-linguagem-ubiqua-do-dominio.md` | no repo (numeração a confirmar) |
 | `ADR-002 — Frontend Foundation` | `docs/adrs/ADR-002-frontend-foundation.md` | no repo |
 | `ADR-010 — Banco oficial do Portal (planilha V2 "Portal Ela")` | `docs/adrs/ADR-010-banco-oficial-do-portal.md` | no repo |
@@ -42,7 +42,7 @@
 | `ADR-014 — Consolidação de arquivos por módulo de negócio` | `docs/adrs/ADR-014-consolidacao-de-arquivos-por-modulo.md` | no repo (2026-07-19: `src/` reorganizado em 14 `.js` — fatias verticais em `src/modulos/`; caminhos `src/{acl,adapters,controller,domain,repository,service}/...` citados em achados anteriores são históricos; mapa classe→arquivo na ADR) |
 | Contratos de camada (ex-`_contract.js`) | `docs/architecture/ARQUITETURA_CAMADAS.md` | no repo (migrados pela ADR-014) |
 | `DECISOES_BLOQUEANTES.md` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`; o estado de cada pergunta P3–P8/Q-NN está rastreado por SPEC neste roteador — resolvidas: Q-03/04/07/08/10; abertas: Q-05/06/09) |
-| `SPEC.md` (formato/Entrega 01) | `docs/specs/SPEC-001.md` | no repo |
+| `SPEC.md` (formato/Entrega 01) | `docs/specs/SPEC-001-cadastro-e-base-de-influenciadoras.md` | no repo |
 | `PLANILHA_TEAR_2.0_MAPA.md` | `PLANILHA_TEAR_2.0_MAPA.md` (raiz) | no repo |
 | `03 — Fronteiras do Domínio` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`) |
 | `04 — Capacidades do Sistema` | — | **não existe mais** (2026-07-18: sumiu de `~/Downloads`) |
@@ -128,7 +128,7 @@ Toda SPEC deve respeitar, sem reabrir:
 - **Deps SPEC:** SPEC-002
 - **Requisitos (PRD):** §5.2, §6.2, §7 (RN-04, RN-05, RN-06), §8 ("Ciclo Mensal" ≡ Colaboração Mensal)
 - **Restrições:** `CONTRATO_SOBERANO` §5, §6, §8 · `ADR-001` §2, §3 (MesReferencia `AAAA-MM`) · `ADR — Linguagem Ubíqua` §4
-- **Material já redigido:** `~/Downloads/SPEC-005-REVISAO.md` (Parte 3 = v2.0), já extraído para `docs/specs/SPEC-005.md`
+- **Material já redigido:** `~/Downloads/SPEC-005-REVISAO.md` (Parte 3 = v2.0), já extraído para `docs/specs/SPEC-005-colaboracao-mensal.md`
 - 🟠 **Aberto:** P8 / Q-06 (ano ausente em MesReferencia) · P4 / Q-05 (inativação)
 - ✅ **Resolvido:** MesReferencia alinhado a `AAAA-MM` (ADR-001 §3) na SPEC-005 v2.0.
 
@@ -187,7 +187,7 @@ Toda SPEC deve respeitar, sem reabrir:
   `PagamentoLiberado` — Obrigação `Mensal` exige todas as Entregas da
   competência em `Aprovado`/`Publicado` (SPEC-012 §9); publicação não é
   requisito. Obrigação `Avulso` não passa pelo gate (liberação manual).
-  Detalhe em `SPEC-020.md` §9/§21.
+  Detalhe em `SPEC-020-gestao-de-pagamentos.md` §9/§21.
 - ✅ **Resolvida (2026-07-17):** autorização por papel (§13, PG-04) — ver §11
   (RBAC aplicado às rotas administrativas).
 
@@ -262,7 +262,7 @@ Toda SPEC deve respeitar, sem reabrir:
 
 #### `[x]` SPEC-035 · Identidade e Acesso (M-ID)
 - **Deps SPEC:** SPEC-001, SPEC-002, SPEC-025
-- **Requisitos:** `docs/specs/SPEC-035.md` (documento próprio — origem: revisão arquitetural + resolução de pendências em 2026-07-17; movido de `.gemini/spec-035-identidade/` em 2026-07-18, auditoria de apoio, para eliminar duplicata que já havia divergido do TASK_ROUTER)
+- **Requisitos:** `docs/specs/SPEC-035-identidade-e-acesso.md` (documento próprio — origem: revisão arquitetural + resolução de pendências em 2026-07-17; movido de `.gemini/spec-035-identidade/` em 2026-07-18, auditoria de apoio, para eliminar duplicata que já havia divergido do TASK_ROUTER)
 - ✅ **Implementada (2026-07-17):** substitui o modelo de credencial legado (RN-16, cupom+CNPJ) por federação Google Identity para os papéis `Administrador` e `Influenciadora`. Resolve Q-07 e Q-08 (parcial) de SPEC-025 — ver nota na entrada de SPEC-025 acima e SPEC-035 §9.2-A. Reaproveita integralmente `Sessao`/`TokenDeSessao`/`SessaoRepository`/`SessaoACL`/`AcessoPortalService`/`AcessoController.renovar()`/`.sair()` (SPEC-025) — nenhuma stack de sessão paralela; verificado ponta a ponta (sessão emitida via Google renovada/encerrada pelo `AcessoController` já existente, mesma aba `SESSOES`). Novo: `Usuario` (domínio — máquina de estados PENDING/ACTIVE/INACTIVE/REJECTED, RN-04/RN-07 bootstrap do primeiro Administrador), `ValidadorDeTokenGoogle` (adaptador — valida `aud`/`iss`/`exp`/`iat` via endpoint `tokeninfo`, sem reaproveitar `Autenticador`/`JanelaDeBloqueio`: bloqueio por tentativas não se aplica a token assinado criptograficamente, §9.2-A), `UsuarioACL`/`AdministradorACL`/`UsuarioRepository` (`SIS_IDENTIDADES`, `BASE_ADMINISTRADORES`), extensão de `ParceiraACL` (`buscarCandidataPorEmail`/`vincularSubProvider`/`obterPorSubProvider`, §5.1-A/§10.2.4 — `INFLU_KEY` preservada como chave soberana, `SUB_PROVIDER` é atributo dependente), `UsuarioService` (login/onboarding/vinculação/moderação/RBAC/suspensão-reativação) → `UsuarioController` → Portal (`entrarComGoogle`/`confirmarVinculacaoDeIdentidade`/`completarCadastroDeUsuario`/`listarUsuariosPendentes`/`aprovarUsuario`/`rejeitarUsuario`/`inativarUsuario`/`reativarUsuario`). 79 testes novos (domínio/adaptador/ACL/repository/service/controller/entrypoint, incluindo jornada completa candidata→vinculação→bloqueio PENDING→aprovação→login ACTIVE); suíte completa 599/599 verde; lint limpo.
 - **Escopo desta unidade de trabalho:** papéis `Administrador` e `Influenciadora` apenas. O ator `Marca` (tenant externo, `BASE_MARCAS`) está definido na SPEC mas **não implementado** — não é inferível do PRD vigente (que descreve operação para uma única marca), é decisão de escopo de produto que só o responsável do projeto pode tomar (SPEC-035, nota de revisão 2). `completarCadastroDeUsuario` recusa explicitamente `papel: 'MARCA'` (`ERR_AUTH_PAPEL_NAO_DISPONIVEL`).
 - **Dívidas registradas:** Q-09 (LGPD) segue aberta, herdada de SPEC-025/027/030/032 — não bloqueia esta implementação, mesmo precedente já aplicado às SPECs anteriores.
@@ -477,7 +477,7 @@ Toda SPEC deve respeitar, sem reabrir:
 - ✅ **Resolvido (2026-07-17, lacuna de documentação, não decisão de PO):**
   D-01 (elegibilidade para selagem) — a SPEC citava "Contrato §9" mas esse
   parágrafo só trata de `PagamentoLiberado` (já resolvido, SPEC-020 Q-04);
-  nada sobre selagem. Regra formalizada em `SPEC-034.md` RN-07/§21, no mesmo
+  nada sobre selagem. Regra formalizada em `SPEC-034-arquivamento-geral-manual.md` RN-07/§21, no mesmo
   formato do precedente Q-04: competência selável quando todo item
   existente de Entrega/Envio/Obrigação `Mensal` está terminal; ausência de
   itens de um módulo não bloqueia; `Avulso` fora da checagem.
@@ -676,7 +676,7 @@ cobertura de regras de negócio de 6 SPECs entregues). Achados e status:
 - **F7 (resolvido, 2026-07-16):** Q-03, D-02 (nome do evento
   `ConteudoPublicado`) e a dívida de material como URL já tinham decisão do
   PO (2026-07-15) só registrada em comentário de código — propagados para
-  `SPEC-012.md` §9/§21 e `CONTRATO_SOBERANO.md` §8.
+  `SPEC-012-gestao-de-conteudo-e-ativacoes.md` §9/§21 e `CONTRATO_SOBERANO.md` §8.
 - **F1/F2 (resolvidos, 2026-07-17):** `compilarMes` (`src/entrypoint/Portal.js`)
   agora reconcilia no ramo `jaCompilada`: chama `recriarParaCompetencia`/
   `materializarParaCompetencia` dos 3 Services (Briefing/Entrega/Envio)
@@ -2991,7 +2991,7 @@ encontrada. **Missão do Agente A nesta frente encerrada.**
   - **Preservação de conhecimento antes da remoção:** algoritmo exato de
     normalização de `ChaveInfluenciadora` (trim + colapso de espaço +
     comparação case-insensitive, valor persistido preserva grafia
-    original) extraído do código para `docs/specs/SPEC-003.md` §6.1 —
+    original) extraído do código para `docs/specs/SPEC-003-importacao-inicial-da-base.md` §6.1 —
     único detalhe de regra de negócio que só existia no código-fonte, sem
     essa precisão documentada em nenhuma SPEC. Confirmado por auditoria
     dedicada (comparando `docs/archive/auditorias/AUDITORIA_REGRAS_NEGOCIO_LEGADO_TEAR.md`,
