@@ -10,171 +10,165 @@
 ## 1. Estado atual
 
 - **Data desta atualização:** 2026-07-23
-- **HEAD de `feat/ui-design-system-ela`:** `75cf5c4`, pushado e sincronizado
-  com `origin/feat/ui-design-system-ela`. **Não inclui ainda** a correção
-  desta sessão (ver abaixo) — está numa branch separada, aguardando merge.
+- **HEAD de `feat/ui-design-system-ela`:** `c23c59b`, pushado e sincronizado
+  com `origin/feat/ui-design-system-ela`.
 - **Branch:** `feat/ui-design-system-ela`.
-- **Working tree:** limpo, exceto os mesmos 3 arquivos `??` de sessões
-  anteriores, intocados por instrução explícita (destino ainda não
-  decidido, ver §4): `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
-  `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`,
-  `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`.
-- **Sistema em foco:** `tear-v2-app/` (Laravel 13 + React), fase de
-  Homologação Funcional.
-- **Esta sessão (papel QA/Auditor, em paralelo à sessão de Homologação do
-  `TASK_ROUTER.md` §37):** 1 commit de código (`4138c04`), numa branch
-  separada `fix/pagamento-gate-pago` (a partir de `f3c20b4`), **não
-  mergeada** em `feat/ui-design-system-ela`. PR draft aberto:
-  `https://github.com/estudioela/jescri-migracao/pull/66`. Suíte completa
-  do backend verde (206/206) na branch da correção.
+- **Working tree:** sujo — 6 arquivos `??`, todos intocados por decisão
+  explícita de escopo (destino não decidido, ver §4):
+  `docs/deployment/CHECKLIST_GO_LIVE.md`,
+  `docs/deployment/RUNBOOK_DEPLOY_E_ROLLBACK.md`,
+  `docs/release/GATE_FINAL_GO_LIVE.md`,
+  `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`,
+  `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
+  `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`.
+- **Sistema em foco:** documentação do repositório (nenhum código tocado
+  nesta sessão). `tear-v2-app/` (Laravel 13 + React) segue em fase de
+  Homologação Funcional/Go-Live em paralelo, numa trilha distinta.
+- **Esta sessão (papel Curador do Repositório — Agente C, missão
+  encerrada):** 2 commits documentais, direto em
+  `feat/ui-design-system-ela`, já pushados:
+  - `ae6f079` — `git mv` de `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`
+    para `docs/archive/pagamento-snapshot/`.
+  - `c23c59b` — `docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md`
+    (nova) + atualização de referências cruzadas (`docs/archive/README.md`,
+    `PLANO_MESTRE_ELA_INFLUENCIA.md`, `TASK_ROUTER.md` §28/§39).
 
-## 2. Última sessão concluída — Auditoria de regras de negócio, 1 bug Categoria A corrigido (2026-07-23)
+## 2. Última sessão concluída — Curadoria documental: decisão P0-2 extraída para ADR-018, plano de congelamento arquivado; missão do Agente C encerrada (2026-07-23)
 
-Sessão no papel de QA/Auditor Técnico (não implementa por conta própria —
-alimenta uma fila priorizada de bugs), rodando em paralelo à sessão de
-Homologação Funcional que fechou o `TASK_ROUTER.md` §37. Histórico
-completo em `TASK_ROUTER.md` §38 — aqui só o resumo operacional.
+Continuação de sessão anterior interrompida por limite de contexto, no
+papel de Curador do Repositório (Agente C — documentação apenas, sem tocar
+`tear-v2-app/` nem `src/`).
 
-1. **Rodada 1 (tela por tela):** reauditoria independente de Login,
-   Recuperação de senha, Convite, Cadastro e Aprovação — confirma por
-   auditoria cruzada os achados já registrados no §4 abaixo (throttle
-   assimétrico, e-mail sem unicidade, erro genérico no Login).
-2. **Rodada 2 (mudança de estratégia, a pedido do responsável do
-   projeto):** de tela por tela para regra de negócio — "existe alguma
-   forma de o sistema chegar a um estado impossível?", rastreando
-   Pagamento/Participação/Campanha/Briefing/Material/Envio direto no
-   código (controllers, models, FormRequests, migrations). Achado mais
-   importante: **o §37 tinha classificado Pagamento como "demonstrável
-   sem bug bloqueador conhecido" — não estava.** O gate de material
-   aprovado (regra documentada no código como `P0-1`) só era checado na
-   transição explícita a `APROVADO`; pular direto para `PAGO` contornava
-   a regra por completo (dinheiro liberado sem entrega aprovada).
-3. **Rodada 3 (reclassificação A/B/C):** a pedido do responsável do
-   projeto, todos os achados das duas rodadas foram reclassificados sob
-   o critério "validar fluxos de negócio para demonstração, não
-   hardening de produção" (mesmo critério já fixado no §37.3). Resultado:
-   **só 1 item Categoria A** (bloqueador de verdade) em ~10 achados —
-   ver lista completa em `TASK_ROUTER.md` §38.
-4. **Correção do único item Categoria A** (commit `4138c04`):
-   `PagamentoController::update()` agora bloqueia avanço a `PAGO` (não só
-   a `APROVADO`) quando há material da participação ainda não aprovado.
-   3 testes novos cobrindo o bypass; suíte completa 206/206; `pint`
-   limpo. **PR draft #66 aberto, ainda não mergeado.**
-5. **Itens Categoria B/C não corrigidos** (registrados como pendência,
-   não bloqueiam a validação do produto) — ver §4.
+1. **Divergência de estado encontrada e registrada** (não corrigida além
+   do registro factual, por estar fora do escopo documental desta sessão):
+   `ESTADO_SESSAO.md`/`TASK_ROUTER.md` §38 afirmavam PR #66 "ainda não
+   mergeado" — `git log` mostrou que já estava mergeado (`99b5f6a`) e havia
+   mais um commit à frente (`955bb83`, RF-028 "Histórico da
+   Influenciadora") não documentado em nenhuma seção. Correção factual
+   anexada ao final de `TASK_ROUTER.md` §38.
+2. **Item pendente da Fase 1 do plano de simplificação documental (§28)
+   concluído:** `docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md`
+   (decisão de arquitetura P0-2, "congelamento de Participação") tinha um
+   pré-requisito não cumprido — extrair a decisão para ADR antes de
+   arquivar.
+3. **Leitura direta do código** (`ParticipacaoNaCampanha.php`,
+   `ParticipacaoController.php`, `routes/api.php`, migration
+   `2026_07_20_180000_...`) revelou que a implementação real é **muito
+   mais estreita** que o plano propunha: só `congelado_em` + trava de
+   edição de 4 campos comerciais. Não existem `congelado_por`,
+   `dados_congelados` (cópia do cadastro da Parceira) nem
+   `historico_alteracoes_participacao` — o núcleo do problema que o plano
+   original resolvia (histórico não deve vazar alteração posterior do
+   cadastro vivo da Parceira) **não está coberto** hoje. Achado
+   consistente com `docs/reports/RECONCILIACAO_ESPECIFICACAO_FUNCIONAL_MVP.md`
+   e com a pendência Categoria C já registrada abaixo (§4).
+4. **`ADR-018` criada** documentando o que foi de fato implementado, o gap
+   consciente em relação ao plano original, e mantendo o plano completo
+   como referência arquivada (útil se o Sprint 3/Contratos precisar da
+   garantia de integridade histórica completa).
+5. **Arquivamento:** `git mv` do plano para
+   `docs/archive/pagamento-snapshot/` (mesmo cluster temático de suas
+   próprias fontes) + atualização de todas as referências cruzadas
+   mantidas ativas. Verificado por grep: nenhuma referência quebrada
+   restante fora de documentos históricos (que não são reescritos por
+   convenção).
+6. **Explicitamente não executado nesta sessão** (aguardando decisão do
+   responsável do projeto — ver §4): os demais itens de Fase 1 (2
+   roadmaps superados, `REPOSITORY_GOVERNANCE_AUDIT.md`,
+   `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`), Fase 2 (3 remoções diretas já
+   validadas), Fase 3 (2 consolidações) e Fase 4 (arquivamento pós-Go-Live)
+   do plano executivo de simplificação documental — nenhum tinha
+   autorização explícita de execução no escopo desta sessão de
+   continuação.
+7. **Missão do Agente C encerrada** por instrução explícita do
+   responsável do projeto ao final desta sessão — não há mais uma frente
+   dedicada de "Curador do Repositório" ativa; qualquer curadoria futura
+   deve ser reaberta explicitamente, não retomada por omissão.
 
 ## 3. Próxima tarefa recomendada
 
-1. **Decidir e mergear (ou não) o PR #66** (`fix/pagamento-gate-pago` →
-   `feat/ui-design-system-ela`) — enquanto não mergeado, a correção do
-   único bug Categoria A não está de fato na branch principal de
-   trabalho, e a afirmação "fluxos aptos para migração" fica condicional
-   a esse merge.
-2. Depois do merge: reproduzir o fluxo de **Login manualmente no
-   navegador** (pendência herdada do §37 — nenhum bug funcional no
-   código, só falta validação visual).
-3. Decidir com o responsável do projeto se a homologação/QA continua
-   para fluxos secundários (Logística/Envio, Marcas, Medidas, Histórico
-   de Alterações — não cobertos ainda) ou se o ciclo atual já é
-   suficiente para a fase de migração.
+Não há uma frente de curadoria documental em andamento — a missão do
+Agente C foi encerrada nesta sessão (ver §2.7). A próxima sessão deve
+retomar a frente de maior prioridade real do projeto, que **não** é
+documental:
 
-Ver `docs/_workspace/TASK_ROUTER.md` §38 (esta sessão), §37 (Homologação
-Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
+1. **Reconciliar o estado real da trilha de QA/Homologação** (achado da
+   divergência em §2.1): confirmar o que o commit `955bb83` (RF-028
+   Histórico da Influenciadora) e o merge do PR #66 mudam no checklist de
+   Go-Live, e atualizar `TASK_ROUTER.md`/`ESTADO_SESSAO.md` de fato (não
+   só o registro factual feito aqui) — provavelmente retomando de onde a
+   sessão de QA (`TASK_ROUTER.md` §37/§38) parou.
+2. Decidir com o responsável do projeto o destino dos 6 arquivos `??`
+   listados em §1/§4 (3 relatórios de sessões anteriores + 3 documentos
+   novos de deployment/release cuja origem não foi rastreada nesta
+   sessão, documental).
+3. Se/quando a curadoria documental for reaberta: os itens não executados
+   de §2.6 (Fases 2/3/4 do plano de simplificação, `TASK_ROUTER.md` §28)
+   seguem descritos e prontos para execução, dado autorização explícita.
 
 ## 4. Pendências/bloqueios (decisão do responsável do projeto)
 
-- **Bloqueador ativo, não técnico:** PR #66 aberto e verde, aguardando
-  decisão de merge (ver §3.1).
-- **Categoria B (compromete robustez/segurança/concorrência/manutenção,
-  não bloqueia validar o produto — herdadas desta sessão e do §37):**
-  - `Pagamento.valor` editável mesmo com `status=PAGO`, sem trava nem
-    auditoria de quem alterou.
-  - Pagamento e cancelamento de Participação não se checam mutuamente
-    (dá pra pagar uma participação cancelada, ou cancelar uma já paga).
-  - Campanha `ENCERRADA`/`CANCELADA` continua 100% editável (inclusive
-    reabrindo status ou trocando marca).
-  - Participação pode ser criada numa Campanha já `ENCERRADA`/`CANCELADA`.
-  - `PagamentoController` sem `DB::transaction`/lock — mesma classe de
-    race condition já corrigida em `ParceiraController::aprovar`, ainda
-    não replicada aqui.
-  - `StoreParceiraRequest`/`UpdateParceiraRequest` sem unicidade de
-    e-mail entre Parceiras — colisão só é detectada tarde, ao aprovar
-    (já tratado com 422 claro, mas depois de o admin investir tempo
-    revisando a candidata).
-  - Mensagens de erro genéricas no frontend de Login não distinguem
-    429/5xx de credenciais inválidas.
-  - `/login` sem rate-limit por e-mail (só por IP).
-  - `CadastroPublicoController::store()` não trata `QueryException` de
-    nome duplicado em requisições concorrentes (TOCTOU) — exige duas
-    requisições simultâneas para se manifestar.
-  - Usuário sem nenhuma role atribuída recebe o `AppShell` administrativo
-    completo no frontend — hoje não existe fluxo de produto que crie
-    `User` sem role.
-  - `email` não é normalizado (trim) em `StoreParceiraRequest`, ao
-    contrário de nome/telefone/CNPJ/CEP.
-- **Categoria C (pode esperar, decisão de produto em aberto):**
-  - Congelamento (`congelado_em`) é decorativo fora dos campos
-    comerciais da própria Participação — não bloqueia Briefing, Material
-    nem Envio. Escopo real de "congelar" nunca foi formalmente definido.
-  - `reenviarConvite` não distingue parceira já ativa de uma que nunca
-    definiu senha (reenvia "boas-vindas" mesmo para conta já em uso).
-  - Item de menu "Logística" no `AppShell.tsx` é um `<PlaceholderPage>`
-    desabilitado — Envio só é alcançável por drill-down de Campanha.
-- Destino dos 3 relatórios `docs/reports/*.md` (`??` há múltiplas
-  sessões) não decidido.
-- Validação ponta a ponta dos 2 fluxos reais de e-mail (convite, reset)
-  com o SMTP real — ainda não executada.
-- SPF/DKIM/DMARC do domínio `elafashionmkt.com.br` não verificados.
-- Limite diário de envio do plano Locaweb não levantado.
-- `MAIL_FROM_NAME=TEAR` diverge da marca usada no corpo dos e-mails
-  ("ELÃ | influência") — configurado deliberadamente, não alterar sem
-  decisão do responsável do projeto.
-- Recorrência/parcelamento de pagamento não implementado (`Pagamento` é
-  estritamente 1:1 com `ParticipacaoNaCampanha`) — limitação de escopo
-  conhecida, não bug.
-- GESTOR_MARCA não funcional, validação de formato Instagram, rótulo
-  "(em breve)" na sidebar — não bloqueiam o ciclo certificado.
-- `tear-v2-app/docs/CONFIGURACAO_PRODUCAO.md` linha ~164 — item de
-  checklist ainda cita "TVs and Limited Input devices" (Google Drive,
-  abandonado) — não confirmado se foi corrigido.
-- Estrutura fixa de pastas do Google Drive vs. estrutura dinâmica real
-  em produção — decisão de produto pendente.
-- `docs/deployment/GOOGLE_DRIVE_RECOVERY.md` — não iniciado.
-- Dois OAuth Clients "Web application" órfãos no Cloud Console
-  (cosmético).
-- Estratégia de infraestrutura do PostgreSQL, autenticação de deploy
-  (ADR-016), DNS de `influencia.estudioela.com`, PR #62 vs.
-  `worktree-agente-b-deploy-infra` — inalterados desde sessões
-  anteriores.
+- **Estado desatualizado na trilha de QA/Homologação** (não é bloqueio
+  documental, é a pendência mais urgente): confirmar se o PR #66 e o
+  commit `955bb83` fecham ou alteram os itens abertos de
+  `TASK_ROUTER.md` §37/§38.
+- **Destino de 6 arquivos `??` não decidido:**
+  `docs/reports/AUDITORIA_FUNCIONAL_MVP_VS_ESPECIFICACAO.md`,
+  `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`,
+  `docs/reports/PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md` (herdados de
+  sessões anteriores) e `docs/deployment/CHECKLIST_GO_LIVE.md`,
+  `docs/deployment/RUNBOOK_DEPLOY_E_ROLLBACK.md`,
+  `docs/release/GATE_FINAL_GO_LIVE.md` (apareceram nesta sessão, origem
+  não investigada — fora do escopo documental desta continuação).
+- **Fases 2/3/4 do plano de simplificação documental** (`TASK_ROUTER.md`
+  §28) seguem sem autorização de execução — 2 roadmaps superados,
+  `REPOSITORY_GOVERNANCE_AUDIT.md`, `RELATORIO_CONSOLIDACAO_AUDITORIAS.md`
+  (Fase 1 restante); 3 remoções diretas (Fase 2); 2 consolidações,
+  incluindo decisão sobre fonte oficial de tokens de design (Fase 3);
+  arquivamento pós-Go-Live de deployment/release (Fase 4).
+- **Congelamento de Participação incompleto frente ao gap real**
+  (registrado agora formalmente em `ADR-018`): se algum fluxo do produto
+  precisar da garantia de que dado histórico não muda quando o cadastro
+  vivo da Parceira muda, isso não está implementado hoje — só descoberto
+  e documentado, não corrigido (fora de escopo de uma sessão documental).
+- Itens Categoria B/C herdados de `TASK_ROUTER.md` §37/§38 (robustez,
+  concorrência, mensagens de erro) — inalterados, não bloqueiam validar o
+  produto.
+- Itens de infraestrutura/deploy inalterados desde sessões anteriores:
+  PostgreSQL indisponível no plano Locaweb, autenticação de deploy
+  (ADR-016), DNS de `influencia.estudioela.com`, SPF/DKIM/DMARC não
+  verificados, `docs/deployment/GOOGLE_DRIVE_RECOVERY.md` não iniciado.
 
 ## 5. Riscos ativos
 
-1. PostgreSQL indisponível no plano atual da Locaweb — impacto em
+1. **Descompasso entre a documentação de estado e a realidade do
+   repositório** (achado desta sessão) — se sessões futuras confiarem em
+   `ESTADO_SESSAO.md`/`TASK_ROUTER.md` sem checar `git log`, podem tomar
+   decisões sobre uma premissa errada (ex.: achar que o PR #66 ainda
+   precisa ser mergeado). Mitigado parcialmente por esta reescrita, mas a
+   causa raiz (sessões paralelas não sincronizando o cockpit) continua.
+2. PostgreSQL indisponível no plano atual da Locaweb — impacto em
    custo/cronograma (inalterado).
-2. Pipeline de deploy com incompatibilidade de autenticação não resolvida
+3. Pipeline de deploy com incompatibilidade de autenticação não resolvida
    (inalterado).
-3. DNS de `influencia.estudioela.com` não apontado (inalterado).
-4. Validação comercial concentrada em piloto único ainda não confirmado;
+4. DNS de `influencia.estudioela.com` não apontado (inalterado).
+5. Validação comercial concentrada em piloto único ainda não confirmado;
    bus factor 1 (inalterado).
-5. SPF/DKIM/DMARC não verificados no domínio de envio — risco de spam em
-   volume real, ainda não avaliado (inalterado, baixo risco imediato).
-6. **Mitigado nesta sessão:** o gate de material aprovado do fluxo de
-   Pagamentos (regra `P0-1`) tinha um desvio trivial (pular direto para
-   `PAGO`) que permitia liberar pagamento sem entrega aprovada — corrigido
-   no commit `4138c04`, mas só entra em vigor na branch principal quando
-   o PR #66 for mergeado (ver §3.1).
+6. SPF/DKIM/DMARC não verificados no domínio de envio (inalterado, baixo
+   risco imediato).
 
 ## 6. IA recomendada para a próxima tarefa
 
-- **Decisão de merge do PR #66:** decisão do responsável do projeto, não
-  requer IA — é revisão humana de um diff pequeno e já validado
-  (206/206 verde, pint limpo).
-- **Reprodução manual do fluxo de Login no navegador:** qualquer IA com
-  acesso a ferramenta de browser (Claude com Chrome/Playwright MCP,
-  ChatGPT com navegador) — tarefa mecânica e curta.
-- **Continuação da auditoria/homologação para fluxos secundários (se
-  decidido):** **Claude**, mesmo motivo das sessões anteriores (volume de
-  fluxos, necessidade de cruzar com `docs/specs/`/`docs/PRD.md`).
+- **Reconciliar o estado real da trilha de QA/Homologação (§3.1):**
+  **Claude**, mesmo motivo de sempre nesta fase — precisa cruzar
+  `git log`, `TASK_ROUTER.md` §37/§38 e o código de `tear-v2-app/` para
+  entender o que o commit RF-028 e o merge do PR #66 realmente mudam.
+- **Decisão sobre destino dos 6 arquivos `??` (§3.2):** decisão do
+  responsável do projeto, não requer IA.
+- **Retomada de curadoria documental (se reaberta):** qualquer IA — o
+  plano já está descrito em detalhe em `TASK_ROUTER.md` §28 e nos 2
+  relatórios `docs/reports/AUDITORIA_SIMPLIFICACAO_DOCUMENTAL.md`/
+  `PLANO_EXECUTIVO_SIMPLIFICACAO_DOCUMENTAL.md`.
 - Toda sessão nesta fase de Go-Live segue reportando ao final: Concluído
   / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima prioridade /
   Checklist de Go-Live (convenção registrada em sessões anteriores).
@@ -183,39 +177,34 @@ Funcional) e §35-§36 (Google Drive/SMTP) para o detalhe completo.
 
 ```
 Contexto: projeto ELÃ | influência (tear-v2-app, Laravel 13+React), fase
-de Homologação Funcional, branch feat/ui-design-system-ela. Estado e
-pendências completos em docs/_workspace/ESTADO_SESSAO.md (leia primeiro)
-e docs/_workspace/TASK_ROUTER.md §38 (esta sessão), §37 (Homologação
-Funcional) e §35-§36 (Drive/SMTP).
+de Homologação Funcional/Go-Live, branch feat/ui-design-system-ela. Estado
+completo em docs/_workspace/ESTADO_SESSAO.md (leia primeiro) e
+docs/_workspace/TASK_ROUTER.md §39 (esta sessão de curadoria), §38/§37
+(trilha de QA/Homologação, provavelmente desatualizada).
 
-Estado: feat/ui-design-system-ela em 75cf5c4, working tree limpo (exceto
-3 arquivos docs/reports/*.md untracked de sempre). Uma sessão paralela de
-QA/Auditor rastreou regras de negócio (não telas) em Pagamentos,
-Campanhas e Administração, e encontrou que o gate de material aprovado
-(P0-1) do fluxo de Pagamentos tinha um desvio: pular direto para
-status=PAGO contornava a checagem que só valia para a transição a
-APROVADO. Corrigido no commit 4138c04 (branch fix/pagamento-gate-pago,
-a partir de f3c20b4), com 3 testes novos e suíte completa 206/206 verde.
-PR draft aberto: https://github.com/estudioela/jescri-migracao/pull/66 —
-AINDA NÃO MERGEADO em feat/ui-design-system-ela.
+Estado: feat/ui-design-system-ela em c23c59b, pushado. Sessão anterior foi
+de curadoria documental pura (Agente C, missão agora encerrada): extraiu a
+decisão de arquitetura do congelamento de Participação (P0-2) para
+docs/adrs/ADR-018-congelamento-de-participacao-trava-simples.md e arquivou
+docs/planning/PLANO_FINAL_CONGELAMENTO_OPERACIONAL.md em
+docs/archive/pagamento-snapshot/. Achado importante da ADR: a implementação
+real do congelamento é muito mais estreita que o plano original propunha —
+só trava de edição via congelado_em, sem cópia de dados da Parceira nem
+auditoria. Achado separado, não relacionado à curadoria: PR #66
+(fix/pagamento-gate-pago) já estava mergeado (commit 99b5f6a) e há um
+commit adicional não documentado (955bb83, RF-028 "Histórico da
+Influenciadora") — TASK_ROUTER.md §38 tinha uma correção factual anexada
+nesta sessão, mas o conteúdo funcional (o que esses commits realmente
+significam para o checklist de Go-Live) não foi investigado.
 
-Tarefa desta sessão: (1) decidir e mergear o PR #66; (2) depois do merge,
-reproduzir o fluxo de Login manualmente no navegador (pendência herdada,
-sem bug funcional conhecido); (3) decidir com o responsável do projeto se
-a auditoria/homologação continua para fluxos secundários (Logística/
-Envio, Marcas, Medidas, Histórico) ou se o ciclo atual já é suficiente
-para a fase de migração para a arquitetura definitiva.
+Tarefa desta sessão: (1) reconciliar o estado real da trilha de
+QA/Homologação — o que muda no checklist de Go-Live com PR #66 mergeado e
+RF-028 implementado; (2) decidir com o responsável do projeto o destino
+dos 6 arquivos `??` (3 relatórios antigos + 3 novos de deployment/release
+de origem não rastreada).
 
-Critério desta fase (decisão explícita do responsável do projeto):
-validar fluxos de negócio ponta a ponta para demonstração a cliente, não
-hardening de produção. Achados classificados A (bloqueia validar o
-produto) / B (compromete robustez, não bloqueia) / C (pode esperar) —
-só corrigir A sem pedido explícito; B/C ficam registrados como pendência
-(ESTADO_SESSAO.md §4), não reabrir sem necessidade real ou novo achado
-crítico.
-
-Regras: não alterar arquitetura sem ADR; não criar documentação
-duplicada; uma frente por vez; validar (testes/lint) antes de commit;
-reportar ao final: Concluído / Bloqueadores (Crítico/Alto/Médio/Baixo) /
-Próxima prioridade / Checklist de Go-Live.
+Regras: não alterar arquitetura sem ADR; não criar documentação duplicada;
+uma frente por vez; validar (testes/lint) antes de commit; reportar ao
+final: Concluído / Bloqueadores (Crítico/Alto/Médio/Baixo) / Próxima
+prioridade / Checklist de Go-Live.
 ```
