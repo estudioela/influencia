@@ -1,8 +1,8 @@
 #!/bin/sh
-# Restaura um backup gerado por backup-db.sh contra o banco gerenciado da
-# Locaweb (sem Docker — mesma fonte de conexão de backup-db.sh, ver
-# docs/deployment/ARQUITETURA_PRODUCAO.md §2). DESTRUTIVO: sobrescreve o
-# banco atual. Uso:
+# Restaura um backup gerado por backup-db.sh contra o banco MySQL gerenciado
+# da Locaweb (sem Docker — mesma fonte de conexão de backup-db.sh;
+# PostgreSQL indisponível nesta hospedagem, decisão de projeto 2026-07-23).
+# DESTRUTIVO: sobrescreve o banco atual. Uso:
 #   ./scripts/restore-db.sh ./backups/tear_20260101_120000.sql.gz
 set -eu
 
@@ -22,9 +22,9 @@ printf 'Isto vai SOBRESCREVER o banco "%s". Confirma? (digite "sim"): ' "${DB_DA
 read -r CONFIRM
 [ "$CONFIRM" = "sim" ] || { echo "Cancelado."; exit 1; }
 
-gunzip -c "$BACKUP_FILE" | PGPASSWORD="$DB_PASSWORD" psql \
-  --host="$DB_HOST" --port="${DB_PORT:-5432}" \
-  --username="$DB_USERNAME" --no-password \
+gunzip -c "$BACKUP_FILE" | MYSQL_PWD="$DB_PASSWORD" mysql \
+  --host="$DB_HOST" --port="${DB_PORT:-3306}" \
+  --user="$DB_USERNAME" \
   "$DB_DATABASE"
 
 echo "Restauração concluída a partir de $BACKUP_FILE"

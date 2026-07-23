@@ -1,6 +1,7 @@
 #!/bin/sh
-# Backup do PostgreSQL de produção (banco gerenciado da Locaweb, sem
-# Docker — ver docs/deployment/ARQUITETURA_PRODUCAO.md §2). Uso:
+# Backup do MySQL de produção (banco gerenciado da Locaweb, sem
+# Docker — PostgreSQL indisponível nesta hospedagem, decisão de projeto
+# 2026-07-23). Uso:
 #   ./scripts/backup-db.sh                 # grava em ./backups/tear_AAAAMMDD_HHMMSS.sql.gz
 #   ./scripts/backup-db.sh /outro/destino  # grava nesse diretório
 #
@@ -24,9 +25,10 @@ DB_DATABASE=$(grep -m1 '^DB_DATABASE=' "$ENV_FILE" | cut -d= -f2-)
 DB_USERNAME=$(grep -m1 '^DB_USERNAME=' "$ENV_FILE" | cut -d= -f2-)
 DB_PASSWORD=$(grep -m1 '^DB_PASSWORD=' "$ENV_FILE" | cut -d= -f2-)
 
-PGPASSWORD="$DB_PASSWORD" pg_dump \
-  --host="$DB_HOST" --port="${DB_PORT:-5432}" \
-  --username="$DB_USERNAME" --no-password \
+MYSQL_PWD="$DB_PASSWORD" mysqldump \
+  --host="$DB_HOST" --port="${DB_PORT:-3306}" \
+  --user="$DB_USERNAME" \
+  --single-transaction --quick \
   "$DB_DATABASE" | gzip > "$OUT_FILE"
 
 echo "Backup salvo em $OUT_FILE"
