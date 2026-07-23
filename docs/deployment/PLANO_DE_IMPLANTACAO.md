@@ -34,7 +34,7 @@ só para não ser confundido com trabalho pendente:
 |---|---|
 | CI de testes/lint (backend + frontend) | `.github/workflows/tear-v2-ci.yml` |
 | Job de build do frontend + deploy via SSH (Etapas 5/6 da Macrofase A, `ac5180f` — numeração de commit histórico, não as Etapas deste documento) | `.github/workflows/tear-v2-deploy.yml` — ⚠️ presume SSH por chave, não suportado pelo painel real (ver nota na Etapa 9) |
-| Script de deploy atômico (`releases/` + symlink `current`) | `scripts/deploy-locaweb.sh` — ⚠️ mesma ressalva acima |
+| Script de deploy atômico (`releases/` + symlink `current`) | `scripts/deploy-locaweb.sh` — ⚠️ mesma ressalva acima; **⚠️ achado adicional (SSH real, 2026-07-23):** o script chama `php artisan ...` genérico, mas o host só tem o binário `php83` (sem `php` no PATH) — falharia no primeiro deploy real. Correção (`php`→`php83`) ainda não aplicada, ver `TASK_ROUTER.md` |
 | Suporte a Shared Drive institucional (`supportsAllDrives`, `corpora=drive`) | `backend/app/Services/GoogleDriveService.php` |
 | `TRUSTED_PROXIES` condicionado a variável de ambiente (proxy reverso da Locaweb) | `backend/bootstrap/app.php` |
 | Backup do banco sem Docker (`pg_dump` direto) + upload ao Drive + alerta de falha por e-mail | `scripts/backup-db.sh`, `app/Console/Commands/BackupDatabaseToDrive.php`, `app/Notifications/BackupFalhouNotification.php` |
@@ -104,7 +104,7 @@ credencial ou decisão que só o responsável do projeto tem.
 
 ---
 
-### Etapa 2 — Confirmar acesso à hospedagem Locaweb ⏳ parcialmente validada (2026-07-22)
+### Etapa 2 — Confirmar acesso à hospedagem Locaweb ⏳ parcialmente validada (2026-07-23)
 
 - **Auditoria completa do painel realizada (read-only) — ver
   `docs/deployment/AUDITORIA_LOCAWEB.md`.** Confirmado: hospedagem correta
@@ -121,10 +121,14 @@ credencial ou decisão que só o responsável do projeto tem.
   corrigido nesta sessão, só documentado (auditoria, sem execução de
   etapa). Ver nota na Etapa 9 e checklist de decisão em
   `AUDITORIA_LOCAWEB.md` §5.
-- **Ainda pendente para fechar esta etapa:** validar via SSH (usuário
-  precisa habilitar no painel, ação manual) — `php -v`, `which composer`,
-  `crontab -l`, conexão de teste ao Postgres. Não feito nesta sessão por
-  exigir habilitação manual do SSH pelo responsável do projeto.
+- **Validado via SSH real (2026-07-23, conduzido pelo responsável do
+  projeto — ver `docs/deployment/VALIDACAO_AMBIENTE_REAL.md`):** Git
+  instalado; `public_html` vazio (nenhum deploy anterior); Composer
+  ausente globalmente (confirma `ADR-016`); **PHP só existe como binário
+  `php83` — não há `php` genérico no PATH**, o que quebra os comandos
+  literais de `scripts/deploy-locaweb.sh` e desta etapa (ver ressalva em
+  §0 e correção pendente registrada em `TASK_ROUTER.md`). Conexão de
+  teste ao banco gerenciado **ainda não confirmada** por essa via.
 - **Objetivo:** validar que o plano já contratado tem, de fato, os
   recursos que a arquitetura assume, antes de depender deles nas etapas
   seguintes.
@@ -138,17 +142,18 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Como validar (via SSH, depois de habilitar no painel):**
   ```bash
   ssh <usuario>@<host-locaweb>   # autenticação por senha, não por chave
-  php -v            # confirmar versão do PHP
+  php83 -v           # binário confirmado; `php` genérico NÃO existe no PATH
   crontab -l         # confirmar acesso a crontab
   git --version
   psql --version     # ou testar conexão ao gerenciado
   ```
 - **Critérios de aceite:** SSH conecta (usuário/senha, habilitado no
-  painel); PHP confirmado (`^8.3`); `crontab -e` funciona; conexão de
-  teste ao banco gerenciado bem-sucedida. **`which composer` não é mais
-  critério de aceite** — `ADR-016` decidiu que Composer nunca roda no
-  host (auditoria já confirmou, à parte, que está ausente globalmente);
-  `vendor/` é gerado no runner do CI e enviado pronto via `rsync`.
+  painel); PHP confirmado — ✅ feito, binário é `php83` (não `php`
+  genérico); `crontab -e` funciona; conexão de teste ao banco gerenciado
+  **ainda pendente**. **`which composer` não é mais critério de aceite**
+  — `ADR-016` decidiu que Composer nunca roda no host (✅ confirmado
+  ausente globalmente via SSH real); `vendor/` é gerado no runner do CI e
+  enviado pronto via `rsync`.
 - **Risco (resolvido, `ADR-016`):** o limite de CPU/memória do plano para
   `composer install --no-dev` deixou de ser um risco — essa etapa nunca
   roda no host, só no runner do GitHub Actions.
@@ -382,6 +387,15 @@ credencial ou decisão que só o responsável do projeto tem.
 - **Critérios de aceite:** estrutura criada; `deploy-locaweb.sh` (rodado
   na Etapa 11) encontra `shared/.env` e não aborta com a mensagem
   "Faltando .../shared/.env".
+- **Lacuna identificada, não resolvida (auditoria de consistência,
+  2026-07-23):** `public_html` (webroot servido pela Locaweb, confirmado
+  vazio via SSH real) não aparece em nenhum passo desta etapa nem em
+  `ARQUITETURA_PRODUCAO.md` §3. Nenhum documento soberano descreve como
+  `~/tear/current` (ou `~/tear/current/public`) passa a ser servido pelo
+  domínio — falta decidir/confirmar o mecanismo (symlink de `public_html`
+  para `current/public`, DocumentRoot custom no painel, ou outro) antes
+  da Etapa 11. Não decidido aqui por depender de confirmação de recurso
+  do painel Locaweb que este documento não tem como validar.
 
 ---
 
@@ -400,8 +414,9 @@ credencial ou decisão que só o responsável do projeto tem.
   ```bash
   curl -f https://influencia.estudioela.com/up
   curl -f https://influencia.estudioela.com/api/health
-  # via SSH, dentro de current/:
-  php artisan migrate:status   # todas as migrations "Ran"
+  # via SSH, dentro de current/ — usar o binário php83, "php" genérico
+  # não existe no PATH do host (achado de SSH real, 2026-07-23):
+  php83 artisan migrate:status   # todas as migrations "Ran"
   ```
 - **Critérios de aceite:** workflow conclui sem erro até o swap do
   symlink `current`; `/up` e `/api/health` respondem 200; certificado
