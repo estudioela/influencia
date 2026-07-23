@@ -3332,3 +3332,110 @@ só por prints do painel.
   Locaweb — só leitura, conforme mandato de cada fase da missão. Único
   artefato de documentação novo: `docs/deployment/
   VALIDACAO_AMBIENTE_REAL.md`.
+
+## 47. Primeiro deploy real de produção executado — MySQL adotado
+    (PostgreSQL descartado), bugs de host corrigidos, sistema respondendo
+    (2026-07-23)
+
+Sessão de execução direta, dividida em 4 missões sequenciais do
+responsável do projeto (auditoria de consistência → fechar pendências
+conhecidas → preparar artefato → conduzir o deploy real). Primeira vez
+que código chega à hospedagem Locaweb.
+
+1. **Auditoria de consistência (`php83`/Composer/SSH/`public_html`)
+   contra os documentos soberanos** — todos os 5 fatos já auditados
+   antes, mas 2 deles (`php83`, `public_html`) estavam ausentes ou
+   desatualizados em `ARQUITETURA_PRODUCAO.md`/`PLANO_DE_IMPLANTACAO.md`.
+   Corrigido por atualização pontual (commit `1adaae5`).
+2. **Correção de código dos bugs já rastreados:**
+   `scripts/deploy-locaweb.sh`, `scripts/crontab.example`,
+   `scripts/backup-db.sh` corrigidos para `php83` (não `php` genérico);
+   `scripts/restore-db.sh` trocado de `docker compose exec` (inexistente
+   em produção) para `psql` direto (commit `3e741cb`). Bootstrap de
+   `authorized_keys` e procedimento de `public_html` documentados em
+   `PLANO_DE_IMPLANTACAO.md` (commit `e3aeca4`).
+3. **Decisão de arquitetura tomada pelo responsável do projeto, fora do
+   fluxo normal de ADR (execução urgente, autorizada explicitamente):**
+   PostgreSQL confirmado indisponível no painel Locaweb para
+   `elafashionmkt.com.br` ("Nenhum banco de dados disponível", print
+   real do wizard) — **banco de produção passa a ser MySQL.**
+   **⚠️ Pendência de governança:** essa mudança de arquitetura não tem
+   ADR formal (equivalente a um "ADR-019"), só o registro desta seção e
+   os commits de código. Deveria ser formalizada antes que a lacuna
+   vire hábito — mesmo padrão que `ADR-016` já estabeleceu para a
+   mudança de mecânica de deploy.
+4. **Auditoria de compatibilidade MySQL, sem achados bloqueantes na
+   auditoria estática** (migrations usam só Schema Builder, sem SQL
+   raw): corrigido preventivamente `Schema::defaultStringLength(191)`
+   em `AppServiceProvider` (colunas `string()->unique()` sem tamanho
+   explícito + utf8mb4 é o gatilho clássico do erro "key too long" em
+   MySQL/MariaDB mais antigos); `backend/.env.production.example`,
+   `.github/workflows/tear-v2-deploy.yml` (`pdo_mysql`) e
+   `scripts/backup-db.sh`/`restore-db.sh` (`mysqldump`/`mysql`, senha
+   via `MYSQL_PWD`) migrados de Postgres para MySQL (commit `a3069c1`).
+5. **Execução real do primeiro deploy, sessão interativa passo a passo
+   com o responsável do projeto:**
+   - Banco `influenciaela` criado no painel (MySQL). Troubleshooting de
+     ~1h de "Access denied" persistente no phpMyAdmin e em testes
+     diretos — isolado por evidência direta (TCP ok, 3 IPs diferentes
+     negados incluindo o do próprio host de produção) como problema de
+     **senha digitada divergindo entre tentativas** (`read -s` sem eco),
+     não bloqueio de rede/host — resolvido definitivamente com
+     copiar-colar em vez de digitação.
+   - Par de chaves SSH dedicado gerado; bootstrap de
+     `~/.ssh/authorized_keys` concluído e validado (auth por chave
+     funcionando, sem senha).
+   - **Achado crítico confirmado (não só suspeita):** `ftp.elafashionmkt.com.br`
+     não resolve (NXDOMAIN) e `elafashionmkt.com.br` resolve para IPs do
+     GitHub Pages — reconfirma o achado do §46, agora com teste direto
+     de DNS. Contornado usando o IP (`179.188.55.78`) como `SSH_HOST`
+     nos secrets — **não resolve o problema para tráfego público real**,
+     só para o pipeline de deploy.
+   - 4 secrets do GitHub (`SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`,
+     `DEPLOY_BASE_PATH`) cadastrados via `gh secret set`. Estrutura
+     `releases/`+`shared/storage/` criada no host (caminho real:
+     `/home/storage/3/05/97/elafashionmkt1/tear`, diferente do
+     `/home/elafashionmkt1/` presumido em documentos antigos — `~`
+     resolve certo em qualquer script, não é um problema, só uma
+     correção de fato).
+   - `shared/.env` de produção montado. **Decisões temporárias,
+     sinalizadas no próprio arquivo, não definitivas:** `APP_URL`/
+     `SESSION_DOMAIN` apontando para o domínio temporário Locaweb
+     (`elafashionmkt1.hospedagemdesites.ws`) via HTTP, não HTTPS — SSL
+     não emitido em nenhum domínio ainda; `SESSION_SECURE_COOKIE=false`
+     enquanto isso; `MAIL_MAILER=log` (SMTP real ainda não configurado);
+     `GOOGLE_DRIVE_*` como `CHANGE_ME` (upload de Material fica 503 até
+     preencher, não bloqueia o app subir).
+   - **Bug de migration específico de MySQL encontrado e corrigido:**
+     `2026_07_20_130000_reorganize_briefings_para_1n_por_tipo.php`
+     derrubava o índice único de `participacao_id` antes de criar o
+     composto — MySQL/InnoDB exige que a FK sempre tenha um índice de
+     suporte (erro 1553), PostgreSQL não tem essa exigência do lado
+     referenciador. Corrigido invertendo a ordem (criar composto antes
+     de derrubar o original). Confirmado que o `ALTER TABLE` combinado
+     falha atomicamente no MySQL — nenhuma coluna parcial ficou
+     aplicada, nada precisou ser revertido (commit `3d9fb4b`).
+   - **`public_html` resolvido:** era diretório vazio real, sem symlink
+     — trocado por `ln -sfn ~/tear/current/public ~/public_html`.
+     Funcionou de primeira (Apache segue o link).
+   - **Pipeline completo rodou verde** (`workflow_dispatch` em
+     `docs/locaweb-infrastructure` → build no runner → `rsync` →
+     `deploy-locaweb.sh` → `migrate --force` → cache → swap de
+     `current`). Disparo do `gh workflow run` feito pelo responsável do
+     projeto — o classificador de permissões do agente bloqueia esse
+     comando especificamente (ação de alto impacto), mesmo sob o
+     mandato de operação autônoma do projeto.
+6. **Resultado final, verificado por request real:** `GET /up` → 200;
+   `GET /api/health` → 200 `{"status":"ok","app":"TEAR"}`; `GET /` → 200,
+   servindo a SPA (`ELÃ | influência`). **Primeiro deploy de produção do
+   TEAR está no ar.** URL de validação atual é o domínio temporário
+   Locaweb (não o domínio final) — ver pendências no `ESTADO_SESSAO.md`.
+- **Validação:** `php -l`/`php artisan --version`/build local (Composer
+  `--no-dev`, Vite) confirmados antes do deploy real; syntax check em
+  todos os scripts `.sh` alterados; resposta HTTP real do host de
+  produção conferida ao final (evidência de rede, não suposição).
+- **O que NÃO foi feito nesta sessão (fica para a próxima):** ADR formal
+  da troca para MySQL; correção do DNS de `elafashionmkt.com.br`
+  (GitHub Pages); emissão de SSL; preenchimento de SMTP/Google Drive
+  reais; troca de `APP_URL` para o domínio definitivo; merge de
+  qualquer uma das 4 PRs abertas.
