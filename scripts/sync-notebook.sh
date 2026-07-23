@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# sync-notebook.sh — sincronizador incremental de knowledge/ com o notebook
+# sync-notebook.sh — sincronizador incremental de docs/knowledge/ com o notebook
 # "🧶 PROJETO TEAR" (alias "tear") no NotebookLM.
 #
-# Mantém knowledge/.notebook-index.json com sha256 + source_id de cada .md:
+# Mantém docs/knowledge/.notebook-index.json com sha256 + source_id de cada .md:
 #   - arquivo inalterado (mesmo sha256) → ignorado;
 #   - arquivo alterado → remove a versão antiga no notebook (pelo source_id)
 #     e envia a nova;
@@ -22,7 +22,7 @@ set -uo pipefail   # sem -e: falha em um upload não deve abortar o restante
 ALIAS="tear"
 MAX_JOBS=4
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-KNOWLEDGE_DIR="$REPO_ROOT/knowledge"
+KNOWLEDGE_DIR="$REPO_ROOT/docs/knowledge"
 INDEX_FILE="$KNOWLEDGE_DIR/.notebook-index.json"
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,95 @@
+name: TEAR V2 Deploy
+
+# Só via acionamento manual: o SSH da hospedagem Locaweb é temporário
+# (habilitação manual no painel, ~3h) — não há como um push disparar o
+# deploy de forma confiável, então o disparo automático por push foi
+# removido (achado de auditoria, docs/deployment/AUDITORIA_LOCAWEB.md
+# §4.1). Acionar via workflow_dispatch depois de habilitar o SSH no painel.
+# Arquitetura: ADR-015 (origem única — Laravel serve o build do Vite a
+# partir de public/build). Composer roda só neste runner — o host Locaweb
+# não tem Composer instalado globalmente (achado de auditoria,
+# docs/deployment/AUDITORIA_LOCAWEB.md §1/§4.3); vendor/ é gerado aqui e
+# enviado pronto via rsync, o host nunca executa Composer. Runbook
+# completo: docs/deployment/PLANO_IMPLEMENTACAO.md, Etapa 6.
+on:
+  workflow_dispatch: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    name: Build + Deploy (Locaweb via SSH)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_pgsql, fileinfo, zip, intl, gd, imagick, openssl
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install backend dependencies (vendor/ vai pronto para o host — Composer não existe lá)
+        working-directory: backend
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend (gera backend/public/build)
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build:locaweb
+
+      - name: Deploy via SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_BASE_PATH: ${{ secrets.DEPLOY_BASE_PATH }}
+        run: |
+          # Secrets ainda não cadastrados (Etapa 1/6 de
+          # docs/deployment/PLANO_IMPLEMENTACAO.md) — falha rápido e visível
+          # em vez de tentar conectar com credenciais vazias.
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_USER" ] || [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$DEPLOY_BASE_PATH" ]; then
+            echo "::error::Secrets de deploy (SSH_HOST/SSH_USER/SSH_PRIVATE_KEY/DEPLOY_BASE_PATH) não configurados."
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          RELEASE_ID="$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$DEPLOY_BASE_PATH/releases/$RELEASE_ID'"
+
+          rsync -avz --delete \
+            --exclude='.env' \
+            --exclude='storage' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            backend/ \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_BASE_PATH/releases/$RELEASE_ID/"
+
+          scp -i ~/.ssh/deploy_key scripts/deploy-locaweb.sh \
+            "$SSH_USER@$SSH_HOST:$DEPLOY_BASE_PATH/releases/$RELEASE_ID/deploy-locaweb.sh"
+
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "bash '$DEPLOY_BASE_PATH/releases/$RELEASE_ID/deploy-locaweb.sh' '$RELEASE_ID' '$DEPLOY_BASE_PATH'"

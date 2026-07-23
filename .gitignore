@@ -3,7 +3,7 @@
 node_modules/
 coverage/
 .claude/worktrees/
-archive/
+/archive/
 _backup_full_*/
 _backup_cleanup_*/
 _backup_stitch_consolidacao_*/
@@ -30,3 +30,6 @@ sources.json
 
 # Configuração local do Claude Code (permissões por máquina)
 .claude/settings.local.json
+
+# Secrets
+.secrets/

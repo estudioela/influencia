@@ -36,9 +36,9 @@ Autorização explícita do responsável pelo projeto, registrada nesta data:
   decide a ordem de SPECs desbloqueadas, conduz integração, QA, arquitetura,
   performance, documentação, preparação para deploy e homologação sem
   aguardar confirmação a cada etapa.
-- `git push` e `clasp push`/deploy para produção estão autorizados sem
-  confirmação pontual, a cada unidade lógica de trabalho concluída (testes
-  verdes, lint limpo).
+- `git push` e deploy para produção estão autorizados sem confirmação
+  pontual, a cada unidade lógica de trabalho concluída (testes verdes,
+  lint limpo).
 - O agente PARA e pede decisão humana apenas quando houver: regra de negócio
   inédita (ex.: decisão de PO pendente, como Q-04), necessidade de
   credenciais/acessos que não possui, impossibilidade técnica objetiva, ou
@@ -47,7 +47,15 @@ Autorização explícita do responsável pelo projeto, registrada nesta data:
   enquanto vigente; revogável a qualquer momento pelo responsável do projeto.
 
 ## Comandos padrão
+
 Comandos permitidos e fluxo Git.
+
+**Protocolo de sessão:** `/comecar` no início de qualquer sessão (lê
+`docs/_workspace/ESTADO_SESSAO.md` e reporta fase, próxima tarefa,
+pendências, riscos e IA recomendada); `/fim` ao encerrar (reescreve
+`ESTADO_SESSAO.md` com o que mudou). `ESTADO_SESSAO.md` é o snapshot
+rápido; `docs/_workspace/TASK_ROUTER.md` continua sendo o histórico
+completo e a fonte única de estado de longo prazo.
 
 ## Documentos oficiais
 

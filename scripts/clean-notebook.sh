@@ -3,8 +3,8 @@
 # clean-notebook.sh — remove documentos duplicados do notebook "🧶 PROJETO TEAR".
 #
 # Estratégia (evita falso positivo de títulos iguais em caminhos diferentes,
-# ex.: knowledge/README.md vs knowledge/specs/README.md):
-#   1. Fontes cujo source_id está em knowledge/.notebook-index.json são
+# ex.: docs/knowledge/README.md vs docs/knowledge/specs/README.md):
+#   1. Fontes cujo source_id está em docs/knowledge/.notebook-index.json são
 #      SEMPRE mantidas — o índice mapeia caminho relativo → source_id, então
 #      cada uma corresponde a um arquivo distinto, mesmo com título repetido.
 #   2. Fontes fora do índice com título de um arquivo indexado são cópias
@@ -23,7 +23,7 @@ set -euo pipefail
 
 ALIAS="tear"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-INDEX_FILE="$REPO_ROOT/knowledge/.notebook-index.json"
+INDEX_FILE="$REPO_ROOT/docs/knowledge/.notebook-index.json"
 DRY_RUN=0
 
 for arg in "$@"; do

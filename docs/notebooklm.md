@@ -6,7 +6,7 @@ abaixo: `nlm` autenticado (`nlm login`) e `jq` no PATH.
 ## Sincronização incremental
 
 `scripts/sync-notebook.sh` mantém o notebook em dia com os `.md` de
-`knowledge/`, de forma **incremental**.
+`docs/knowledge/`, de forma **incremental**.
 
 ```sh
 scripts/sync-notebook.sh
@@ -16,7 +16,7 @@ Não há flags. Rodar de novo sem mudanças termina em segundos sem enviar nada.
 
 ### Como funciona
 
-O índice `knowledge/.notebook-index.json` guarda, por arquivo, o `sha256`
+O índice `docs/knowledge/.notebook-index.json` guarda, por arquivo, o `sha256`
 do conteúdo e o `source_id` da fonte correspondente no NotebookLM:
 
 - **Inalterado** (mesmo sha256) → ignorado.
@@ -28,7 +28,7 @@ Uploads rodam em paralelo (até 4 simultâneos). O resumo final mostra
 enviados, ignorados, removidos, falhas e tempo total. Em caso de falha
 parcial, basta rodar de novo: só os arquivos que falharam são reenviados.
 
-O índice deve ser **versionado junto com knowledge/** — é ele que evita
+O índice deve ser **versionado junto com docs/knowledge/** — é ele que evita
 reenvios e duplicatas entre execuções (inclusive em outra máquina).
 
 ## Limpeza de duplicados
@@ -46,10 +46,10 @@ scripts/clean-notebook.sh
 
 Comportamento:
 
-- Lê `nlm source list tear --json` e usa `knowledge/.notebook-index.json`
+- Lê `nlm source list tear --json` e usa `docs/knowledge/.notebook-index.json`
   (caminho relativo → `source_id`, mantido pelo sync) como identificador
-  estável — títulos iguais em caminhos diferentes (ex.: `knowledge/README.md`
-  e `knowledge/specs/README.md`) **não** são tratados como duplicata.
+  estável — títulos iguais em caminhos diferentes (ex.: `docs/knowledge/README.md`
+  e `docs/knowledge/specs/README.md`) **não** são tratados como duplicata.
 - Fontes rastreadas pelo índice são sempre mantidas; fontes fora do índice
   com título de arquivo indexado são cópias obsoletas e são removidas;
   as demais são agrupadas por título, mantendo a primeira ocorrência.
